@@ -43,6 +43,34 @@
     "comingSoon": "We are preparing the content for this section.",
     "backLabel": "Guide"
   },
+  "explore": {
+    "eyebrow": "Explore",
+    "filterLabel": "Categories",
+    "categories": {
+      "all": "All",
+      "food-drink": "Food & drink",
+      "nature": "Nature",
+      "active": "Active",
+      "culture": "Culture",
+      "family": "Family"
+    },
+    "resultsCount": "{count, plural, one {# recommendation} other {# recommendations}}",
+    "empty": "We have no recommendation in this category right now.",
+    "placesHeading": "Recommendations",
+    "backLabel": "Explore",
+    "goodToKnow": "Good to know",
+    "detailsHeading": "Details & contact",
+    "openingHours": "Opening hours",
+    "address": "Address",
+    "phone": "Phone",
+    "actions": {
+      "route": "Get directions",
+      "website": "Open website",
+      "call": "Call",
+      "reserve": "Reserve"
+    },
+    "opensInNewWindow": "(opens in a new window)"
+  },
   "placeholder": {
     "eyebrow": "Coming soon",
     "body": "We are preparing this section for you.",

@@ -46,17 +46,20 @@ export function EditorialImageCard({
     <Link
       href={href}
       className={cx(
-        // min-h keeps two-line titles comfortable on compact phones (no effect at 390px).
-        "group relative isolate block min-h-32 overflow-hidden rounded-card bg-surface",
-        ratios[ratio],
+        // Grid stack: an invisible sizer carries the aspect ratio, the text layer carries the
+        // minimum height; the card takes the larger of both. Neither affects the width, so the
+        // card never overflows narrow screens.
+        "group relative isolate grid min-w-0 overflow-hidden rounded-card bg-surface",
         className,
       )}
     >
+      <div aria-hidden className={cx("col-start-1 row-start-1", ratios[ratio])} />
       <div className="absolute inset-0 -z-10 transition-transform duration-500 ease-standard motion-safe:group-hover:scale-102">
         {media}
       </div>
       <div aria-hidden className="overlay-image absolute inset-0 -z-10" />
-      <div className="flex h-full items-end justify-between gap-4 px-4 pt-4 pb-3">
+      {/* min-h keeps two-line titles comfortable on compact phones. */}
+      <div className="col-start-1 row-start-1 flex min-h-32 items-end justify-between gap-4 px-4 pt-4 pb-3">
         <div className="min-w-0">
           <Heading className="type-title text-text-inverse">{title}</Heading>
           {subtitle && (

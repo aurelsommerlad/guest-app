@@ -5,7 +5,7 @@ Pilotkunde und erster Tenant: **UNIQUE PLACES**. Ziel-Domain: **`stay.unique-pla
 
 > Dies ist **nicht** die bestehende Extras-App (`extras.unique-places.com`). Sie bleibt unverändert und wird zunächst nur verlinkt.
 
-**Status:** Phase 4 – STAY (`/de/stay`) wahlweise mit Mock-Daten oder einem Apaleo-Testaufenthalt (`STAY_DATA_SOURCE`), GUIDE (`/de/guide`) mit Mock-Inhalten. Noch keine Anbindung an Datenbank, Apaleo oder Gastzugang. Design Lab: `/dev/ui` (nur local und staging).
+**Status:** Phase 4 – STAY (`/de/stay`) wahlweise mit Mock-Daten oder einem Apaleo-Testaufenthalt (`STAY_DATA_SOURCE`), GUIDE (`/de/guide`) und EXPLORE (`/de/explore`) mit Mock-Inhalten. Noch keine Anbindung an Datenbank, Apaleo oder Gastzugang. Design Lab: `/dev/ui` (nur local und staging).
 
 ## Schnellstart
 

@@ -27,7 +27,7 @@ describe("Icon", () => {
 
   it("renders every icon in the set", () => {
     for (const name of iconNames) {
-      expect(renderToStaticMarkup(<Icon name={name} />)).toMatch(/<(path|circle|rect)/);
+      expect(renderToStaticMarkup(<Icon name={name} />)).toMatch(/<(path|circle|rect|polygon)/);
     }
   });
 });

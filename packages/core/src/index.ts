@@ -35,3 +35,18 @@ export {
   type PmsReservation,
   type PmsReservationStatus,
 } from "./pms/pms-provider";
+export {
+  EXPLORE_CATEGORIES,
+  EXPLORE_FILTERS,
+  type ExploreCategory,
+  type ExploreFilter,
+  type ExplorePlace,
+  type GeoCoordinates,
+  type PlaceScope,
+} from "./explore/explore-model";
+export {
+  type ExploreContext,
+  filterPlacesByCategory,
+  placeScopeApplies,
+  selectExplorePlaces,
+} from "./explore/select-explore-places";

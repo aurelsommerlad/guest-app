@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 4 (Apaleo-Integration für STAY, Mock-Modus erhalten). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 5 (EXPLORE-Grundstruktur mit Mock-Inhalten). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -110,6 +110,8 @@ Tests: Integrationstests mit zwei Tenants (Phase 3) beweisen die Isolation.
 
 ## 8. Content-Modell (GUIDE & EXPLORE)
 
+> **EXPLORE ab Phase 5 implementiert:** siehe [ADR 0009](adr/0009-explore-content-model.md).
+>
 > **Ab Phase 3 implementiert:** Das GUIDE-Modell ist in [ADR 0007](adr/0007-guide-content-model.md) beschrieben und liegt in `packages/core/src/guide`. Die folgenden Abschnitte bleiben als Planungsgrundlage, die Details stehen im ADR.
 
 **Quelle:**

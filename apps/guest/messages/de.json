@@ -43,6 +43,34 @@
     "comingSoon": "Die Inhalte für diesen Bereich bereiten wir gerade für Dich vor.",
     "backLabel": "Guide"
   },
+  "explore": {
+    "eyebrow": "Explore",
+    "filterLabel": "Kategorien",
+    "categories": {
+      "all": "Alle",
+      "food-drink": "Essen & Trinken",
+      "nature": "Natur",
+      "active": "Aktiv",
+      "culture": "Kultur",
+      "family": "Familie"
+    },
+    "resultsCount": "{count, plural, one {# Empfehlung} other {# Empfehlungen}}",
+    "empty": "In dieser Kategorie haben wir gerade keine Empfehlung für Dich.",
+    "placesHeading": "Empfehlungen",
+    "backLabel": "Explore",
+    "goodToKnow": "Gut zu wissen",
+    "detailsHeading": "Infos & Kontakt",
+    "openingHours": "Öffnungszeiten",
+    "address": "Adresse",
+    "phone": "Telefon",
+    "actions": {
+      "route": "Route planen",
+      "website": "Website öffnen",
+      "call": "Anrufen",
+      "reserve": "Reservieren"
+    },
+    "opensInNewWindow": "(öffnet in neuem Fenster)"
+  },
   "placeholder": {
     "eyebrow": "Bald verfügbar",
     "body": "Dieser Bereich wird gerade für Dich vorbereitet.",

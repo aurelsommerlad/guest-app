@@ -3,6 +3,9 @@ import { type IconName } from "../icons/paths";
 import { cx } from "../lib/cx";
 import { type LinkComponent } from "./link";
 
+/** Labels longer than this use the compact style inside the active circle. */
+const COMPACT_LABEL_LENGTH = 5;
+
 export type BottomNavigationItem = {
   id: string;
   href: string;
@@ -53,7 +56,16 @@ export function BottomNavigation({
                 )}
               >
                 <Icon name={item.icon} size={active ? "lg" : "md"} />
-                <span className="type-nav">{item.label}</span>
+                {/* Long labels get a compact style inside the circle so they never touch its edge. */}
+                <span
+                  className={
+                    active && item.label.length > COMPACT_LABEL_LENGTH
+                      ? "type-nav-compact"
+                      : "type-nav"
+                  }
+                >
+                  {item.label}
+                </span>
               </Link>
             </li>
           );

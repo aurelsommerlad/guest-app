@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { BottomNavigation } from "./BottomNavigation";
 import { EditorialImageCard } from "./EditorialImageCard";
 import { Callout } from "./Callout";
+import { DetailList } from "./DetailList";
+import { FilterBar } from "./FilterBar";
 import { InfoTile } from "./InfoTile";
 import { LinkList } from "./LinkList";
 import { PropertyName } from "./PropertyName";
@@ -94,6 +96,18 @@ describe("BottomNavigation", () => {
     expect(markup).toContain("safe-bottom");
   });
 
+  it("uses the compact label style only for long active labels", () => {
+    const stay = renderToStaticMarkup(
+      <BottomNavigation items={items} activeId="stay" label="Nav" />,
+    );
+    expect(stay).not.toContain("type-nav-compact");
+    const explore = renderToStaticMarkup(
+      <BottomNavigation items={items} activeId="explore" label="Nav" />,
+    );
+    expect(explore.match(/type-nav-compact/g)).toHaveLength(1);
+    expect(explore).toMatch(/type-nav-compact">Explore</);
+  });
+
   it("marks only the active item, wherever it is", () => {
     for (const active of ["guide", "stay", "explore"]) {
       const markup = renderToStaticMarkup(
@@ -170,5 +184,39 @@ describe("Callout", () => {
     expect(markup).toMatch(/^<aside/);
     expect(markup).toContain("Gut zu wissen");
     expect(markup).toContain("bg-surface");
+  });
+});
+
+describe("FilterBar", () => {
+  const filters = [
+    { id: "all", label: "Alle" },
+    { id: "nature", label: "Natur" },
+  ] as const;
+
+  it("is a labelled group of toggle buttons with the active one pressed", () => {
+    const markup = renderToStaticMarkup(
+      <FilterBar items={filters} value="nature" onChange={() => undefined} label="Kategorien" />,
+    );
+    expect(markup).toContain('role="group" aria-label="Kategorien"');
+    expect(markup.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(markup).toMatch(/aria-pressed="true"[^>]*>Natur</);
+    expect(markup).toContain("min-h-11"); // 44px touch target
+    expect(markup).not.toContain("rounded-full");
+  });
+});
+
+describe("DetailList", () => {
+  it("renders labelled details as a description list", () => {
+    const markup = renderToStaticMarkup(
+      <DetailList
+        items={[
+          { id: "hours", icon: "clock", label: "Öffnungszeiten", value: "Mi–So ab 17:00 Uhr" },
+        ]}
+      />,
+    );
+    expect(markup).toMatch(/^<dl/);
+    expect(markup).toContain("<dt");
+    expect(markup).toContain("Mi–So ab 17:00 Uhr");
+    expect(markup).toContain('aria-hidden="true"');
   });
 });

@@ -1,6 +1,6 @@
 # Design System – UNIQUE PLACES Guest App
 
-Stand: Phase 3 (GUIDE). Dieses Dokument beschreibt das aus den Referenzen abgeleitete Designsystem und wie es technisch umgesetzt ist.
+Stand: Phase 5 (EXPLORE). Dieses Dokument beschreibt das aus den Referenzen abgeleitete Designsystem und wie es technisch umgesetzt ist.
 
 > **Die Referenzbilder bleiben die visuelle Source of Truth.** Dieses Dokument übersetzt sie in reproduzierbare Regeln.
 >
@@ -292,7 +292,27 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
   - Blöcke im ruhigen Rhythmus: Zwischenüberschrift 32 px Abstand, Absatz 8 px, Liste zwischen Haarlinien, Hinweis 32 px
 - **Neue Icons:** car, plug, thermometer, trash, book-open, log-out, key, phone, mail.
 
-## 14. Offene Punkte (C)
+## 14. Ergänzungen in Phase 5 (EXPLORE)
+
+- **Übersicht:**
+  - BrandHeader, Eyebrow „Explore“, Display-Titel und Lead aus dem Property-Content (z. B. „Allgäu entdecken“)
+  - darunter der Kategorie-Filter und die Empfehlungen als `EditorialImageCard`: hervorgehobener Ort im Format 11 : 5, alle weiteren 11 : 4, Desktop dreispaltig 4 : 3
+- **`FilterBar`** (`@up/ui`):
+  - ruhige Versal-Labels (`type-eyebrow`), das aktive Label in `text` mit 1-px-Unterstreichung, inaktive in `text-muted`
+  - keine Chips, keine Farben, Trefferfläche 44 px
+  - auf schmalen Screens horizontal scrollbar, ohne Scrollbalken (`scrollbar-hidden`)
+- **`DetailList`** (`@up/ui`): Info-Zeilen mit Outline-Icon (24 px), Label als Eyebrow und Wert in `type-body`/`text-muted`. Zeilenumbrüche bleiben erhalten (Adresse).
+- **Detailseite:**
+  - Zurück zu Explore, Kategorie als Eyebrow, Titel, Titelbild 3 : 2
+  - persönliche Empfehlung als Lead in `text`, Beschreibung, „Gut zu wissen“ (`Callout`)
+  - Infos hinter einer Haarlinie, darunter die Aktionen: die erste gefüllt, weitere als Outline, ab 360 px zweispaltig. Externe Links sind für Screenreader gekennzeichnet.
+- **Navigation:** Labels mit mehr als 5 Zeichen (z. B. „EXPLORE“) nutzen im aktiven Kreis `type-nav-compact` (10 px, +0,02 em), damit sie den Kreisrand nicht berühren. STAY und GUIDE bleiben unverändert. C7 ist damit gelöst.
+- **Bugfix `EditorialImageCard`:**
+  - Die Mindesthöhe (128 px) wurde über das Seitenverhältnis zu einer Mindestbreite von 352 px. Das erzeugte horizontalen Überlauf unter 372 px und machte die Karten bei 390 px 2 px zu breit.
+  - Jetzt ein Grid-Stapel: Ein Platzhalter trägt das Seitenverhältnis, die Textebene die Mindesthöhe. Bei 390 px sind die Karten wieder exakt 350 px breit, mit 20 px Seitenrand.
+- **Neue Icons:** globe, navigation.
+
+## 15. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -3,6 +3,7 @@ import {
   BottomNavigation,
   Button,
   Callout,
+  DetailList,
   buttonStyles,
   Container,
   Heading,
@@ -28,6 +29,7 @@ import interior from "./_assets/placeholder-interior.webp";
 import landscape from "./_assets/placeholder-landscape.webp";
 import { ColorSwatches, SemanticColorList } from "./_components/ColorSwatches";
 import { ContrastTable } from "./_components/ContrastTable";
+import { ExploreFilterDemo } from "./_components/ExploreFilterDemo";
 import { ImageCardSample } from "./_components/ImageCardSample";
 import { LabSection } from "./_components/LabSection";
 import { ScaledFrame } from "./_components/ScaledFrame";
@@ -46,6 +48,7 @@ const sections = [
   ["breiten", "Breiten"],
   ["stay", "Stay-Bausteine"],
   ["guide", "Guide-Bausteine"],
+  ["explore", "Explore-Bausteine"],
 ] as const;
 
 const guideItems = [
@@ -607,6 +610,38 @@ export default function DesignLabPage() {
             <Callout title="Gut zu wissen">
               Die Beschilderung vor Ort führt Dich zu Parkplatz und Eingang.
             </Callout>
+          </div>
+        </Stack>
+      </LabSection>
+
+      {/* ── 12 Explore-Bausteine ──────────────────────────── */}
+      <LabSection
+        id="explore"
+        index="12"
+        title="Explore-Bausteine"
+        intro="Ruhiger Text-Filter statt Chips und Info-Zeilen für praktische Details. Der echte Bereich liegt unter /de/explore."
+      >
+        <Stack gap={10}>
+          <div className="max-w-reading">
+            <ExploreFilterDemo />
+          </div>
+          <div className="max-w-reading">
+            <DetailList
+              items={[
+                {
+                  id: "hours",
+                  icon: "clock",
+                  label: "Öffnungszeiten",
+                  value: "Mittwoch bis Sonntag ab 17:00 Uhr",
+                },
+                {
+                  id: "address",
+                  icon: "map-pin",
+                  label: "Adresse",
+                  value: "Beispielweg 1\n00000 Musterort",
+                },
+              ]}
+            />
           </div>
         </Stack>
       </LabSection>

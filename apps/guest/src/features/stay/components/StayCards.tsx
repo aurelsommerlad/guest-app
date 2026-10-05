@@ -13,7 +13,7 @@ export async function StayCards({ cards }: { cards: readonly StayCard[] }) {
       <h2 id="stay-cards-heading" className="sr-only">
         {t("cardsHeading")}
       </h2>
-      <ul className="grid gap-2 lg:grid-cols-3 lg:gap-3">
+      <ul className="grid grid-cols-1 gap-2 lg:grid-cols-3 lg:gap-3">
         {cards.map((card, index) => (
           <li key={card.id}>
             <EditorialImageCard
