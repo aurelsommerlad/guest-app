@@ -69,12 +69,12 @@ Details zu Schema, Isolation und RLS: [ADR 0010](adr/0010-database-foundation.md
 
 Details in [ADR 0011](adr/0011-guest-access.md).
 
-| Variable                  | local                                 | Vercel Preview / staging                        | Vercel Production                                  |
-| ------------------------- | ------------------------------------- | ----------------------------------------------- | -------------------------------------------------- |
-| `GUEST_ACCESS_MODE`       | `preview` (Standard)                  | `preview` für die Abnahme, zum Testen `secured` | vorerst `preview`; **vor echten Gästen `secured`** |
-| `GUEST_TENANT_SLUG`       | `unique-places` (für Login)           | `unique-places`                                 | `unique-places`                                    |
-| `DATABASE_URL`            | lokales Postgres (z. B. Supabase CLI) | Staging-Projekt (Transaction Pooler)            | Production-Projekt (Transaction Pooler)            |
-| `APALEO_CLIENT_ID/SECRET` | optional (sonst Mock-PMS)             | für echte Testreservierungen                    | Pflicht im Modus `secured`                         |
+| Variable                  | local                                 | Vercel Preview / staging                        | Vercel Production                                                |
+| ------------------------- | ------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------- |
+| `GUEST_ACCESS_MODE`       | `preview` (Standard)                  | `preview` für die Abnahme, zum Testen `secured` | wirkt wie `secured`: Production fällt nie auf die Preview zurück |
+| `GUEST_TENANT_SLUG`       | `unique-places` (für Login)           | `unique-places`                                 | `unique-places`                                                  |
+| `DATABASE_URL`            | lokales Postgres (z. B. Supabase CLI) | Staging-Projekt (Transaction Pooler)            | Production-Projekt (Transaction Pooler)                          |
+| `APALEO_CLIENT_ID/SECRET` | optional (sonst Mock-PMS)             | für echte Testreservierungen                    | Pflicht im Modus `secured`                                       |
 
 - Ohne `DATABASE_URL` schlagen Link und Login geschlossen fehl (neutrale Seite bzw. Meldung). `/stay` zeigt im Modus `preview` weiter die Preview.
 - Ohne Apaleo-Zugangsdaten nutzt der Login außerhalb von Production das Mock-PMS. Testdaten: `MOCK-HOV-ROS-LIVE` mit Nachname „Muster“.

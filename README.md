@@ -5,7 +5,7 @@ Pilotkunde und erster Tenant: **UNIQUE PLACES**. Ziel-Domain: **`stay.unique-pla
 
 > Dies ist **nicht** die bestehende Extras-App (`extras.unique-places.com`). Sie bleibt unverändert und wird zunächst nur verlinkt.
 
-**Status:** Phase 7 – Sicherer Gastzugang: persönlicher Link (`/de/s/{token}`) und Login per Buchungsnummer + Nachname (`/de/login`) führen in dieselbe serverseitige Guest Session. STAY lädt damit die Reservierung des Gastes (Apaleo oder Mock). Ohne Session zeigt `/de/stay` im Modus `preview` weiter die Preview. Datenbank: Supabase PostgreSQL + Drizzle (Tenant → Property → Unit, External Mappings, Guest Access). GUIDE (`/de/guide`) und EXPLORE (`/de/explore`) laufen mit Mock-Inhalten. Design Lab: `/dev/ui` (nur local und staging).
+**Status:** Phase 8 – Zentraler Guest/Stay Context: STAY, GUIDE und EXPLORE beziehen Property, Unit und Reservierung aus derselben Guest Session ([ADR 0012](docs/adr/0012-guest-context.md)). Phase 7 – Sicherer Gastzugang: persönlicher Link (`/de/s/{token}`) und Login per Buchungsnummer + Nachname (`/de/login`) führen in dieselbe serverseitige Guest Session. STAY lädt damit die Reservierung des Gastes (Apaleo oder Mock). Ohne Session zeigt `/de/stay` im Modus `preview` weiter die Preview. Datenbank: Supabase PostgreSQL + Drizzle (Tenant → Property → Unit, External Mappings, Guest Access). GUIDE (`/de/guide`) und EXPLORE (`/de/explore`) laufen mit Mock-Inhalten. Design Lab: `/dev/ui` (nur local und staging).
 
 ## Schnellstart
 

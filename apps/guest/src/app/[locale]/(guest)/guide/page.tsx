@@ -5,7 +5,9 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { BrandHeader } from "../../../../components/GuestHeader";
-import { getGuideOverview, getGuideProperty } from "../../../../features/guide/get-guide";
+import { headerPropertyOf } from "../../../../features/guest-context/guest-context";
+import { requireGuestContext } from "../../../../features/guest-context/server";
+import { getGuideOverview } from "../../../../features/guide/get-guide";
 import { Link } from "../../../../i18n/navigation";
 import { routing } from "../../../../i18n/routing";
 
@@ -25,12 +27,13 @@ export default async function GuidePage({ params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
 
   const t = await getTranslations("guide");
-  const sections = getGuideOverview(locale);
+  const context = await requireGuestContext(locale);
+  const sections = getGuideOverview(context, locale);
 
   return (
     <div className="safe-top">
       <Container width="content" className="md:max-w-reading lg:max-w-content lg:pt-10">
-        <BrandHeader property={getGuideProperty()} />
+        <BrandHeader property={headerPropertyOf(context.property)} />
 
         <main className="lg:max-w-reading">
           <div className="mt-6 flex flex-col gap-3 lg:mt-16">

@@ -28,7 +28,7 @@ pnpm dev            # http://localhost:3000 → /de/stay
 - `src/features/guest-access`: guest access use cases (`guest-access-service.ts`: link, login, session), rate limit, session cookie, entry response, login action/form
 - `src/server`: server-only singletons (`database.ts`, `pms.ts`, `logger.ts`)
 - `scripts/guest-access.ts`: CLI `pnpm guest-access:create|revoke` (development/test links)
-- `src/features/guest-context.ts`: guest context for content sections (property/unit, time) – mock until guest access
+- `src/features/guest-context`: the central guest context (ADR 0012) – session → property/unit/reservation for every section; development preview only outside production
 - `src/features/explore`: EXPLORE view models, resolver, place actions, data access, filter UI
 - `src/features/guide`: GUIDE view models, resolver (content → locale), data access, block renderer
 - `src/components/GuestHeader.tsx`: `BrandHeader` (section start pages) and `BackHeader` (detail pages)

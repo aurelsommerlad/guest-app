@@ -4,28 +4,22 @@ import Image from "next/image";
 import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { locale as rootLocale } from "next/root-params";
 
 import { BackHeader } from "../../../../../components/GuestHeader";
 import { GuideBlocks } from "../../../../../features/guide/components/GuideBlocks";
-import { getGuideArticle, getGuideSlugs } from "../../../../../features/guide/get-guide";
+import { getGuideArticle } from "../../../../../features/guide/get-guide";
+import { requireGuestContext } from "../../../../../features/guest-context/server";
 import { routing } from "../../../../../i18n/routing";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
-/** One page per visible section and locale (slugs are localized). */
-export async function generateStaticParams() {
-  const locale = await rootLocale();
-  return hasLocale(routing.locales, locale) ? getGuideSlugs(locale).map((slug) => ({ slug })) : [];
-}
-
-// Unknown slugs (or a slug of another locale) are 404s.
-export const dynamicParams = false;
-
 async function loadArticle(params: Props["params"]) {
   const { locale, slug } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
-  const article = getGuideArticle(locale, slug);
+  // Sections depend on the guest's property/unit, so pages render per request;
+  // unknown slugs (or a slug of another locale) are 404s.
+  const context = await requireGuestContext(locale);
+  const article = getGuideArticle(context, locale, slug);
   if (!article) notFound();
   return article;
 }

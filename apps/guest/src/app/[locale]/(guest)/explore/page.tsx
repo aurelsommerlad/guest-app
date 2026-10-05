@@ -7,11 +7,9 @@ import { notFound } from "next/navigation";
 
 import { BrandHeader } from "../../../../components/GuestHeader";
 import { ExploreBrowser } from "../../../../features/explore/components/ExploreBrowser";
-import {
-  getExploreCards,
-  getExploreIntro,
-  getExploreProperty,
-} from "../../../../features/explore/get-explore";
+import { getExploreCards, getExploreIntro } from "../../../../features/explore/get-explore";
+import { headerPropertyOf } from "../../../../features/guest-context/guest-context";
+import { requireGuestContext } from "../../../../features/guest-context/server";
 import { routing } from "../../../../i18n/routing";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -30,8 +28,9 @@ export default async function ExplorePage({ params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
 
   const t = await getTranslations("explore");
-  const intro = getExploreIntro(locale);
-  const cards = getExploreCards(locale);
+  const context = await requireGuestContext(locale);
+  const intro = getExploreIntro(context, locale);
+  const cards = getExploreCards(context, locale);
 
   const filters = EXPLORE_FILTERS.map((id) => ({ id, label: t(`categories.${id}`) }));
   const countLabels = Object.fromEntries(
@@ -47,7 +46,7 @@ export default async function ExplorePage({ params }: Props) {
   return (
     <div className="safe-top">
       <Container width="content" className="md:max-w-reading lg:max-w-content lg:pt-10">
-        <BrandHeader property={getExploreProperty()} />
+        <BrandHeader property={headerPropertyOf(context.property)} />
 
         <main>
           <div className="mt-6 flex flex-col gap-3 lg:mt-16 lg:max-w-reading">

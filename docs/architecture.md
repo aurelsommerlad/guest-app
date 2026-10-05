@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 7 (Sicherer Gastzugang: Link, Buchungsnummer-Login, Guest Session). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 8 (Zentraler Guest/Stay Context für STAY, GUIDE und EXPLORE). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -269,8 +269,9 @@ Für den Austausch der Datenquelle ändert sich nur `features/stay/get-stay.ts`.
 | 4\*     | **Apaleo-Integration**: `PmsProvider`, `ApaleoProvider`, STAY aus einer Testreservierung ✅ (Live-Test offen) |
 | 5\*     | **EXPLORE**: Übersicht, Kategorien, Detailseite (Mock-Inhalte) ✅                                             |
 | 6\*     | **Datenbank-Fundament**: Tenant → Property → Unit, External Mappings, Migrationen, Seed, Repositories ✅      |
-| **7\*** | **Sicherer Gastzugang**: Link, Buchungsnummer + Nachname, Guest Session, Widerruf, Rate Limit (in Abnahme)    |
-| 8+      | Versand der Links, Umstellung der App auf die Datenbank, Content in der DB, Content-Editor, Hardening / Pilot |
+| 7\*     | **Sicherer Gastzugang**: Link, Buchungsnummer + Nachname, Guest Session, Widerruf, Rate Limit ✅              |
+| **8\*** | **Zentraler Guest/Stay Context**: eine Session-basierte Kontextquelle für alle Bereiche (in Abnahme)          |
+| 9+      | Versand der Links, Umstellung der App auf die Datenbank, Content in der DB, Content-Editor, Hardening / Pilot |
 | später  | Admin-App, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI                           |
 
 > \* Die Reihenfolge wurde angepasst: GUIDE, Apaleo und EXPLORE kamen vor der Datenbank. Die Reihenfolge ab Phase 7 wird jeweils bei der Freigabe festgelegt.
