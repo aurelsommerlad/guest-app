@@ -50,3 +50,18 @@ export {
   placeScopeApplies,
   selectExplorePlaces,
 } from "./explore/select-explore-places";
+export {
+  ENTITY_KEY_PATTERN,
+  EXTERNAL_ENTITY_TYPES,
+  EXTERNAL_PROVIDERS,
+  type ExternalEntityType,
+  type ExternalProvider,
+  isEntityKey,
+  isExternalEntityType,
+  isExternalProvider,
+  isValidTimeZone,
+  type Property,
+  type Tenant,
+  type TenantContext,
+  type Unit,
+} from "./tenancy/tenancy-model";

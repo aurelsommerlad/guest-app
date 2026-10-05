@@ -1,6 +1,6 @@
 # 0002 – Tenant-Isolation
 
-**Status:** Akzeptiert (2026-10-05). Umsetzung ab Phase 3.
+**Status:** Akzeptiert (2026-10-05). Schichten 1–2 und „deny all“ umgesetzt in Phase 6, siehe [ADR 0010](0010-database-foundation.md).
 
 ## Kontext
 

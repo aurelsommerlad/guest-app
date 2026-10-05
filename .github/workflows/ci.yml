@@ -39,6 +39,10 @@ jobs:
       - name: Format
         run: pnpm format:check
 
+      - name: Migrations match schema
+        # Fails if packages/db/src/schema.ts changed without a generated migration.
+        run: pnpm db:generate && git diff --exit-code --stat -- packages/db/drizzle && test -z "$(git status --porcelain -- packages/db/drizzle)"
+
       - name: Typecheck
         run: pnpm typecheck
 

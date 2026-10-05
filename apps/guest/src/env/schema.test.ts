@@ -102,3 +102,45 @@ describe("STAY data source", () => {
     expect(message).not.toContain("secret-value");
   });
 });
+
+describe("DATABASE_URL", () => {
+  const local = { APP_ENV: "local", NEXT_PUBLIC_APP_URL: "http://localhost:3000" };
+  const production = {
+    APP_ENV: "production",
+    NEXT_PUBLIC_APP_URL: "https://stay.unique-places.com",
+  };
+  const supabase =
+    "postgresql://postgres.project:secret@aws-0-eu-central-1.pooler.supabase.com:6543/postgres";
+
+  it("is optional in every environment (the app does not read the database yet)", () => {
+    expect(validateServerEnv(local).DATABASE_URL).toBeUndefined();
+    expect(validateServerEnv(production).DATABASE_URL).toBeUndefined();
+  });
+
+  it("accepts postgres URLs", () => {
+    expect(validateServerEnv({ ...production, DATABASE_URL: supabase }).DATABASE_URL).toBe(
+      supabase,
+    );
+    expect(
+      validateServerEnv({
+        ...local,
+        DATABASE_URL: "postgres://postgres:postgres@localhost:54322/postgres",
+      }).DATABASE_URL,
+    ).toBeDefined();
+  });
+
+  it("rejects other schemes without echoing the value", () => {
+    const run = () => validateServerEnv({ ...local, DATABASE_URL: "mysql://user:secret@host/db" });
+    expect(run).toThrow(/DATABASE_URL/);
+    expect(run).not.toThrow(/secret/);
+  });
+
+  it("rejects localhost outside of local development", () => {
+    expect(() =>
+      validateServerEnv({
+        ...production,
+        DATABASE_URL: "postgres://postgres:postgres@127.0.0.1:5432/postgres",
+      }),
+    ).toThrow(/DATABASE_URL/);
+  });
+});

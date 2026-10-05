@@ -5,8 +5,10 @@
  * stable PMS ids (Apaleo property id, unit ids) to our internal ids and the
  * branded presentation – never derived from PMS display names.
  *
- * Migration: this becomes the tables `properties`, `units` and `pms_mappings`
- * (tenant_id, provider, external_property_id → property_id, external_unit_id → unit_id).
+ * Database (Phase 6, ADR 0010): the same master data is seeded into `tenants`, `properties`,
+ * `units` and `external_mappings` (packages/db/src/seed/unique-places.ts). The app keeps
+ * reading this registry until its own migration phase; properties.test.ts keeps both equal.
+ * The TEST property stays a code-level preview fixture and is not seeded.
  *
  * Apaleo ids verified against the UNIQUE PLACES Apaleo account (Phase 4).
  */

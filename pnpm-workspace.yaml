@@ -7,4 +7,5 @@ packages:
 ignoredBuiltDependencies:
   - "@parcel/watcher"
   - "@swc/core"
+  - esbuild
   - unrs-resolver

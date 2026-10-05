@@ -2,15 +2,15 @@
 
 ## Übersicht
 
-|            | local                        | staging                                      | production                   |
-| ---------- | ---------------------------- | -------------------------------------------- | ---------------------------- |
-| App        | `pnpm dev`                   | Vercel, Branch `staging` (+ Preview-Deploys) | Vercel, Branch `main`        |
-| URL        | `http://localhost:3000`      | z. B. `staging.stay.unique-places.com`       | `stay.unique-places.com`     |
-| `APP_ENV`  | `local`                      | `staging`                                    | `production`                 |
-| `NODE_ENV` | `development`                | `production`                                 | `production`                 |
-| Datenbank  | Supabase CLI lokal (Phase 3) | eigenes Supabase-Projekt, EU (Phase 3)       | eigenes Supabase-Projekt, EU |
-| Secrets    | `apps/guest/.env.local`      | Vercel Env „Staging“ bzw. „Preview“          | Vercel Env „Production“      |
-| Daten      | Seeds                        | Seeds / Testdaten, Apaleo-Testsystem         | echte Daten                  |
+|            | local                           | staging                                      | production                          |
+| ---------- | ------------------------------- | -------------------------------------------- | ----------------------------------- |
+| App        | `pnpm dev`                      | Vercel, Branch `staging` (+ Preview-Deploys) | Vercel, Branch `main`               |
+| URL        | `http://localhost:3000`         | z. B. `staging.stay.unique-places.com`       | `stay.unique-places.com`            |
+| `APP_ENV`  | `local`                         | `staging`                                    | `production`                        |
+| `NODE_ENV` | `development`                   | `production`                                 | `production`                        |
+| Datenbank  | Supabase CLI / lokales Postgres | eigenes Supabase-Projekt, Frankfurt          | eigenes Supabase-Projekt, Frankfurt |
+| Secrets    | `apps/guest/.env.local`         | Vercel Env „Staging“ bzw. „Preview“          | Vercel Env „Production“             |
+| Daten      | Seeds                           | Seeds / Testdaten, Apaleo-Testsystem         | echte Daten                         |
 
 `APP_ENV` ist bewusst von `NODE_ENV` getrennt: Staging läuft als Production-Build, nutzt aber eigene Secrets, eine eigene Datenbank und eigene Integrationszugänge.
 
@@ -37,6 +37,34 @@
 
 Die Apaleo-Zugangsdaten gehören ausschließlich in Vercel (Environment „Preview“ bzw. das Custom Environment „staging“) oder lokal in `.env.local`, nie ins Repository.
 
+## Datenbank (Phase 6)
+
+Details zu Schema, Isolation und RLS: [ADR 0010](adr/0010-database-foundation.md). Befehle und Ablauf: [`packages/db/README.md`](../packages/db/README.md).
+
+**Grundsätze:**
+
+- **Zwei getrennte Supabase-Projekte:** `unique-places-guest-staging` und `unique-places-guest-production`, beide in der Region **Central EU (Frankfurt)**, passend zu Vercel `fra1`.
+- Preview- und Staging-Deployments nutzen nie die Production-Datenbank.
+- Supabase dient nur als Postgres. Supabase Auth, Storage und die Data API werden nicht genutzt.
+- Die App verbindet sich serverseitig über den **Transaction Pooler** (Port 6543). Migrationen und Seed laufen über den **Session Pooler** (Port 5432). Beide sind IPv4-fähig.
+- `DATABASE_URL` ist nie `NEXT_PUBLIC_` und wird nie an den Browser ausgeliefert.
+
+| Variable       | local                                    | Vercel Preview / staging                                            | Vercel Production                                                      |
+| -------------- | ---------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `DATABASE_URL` | optional, z. B. lokales Supabase (54322) | optional in Phase 6: Staging-Projekt, Transaction Pooler (sensitiv) | optional in Phase 6: Production-Projekt, Transaction Pooler (sensitiv) |
+
+- In Phase 6 liest die App die Datenbank noch nicht. Ist `DATABASE_URL` gesetzt, wird sie nur validiert: `postgres://`-Schema, außerhalb von `local` kein localhost.
+- Migrations- und Seed-URLs stehen **nicht** in Vercel. Sie werden nur für den jeweiligen CLI-Aufruf in der Shell gesetzt.
+
+**Einmalig in Supabase, je Projekt:**
+
+1. Projekt anlegen: Region Central EU (Frankfurt), starkes Datenbank-Passwort im Passwortmanager speichern.
+2. Unter Project Settings → Data API die Data API deaktivieren. Ist das nicht möglich: „Automatically expose new tables“ ausschalten. Migration `0001` sperrt `anon` und `authenticated` zusätzlich.
+3. Unter Database → Settings → SSL Configuration „Enforce SSL“ aktivieren.
+4. Über **Connect** zwei Connection Strings kopieren:
+   - Transaction Pooler (Port 6543) → Vercel `DATABASE_URL`
+   - Session Pooler (Port 5432) → nur für `pnpm db:migrate` und `pnpm db:seed`
+
 ## Vercel-Setup (einmalig, manuell)
 
 1. Projekt `guest` anlegen und das GitHub-Repo verbinden.
@@ -62,7 +90,7 @@ feature/* ──PR──▶ staging ──(Abnahme)──PR──▶ main
 
 - CI (`.github/workflows/ci.yml`) läuft auf jedem PR sowie auf `main` und `staging`: Format, Typecheck, Lint, Tests, Build.
 - Empfehlung: Branch Protection auf `main` und `staging`, mit grüner CI als Pflicht.
-- Ab Phase 3: Datenbankmigrationen (Drizzle Kit) laufen versioniert vor dem jeweiligen Deployment gegen die Ziel-Datenbank. Es gibt keine manuellen Schemaänderungen in Staging oder Production.
+- Datenbankmigrationen (Drizzle Kit, versioniert in `packages/db/drizzle`) werden explizit vor dem jeweiligen Deployment gegen die Ziel-Datenbank ausgeführt (`pnpm db:migrate --target …`). Es gibt weder manuelle Schemaänderungen noch `drizzle-kit push` in Staging oder Production. Die CI prüft, dass Schema und Migrationen übereinstimmen.
 - Preview-Deployments nutzen niemals die Production-Datenbank.
 
 ## Health Check

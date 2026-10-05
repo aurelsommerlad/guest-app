@@ -1,4 +1,4 @@
 {
   "extends": "@up/config/typescript/library.json",
-  "include": ["src"]
+  "include": ["src", "drizzle.config.ts", "vitest.config.ts"]
 }

@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 5 (EXPLORE-Grundstruktur mit Mock-Inhalten). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 6 (Datenbank-Fundament: Tenant → Property → Unit, parallel zur App). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -67,12 +67,15 @@ Tenant ─┬─ TenantDomain · Brand · ModuleConfig · TenantSettings
 ## 5. Datenmodell (Grundregeln)
 
 - Jede tenant-bezogene Tabelle hat `tenant_id NOT NULL`. Fremdschlüssel sind zusammengesetzt, `(tenant_id, …_id)`.
-- UUIDs als IDs. Slugs sind pro Tenant eindeutig.
+- Stammdaten (Tenant, Property, Unit) haben eigene, stabile Text-IDs (`hov`, `ros`), keine UUIDs und nie PMS-IDs, siehe [ADR 0010](adr/0010-database-foundation.md). Technische Tabellen (z. B. `external_mappings`) nutzen UUIDs. Slugs sind pro Tenant (Properties) bzw. pro Property (Units) eindeutig.
+- Externe IDs (Apaleo, später Nuki …) stehen nur in `external_mappings`, nie als Anbieter-Spalten in Stammdaten-Tabellen.
 - Mehrsprachige Inhalte als `jsonb` vom Typ `LocalizedText` (`{ "de": "…", "en": "…" }`), Zod-validiert.
 - `reservations` sind eine **lokale Kopie** der PMS-Daten (`external_provider`, `external_id`, `synced_at`), minimiert auf das Nötige.
 - Vorbereitete Tabellen ohne Funktion: `integration_connections`, `sync_runs`, `webhook_events`, `audit_logs`.
 
 ## 6. Tenant-Isolation
+
+> **Ab Phase 6 umgesetzt:** Schema mit zusammengesetzten Fremdschlüsseln, tenant-scoped Repositories, RLS ohne Policies und `REVOKE` für `anon`/`authenticated`. Zugriffswege und die spätere RLS-Strategie stehen in [ADR 0010](adr/0010-database-foundation.md).
 
 1. **Anwendung:** Repositories in `packages/db` verlangen einen `TenantContext`. Apps führen keine rohen Queries aus.
 2. **Schema:** `tenant_id` überall, zusammengesetzte Fremdschlüssel, eindeutige Indizes pro Tenant.
@@ -255,21 +258,19 @@ Für den Austausch der Datenquelle ändert sich nur `features/stay/get-stay.ts`.
 
 ## 14. Roadmap
 
-| Phase | Inhalt                                                                                                          |
-| ----- | --------------------------------------------------------------------------------------------------------------- |
-| **0** | **Foundation**: Monorepo, Tooling, CI, Env-Validierung, minimale App, Doku ✅                                   |
-| 1     | **Design System**: Tokens, Fonts, Kernkomponenten, `/dev/ui`                                                    |
-| 2     | **STAY statisch** mit Mockdaten, responsive, DE/EN → visuelle Abnahme                                           |
-| 3     | **Datenbank + Tenant**: Drizzle-Schema, Migrationen, Seeds, Repositories, Isolationstests                       |
-| 4     | **Apaleo-Integration**: `PMSProvider`, `ApaleoProvider`, Webhooks + Abgleich, lokale Reservierungskopie, Status |
-| 5     | **Gastzugang + echte personalisierte Reservation**: Token-Link → Session, STAY aus echten Daten                 |
-| 6     | **GUIDE**: Kategorien, Artikel, Blocks, Scope-Vererbung, `Visibility`                                           |
-| 7     | **EXPLORE** + bestehender Extras-Link                                                                           |
-| 8     | **Hardening / Pilot**: Error-, Empty- und Loading-States, A11y-Audit, CSP, Performance, Production              |
-| 9     | **Einfacher Content-Editor** für GUIDE und EXPLORE (geschützt, ohne vollständige Admin-App)                     |
-| 10+   | Admin-App, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI                             |
+| Phase   | Inhalt                                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------------------------ |
+| 0       | **Foundation**: Monorepo, Tooling, CI, Env-Validierung, minimale App, Doku ✅                                      |
+| 1       | **Design System**: Tokens, Fonts, Kernkomponenten, `/dev/ui` ✅                                                    |
+| 2       | **STAY** mit Mockdaten, responsive, DE/EN ✅                                                                       |
+| 3\*     | **GUIDE**: Übersicht, Detailseite, Content-Modell mit Scope und `Visibility` (Mock-Daten) ✅                       |
+| 4\*     | **Apaleo-Integration**: `PmsProvider`, `ApaleoProvider`, STAY aus einer Testreservierung ✅ (Live-Test offen)      |
+| 5\*     | **EXPLORE**: Übersicht, Kategorien, Detailseite (Mock-Inhalte) ✅                                                  |
+| **6\*** | **Datenbank-Fundament**: Tenant → Property → Unit, External Mappings, Migrationen, Seed, Repositories (in Abnahme) |
+| 7+      | Umstellung der App auf die Datenbank, Gastzugang, Content in der DB, Content-Editor, Hardening / Pilot             |
+| später  | Admin-App, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI                                |
 
-> \* Die Reihenfolge wurde angepasst: GUIDE (Struktur mit Mock-Daten) kommt vor Datenbank und Apaleo. Die übrigen Phasen verschieben sich entsprechend.
+> \* Die Reihenfolge wurde angepasst: GUIDE, Apaleo und EXPLORE kamen vor der Datenbank. Die Reihenfolge ab Phase 7 wird jeweils bei der Freigabe festgelegt.
 
 ## 15. Abgrenzung
 

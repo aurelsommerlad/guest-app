@@ -16,7 +16,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "pnpm format:check && turbo run typecheck lint test build && pnpm lint:tokens",
-    "lint:tokens": "node scripts/check-design-tokens.mjs"
+    "lint:tokens": "node scripts/check-design-tokens.mjs",
+    "db:generate": "pnpm --filter @up/db db:generate",
+    "db:migrate": "pnpm --filter @up/db db:migrate",
+    "db:seed": "pnpm --filter @up/db db:seed"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

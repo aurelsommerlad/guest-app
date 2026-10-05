@@ -10,5 +10,9 @@ Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue
 | 0004 | [Gastzugang per Token-Link](0004-guest-access.md)                | Akzeptiert |
 | 0005 | [Zeitabhängige Sichtbarkeit](0005-time-based-visibility.md)      | Akzeptiert |
 | 0006 | [Environments und Env-Validierung](0006-environments.md)         | Akzeptiert |
+| 0007 | [GUIDE-Content-Modell](0007-guide-content-model.md)              | Akzeptiert |
+| 0008 | [PMS-Provider und Apaleo-Anbindung](0008-pms-provider-apaleo.md) | Akzeptiert |
+| 0009 | [EXPLORE-Content-Modell](0009-explore-content-model.md)          | Akzeptiert |
+| 0010 | [Datenbank-Fundament](0010-database-foundation.md)               | Akzeptiert |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.

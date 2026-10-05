@@ -11,6 +11,19 @@ export const clientEnvSchema = z.object({
 
 export const STAY_DATA_SOURCES = ["mock", "apaleo"] as const;
 
+const LOCAL_DATABASE_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+
+function databaseHost(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "postgres:" || parsed.protocol === "postgresql:"
+      ? parsed.hostname
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Server-only variables. Secrets (APALEO_CLIENT_SECRET) live here and are never
  * exposed to the client (server.ts is `server-only`).
@@ -29,6 +42,14 @@ export const serverEnvSchema = clientEnvSchema
      * Never allowed in production.
      */
     APALEO_PREVIEW_RESERVATION_ID: z.string().min(1).optional(),
+    /**
+     * Server-side Postgres connection (Supabase transaction pooler) – one database per
+     * environment. Optional: nothing in the app reads the database yet (Phase 6).
+     */
+    DATABASE_URL: z
+      .string()
+      .refine((url) => databaseHost(url) !== undefined, "must be a postgres:// URL")
+      .optional(),
   })
   .superRefine((env, ctx) => {
     if (env.APP_ENV !== "local" && !env.NEXT_PUBLIC_APP_URL.startsWith("https://")) {
@@ -52,6 +73,16 @@ export const serverEnvSchema = clientEnvSchema
           code: "custom",
           path: ["APALEO_PREVIEW_RESERVATION_ID"],
           message: "a preview reservation must never be configured in production",
+        });
+      }
+    }
+    if (env.DATABASE_URL && env.APP_ENV !== "local") {
+      const host = databaseHost(env.DATABASE_URL);
+      if (host && LOCAL_DATABASE_HOSTS.has(host)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["DATABASE_URL"],
+          message: "must not point to localhost outside of local development",
         });
       }
     }

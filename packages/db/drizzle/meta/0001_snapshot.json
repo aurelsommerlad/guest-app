@@ -1,0 +1,511 @@
+{
+  "id": "0e57594d-707e-4128-81d4-929a9fb4d88b",
+  "prevId": "9ef9ec79-e711-4718-9240-470754a6aa60",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.external_mappings": {
+      "name": "external_mappings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "internal_entity_id": {
+          "name": "internal_entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "property_id": {
+          "name": "property_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "type": "stored",
+            "as": "CASE WHEN entity_type = 'property' THEN internal_entity_id END"
+          }
+        },
+        "unit_id": {
+          "name": "unit_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "generated": {
+            "type": "stored",
+            "as": "CASE WHEN entity_type = 'unit' THEN internal_entity_id END"
+          }
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "external_mappings_tenant_id_tenants_id_fk": {
+          "name": "external_mappings_tenant_id_tenants_id_fk",
+          "tableFrom": "external_mappings",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "tableTo": "tenants",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "external_mappings_property_fkey": {
+          "name": "external_mappings_property_fkey",
+          "tableFrom": "external_mappings",
+          "columnsFrom": [
+            "tenant_id",
+            "property_id"
+          ],
+          "tableTo": "properties",
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "external_mappings_unit_fkey": {
+          "name": "external_mappings_unit_fkey",
+          "tableFrom": "external_mappings",
+          "columnsFrom": [
+            "tenant_id",
+            "unit_id"
+          ],
+          "tableTo": "units",
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "external_mappings_external_key": {
+          "name": "external_mappings_external_key",
+          "columns": [
+            "tenant_id",
+            "provider",
+            "entity_type",
+            "external_id"
+          ],
+          "nullsNotDistinct": false
+        },
+        "external_mappings_internal_key": {
+          "name": "external_mappings_internal_key",
+          "columns": [
+            "tenant_id",
+            "provider",
+            "entity_type",
+            "internal_entity_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "external_mappings_provider_valid": {
+          "name": "external_mappings_provider_valid",
+          "value": "\"external_mappings\".\"provider\" IN ('apaleo')"
+        },
+        "external_mappings_entity_type_valid": {
+          "name": "external_mappings_entity_type_valid",
+          "value": "\"external_mappings\".\"entity_type\" IN ('property', 'unit')"
+        },
+        "external_mappings_external_id_not_blank": {
+          "name": "external_mappings_external_id_not_blank",
+          "value": "char_length(btrim(\"external_mappings\".\"external_id\")) BETWEEN 1 AND 255"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.properties": {
+      "name": "properties",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "spoken_name": {
+          "name": "spoken_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location_name": {
+          "name": "location_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "properties_tenant_id_tenants_id_fk": {
+          "name": "properties_tenant_id_tenants_id_fk",
+          "tableFrom": "properties",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "tableTo": "tenants",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "properties_tenant_id_id_key": {
+          "name": "properties_tenant_id_id_key",
+          "columns": [
+            "tenant_id",
+            "id"
+          ],
+          "nullsNotDistinct": false
+        },
+        "properties_tenant_id_slug_key": {
+          "name": "properties_tenant_id_slug_key",
+          "columns": [
+            "tenant_id",
+            "slug"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "properties_id_format": {
+          "name": "properties_id_format",
+          "value": "\"properties\".\"id\" ~ '^[a-z0-9][a-z0-9-]{0,63}$'"
+        },
+        "properties_slug_format": {
+          "name": "properties_slug_format",
+          "value": "\"properties\".\"slug\" ~ '^[a-z0-9][a-z0-9-]{0,63}$'"
+        },
+        "properties_display_name_not_blank": {
+          "name": "properties_display_name_not_blank",
+          "value": "char_length(btrim(\"properties\".\"display_name\")) BETWEEN 1 AND 100"
+        },
+        "properties_spoken_name_not_blank": {
+          "name": "properties_spoken_name_not_blank",
+          "value": "char_length(btrim(\"properties\".\"spoken_name\")) BETWEEN 1 AND 100"
+        },
+        "properties_location_name_not_blank": {
+          "name": "properties_location_name_not_blank",
+          "value": "char_length(btrim(\"properties\".\"location_name\")) BETWEEN 1 AND 100"
+        },
+        "properties_timezone_not_blank": {
+          "name": "properties_timezone_not_blank",
+          "value": "char_length(btrim(\"properties\".\"timezone\")) BETWEEN 1 AND 64"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.tenants": {
+      "name": "tenants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tenants_slug_key": {
+          "name": "tenants_slug_key",
+          "columns": [
+            "slug"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "tenants_id_format": {
+          "name": "tenants_id_format",
+          "value": "\"tenants\".\"id\" ~ '^[a-z0-9][a-z0-9-]{0,63}$'"
+        },
+        "tenants_slug_format": {
+          "name": "tenants_slug_format",
+          "value": "\"tenants\".\"slug\" ~ '^[a-z0-9][a-z0-9-]{0,63}$'"
+        },
+        "tenants_name_not_blank": {
+          "name": "tenants_name_not_blank",
+          "value": "char_length(btrim(\"tenants\".\"name\")) BETWEEN 1 AND 200"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.units": {
+      "name": "units",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "property_id": {
+          "name": "property_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "units_tenant_id_property_id_idx": {
+          "name": "units_tenant_id_property_id_idx",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "property_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "units_property_fkey": {
+          "name": "units_property_fkey",
+          "tableFrom": "units",
+          "columnsFrom": [
+            "tenant_id",
+            "property_id"
+          ],
+          "tableTo": "properties",
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "units_tenant_id_id_key": {
+          "name": "units_tenant_id_id_key",
+          "columns": [
+            "tenant_id",
+            "id"
+          ],
+          "nullsNotDistinct": false
+        },
+        "units_property_id_slug_key": {
+          "name": "units_property_id_slug_key",
+          "columns": [
+            "property_id",
+            "slug"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "units_id_format": {
+          "name": "units_id_format",
+          "value": "\"units\".\"id\" ~ '^[a-z0-9][a-z0-9-]{0,63}$'"
+        },
+        "units_slug_format": {
+          "name": "units_slug_format",
+          "value": "\"units\".\"slug\" ~ '^[a-z0-9][a-z0-9-]{0,63}$'"
+        },
+        "units_display_name_not_blank": {
+          "name": "units_display_name_not_blank",
+          "value": "char_length(btrim(\"units\".\"display_name\")) BETWEEN 1 AND 100"
+        }
+      },
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

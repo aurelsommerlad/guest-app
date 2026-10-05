@@ -5,7 +5,7 @@ Pilotkunde und erster Tenant: **UNIQUE PLACES**. Ziel-Domain: **`stay.unique-pla
 
 > Dies ist **nicht** die bestehende Extras-App (`extras.unique-places.com`). Sie bleibt unverändert und wird zunächst nur verlinkt.
 
-**Status:** Phase 4 – STAY (`/de/stay`) wahlweise mit Mock-Daten oder einem Apaleo-Testaufenthalt (`STAY_DATA_SOURCE`), GUIDE (`/de/guide`) und EXPLORE (`/de/explore`) mit Mock-Inhalten. Noch keine Anbindung an Datenbank, Apaleo oder Gastzugang. Design Lab: `/dev/ui` (nur local und staging).
+**Status:** Phase 6 – Datenbank-Fundament (Supabase PostgreSQL + Drizzle: Tenant → Property → Unit, External Mappings, Seed UNIQUE PLACES) parallel aufgebaut. Die App liest noch nicht aus der Datenbank: STAY (`/de/stay`) wahlweise mit Mock-Daten oder einem Apaleo-Testaufenthalt (`STAY_DATA_SOURCE`), GUIDE (`/de/guide`) und EXPLORE (`/de/explore`) mit Mock-Inhalten. Noch kein Gastzugang. Design Lab: `/dev/ui` (nur local und staging).
 
 ## Schnellstart
 
@@ -29,6 +29,9 @@ pnpm dev                      # http://localhost:3000 → /de/stay · Design Lab
 | `pnpm format`       | Prettier schreiben                                     |
 | `pnpm format:check` | Prettier prüfen                                        |
 | `pnpm check`        | Alles wie in CI: Format, Typecheck, Lint, Tests, Build |
+| `pnpm db:generate`  | Migration aus dem Drizzle-Schema erzeugen              |
+| `pnpm db:migrate`   | Migrationen anwenden (explizit, siehe `packages/db`)   |
+| `pnpm db:seed`      | Stammdaten UNIQUE PLACES idempotent einspielen         |
 
 ## Struktur
 
@@ -39,8 +42,8 @@ packages/
   config/           Geteilte TypeScript- und ESLint-Konfiguration
   core/             Domain, Use Cases, Provider-Interfaces, Env-Validierung, Logger (framework-frei)
   ui/               Design Tokens, Primitives, Icons, Buttons
-  db/               Drizzle-Schema, Repositories, Seeds   (Phase 3)
-  integrations/     Provider-Adapter (Apaleo …)           (Phase 4)
+  db/               Drizzle-Schema, Migrationen, Repositories, Seeds
+  integrations/     Provider-Adapter (Apaleo …)
 docs/
   architecture.md   Freigegebener Architekturplan
   environments.md   local / staging / production, Deployment
@@ -55,4 +58,5 @@ Abhängigkeitsregeln (per ESLint erzwungen):
 - [Architektur](docs/architecture.md)
 - [Design System](docs/design-system.md)
 - [Environments & Deployment](docs/environments.md)
-- [Architecture Decision Records](docs/adr/) – u. a. [PMS-Provider & Apaleo](docs/adr/0008-pms-provider-apaleo.md)
+- [Architecture Decision Records](docs/adr/) – u. a. [PMS-Provider & Apaleo](docs/adr/0008-pms-provider-apaleo.md), [Datenbank-Fundament](docs/adr/0010-database-foundation.md)
+- [Datenbank: Migrationen & Seed](packages/db/README.md)
