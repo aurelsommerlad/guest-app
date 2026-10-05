@@ -23,7 +23,7 @@ export interface Logger {
 
 const REDACTED = "[REDACTED]";
 const SENSITIVE_KEY =
-  /pass(word)?|secret|token|authorization|cookie|api[-_]?key|credential|email|phone/i;
+  /pass(word)?|secret|token|authorization|cookie|api[-_]?key|credential|email|phone|last[-_]?name|surname|booking[-_]?(reference|number)/i;
 
 function redact(value: unknown, depth = 0): unknown {
   if (depth > 5 || value === null || typeof value !== "object") {

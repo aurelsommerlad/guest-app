@@ -15,6 +15,20 @@
       "when": 1791209741073,
       "tag": "0001_lock_supabase_data_api",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791213932460,
+      "tag": "0002_guest_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791213933549,
+      "tag": "0003_lock_data_api_all_tables",
+      "breakpoints": true
     }
   ]
 }

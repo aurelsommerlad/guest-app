@@ -28,10 +28,26 @@ export type PmsReservation = {
   };
 };
 
+/**
+ * A reservation found for a guest login, with the primary guest's last name for exactly
+ * one comparison. The last name must never be stored, logged, rendered or passed on.
+ */
+export type PmsReservationCandidate = {
+  reservation: PmsReservation;
+  primaryGuestLastName?: string;
+};
+
 export interface PmsProvider {
   readonly name: string;
   /** Loads one reservation by its PMS id. Rejects with a `PmsError`. */
   getReservation(reservationId: string): Promise<PmsReservation>;
+  /**
+   * Guest self-service login: reservations matching a booking reference typed by the
+   * guest (already normalised). Today: the provider's own reservation id, exact match.
+   * OTA booking numbers are added per provider once verified (ADR 0011).
+   * Unknown references resolve to `[]`; technical failures reject with a `PmsError`.
+   */
+  findReservationsByBookingReference(reference: string): Promise<PmsReservationCandidate[]>;
 }
 
 export type PmsErrorKind =

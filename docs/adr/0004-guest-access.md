@@ -1,6 +1,6 @@
 # 0004 – Gastzugang per Token-Link
 
-**Status:** Akzeptiert (2026-10-05). Umsetzung in Phase 5.
+**Status:** Akzeptiert (2026-10-05). Umgesetzt in Phase 7 mit Präzisierungen, siehe [ADR 0011](0011-guest-access.md). Die Session ist serverseitig statt als signiertes Cookie.
 
 ## Kontext
 

@@ -33,6 +33,7 @@ export {
   type PmsErrorKind,
   type PmsProvider,
   type PmsReservation,
+  type PmsReservationCandidate,
   type PmsReservationStatus,
 } from "./pms/pms-provider";
 export {
@@ -65,3 +66,27 @@ export {
   type TenantContext,
   type Unit,
 } from "./tenancy/tenancy-model";
+export {
+  constantTimeEquals,
+  generateSecret,
+  hashSecret,
+  isSecretHash,
+  isWellFormedSecret,
+  SECRET_BYTES,
+} from "./guest-access/access-token";
+export {
+  type AccessState,
+  type AccessWindowPolicy,
+  computeAccessWindow,
+  DEFAULT_ACCESS_WINDOW_POLICY,
+  evaluateAccess,
+  type GuestAccess,
+  isReservationProvider,
+  RESERVATION_PROVIDERS,
+  type ReservationProvider,
+} from "./guest-access/guest-access-model";
+export {
+  lastNameMatches,
+  normalizeBookingReference,
+  normalizeLastName,
+} from "./guest-access/guest-login";

@@ -14,5 +14,6 @@ Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue
 | 0008 | [PMS-Provider und Apaleo-Anbindung](0008-pms-provider-apaleo.md) | Akzeptiert |
 | 0009 | [EXPLORE-Content-Modell](0009-explore-content-model.md)          | Akzeptiert |
 | 0010 | [Datenbank-Fundament](0010-database-foundation.md)               | Akzeptiert |
+| 0011 | [Sicherer Gastzugang](0011-guest-access.md)                      | Akzeptiert |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.

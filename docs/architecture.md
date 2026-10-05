@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 6 (Datenbank-Fundament: Tenant → Property → Unit, parallel zur App). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 7 (Sicherer Gastzugang: Link, Buchungsnummer-Login, Guest Session). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -94,6 +94,8 @@ Tests: Integrationstests mit zwei Tenants (Phase 3) beweisen die Isolation.
 ## 7. Auth
 
 **Gäste:** Token-Link ohne Account ([ADR 0004](adr/0004-guest-access.md)).
+
+> **Ab Phase 7 umgesetzt**, ergänzt um den Login per Buchungsnummer + Nachname. Beide Wege führen in dieselbe serverseitige Guest Session (opakes Secret, Widerruf greift sofort). Details in [ADR 0011](adr/0011-guest-access.md).
 
 - Zufälliges Token (≥ 128 Bit), in der Datenbank nur als Hash gespeichert.
 - `/s/{token}` wird serverseitig geprüft. Danach setzt der Server ein httpOnly-, Secure- und SameSite=Lax-Session-Cookie und leitet weiter. **Das Token verschwindet aus der URL.**
@@ -258,17 +260,18 @@ Für den Austausch der Datenquelle ändert sich nur `features/stay/get-stay.ts`.
 
 ## 14. Roadmap
 
-| Phase   | Inhalt                                                                                                             |
-| ------- | ------------------------------------------------------------------------------------------------------------------ |
-| 0       | **Foundation**: Monorepo, Tooling, CI, Env-Validierung, minimale App, Doku ✅                                      |
-| 1       | **Design System**: Tokens, Fonts, Kernkomponenten, `/dev/ui` ✅                                                    |
-| 2       | **STAY** mit Mockdaten, responsive, DE/EN ✅                                                                       |
-| 3\*     | **GUIDE**: Übersicht, Detailseite, Content-Modell mit Scope und `Visibility` (Mock-Daten) ✅                       |
-| 4\*     | **Apaleo-Integration**: `PmsProvider`, `ApaleoProvider`, STAY aus einer Testreservierung ✅ (Live-Test offen)      |
-| 5\*     | **EXPLORE**: Übersicht, Kategorien, Detailseite (Mock-Inhalte) ✅                                                  |
-| **6\*** | **Datenbank-Fundament**: Tenant → Property → Unit, External Mappings, Migrationen, Seed, Repositories (in Abnahme) |
-| 7+      | Umstellung der App auf die Datenbank, Gastzugang, Content in der DB, Content-Editor, Hardening / Pilot             |
-| später  | Admin-App, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI                                |
+| Phase   | Inhalt                                                                                                        |
+| ------- | ------------------------------------------------------------------------------------------------------------- |
+| 0       | **Foundation**: Monorepo, Tooling, CI, Env-Validierung, minimale App, Doku ✅                                 |
+| 1       | **Design System**: Tokens, Fonts, Kernkomponenten, `/dev/ui` ✅                                               |
+| 2       | **STAY** mit Mockdaten, responsive, DE/EN ✅                                                                  |
+| 3\*     | **GUIDE**: Übersicht, Detailseite, Content-Modell mit Scope und `Visibility` (Mock-Daten) ✅                  |
+| 4\*     | **Apaleo-Integration**: `PmsProvider`, `ApaleoProvider`, STAY aus einer Testreservierung ✅ (Live-Test offen) |
+| 5\*     | **EXPLORE**: Übersicht, Kategorien, Detailseite (Mock-Inhalte) ✅                                             |
+| 6\*     | **Datenbank-Fundament**: Tenant → Property → Unit, External Mappings, Migrationen, Seed, Repositories ✅      |
+| **7\*** | **Sicherer Gastzugang**: Link, Buchungsnummer + Nachname, Guest Session, Widerruf, Rate Limit (in Abnahme)    |
+| 8+      | Versand der Links, Umstellung der App auf die Datenbank, Content in der DB, Content-Editor, Hardening / Pilot |
+| später  | Admin-App, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI                           |
 
 > \* Die Reihenfolge wurde angepasst: GUIDE, Apaleo und EXPLORE kamen vor der Datenbank. Die Reihenfolge ab Phase 7 wird jeweils bei der Freigabe festgelegt.
 

@@ -42,3 +42,17 @@ export const apaleoReservationSchema = z.object({
 });
 
 export type ApaleoReservation = z.infer<typeof apaleoReservationSchema>;
+
+/**
+ * Same reservation plus the primary guest's last name – used only for the guest login
+ * knowledge check. `lastName` is required in Apaleo's guest model; we still treat it as
+ * optional and fail closed when it is missing.
+ */
+export const apaleoReservationForLoginSchema = apaleoReservationSchema.extend({
+  primaryGuest: z
+    .object({
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+    })
+    .optional(),
+});

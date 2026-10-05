@@ -80,5 +80,25 @@
     "title": "This page does not exist.",
     "body": "The address may have changed.",
     "back": "To your stay"
+  },
+  "access": {
+    "login": {
+      "metaTitle": "Open your stay",
+      "title": "Open your stay",
+      "lead": "With your booking number and your last name.",
+      "bookingReference": "Booking number",
+      "bookingReferenceHint": "You can find your booking number in your booking confirmation.",
+      "lastName": "Last name",
+      "submit": "Open stay",
+      "submitting": "Checking …",
+      "notFound": "We could not find your stay with these details. Please check your booking number and last name.",
+      "rateLimited": "Too many attempts. Please try again in {minutes, plural, one {one minute} other {# minutes}}."
+    },
+    "invalidLink": {
+      "metaTitle": "Access link not valid",
+      "title": "This access link is no longer valid.",
+      "body": "Please use the latest link from your booking message.",
+      "login": "Sign in with booking number"
+    }
   }
 }

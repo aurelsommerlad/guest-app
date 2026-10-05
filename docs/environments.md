@@ -65,6 +65,32 @@ Details zu Schema, Isolation und RLS: [ADR 0010](adr/0010-database-foundation.md
    - Transaction Pooler (Port 6543) → Vercel `DATABASE_URL`
    - Session Pooler (Port 5432) → nur für `pnpm db:migrate` und `pnpm db:seed`
 
+## Gastzugang (Phase 7)
+
+Details in [ADR 0011](adr/0011-guest-access.md).
+
+| Variable                  | local                                 | Vercel Preview / staging                        | Vercel Production                                  |
+| ------------------------- | ------------------------------------- | ----------------------------------------------- | -------------------------------------------------- |
+| `GUEST_ACCESS_MODE`       | `preview` (Standard)                  | `preview` für die Abnahme, zum Testen `secured` | vorerst `preview`; **vor echten Gästen `secured`** |
+| `GUEST_TENANT_SLUG`       | `unique-places` (für Login)           | `unique-places`                                 | `unique-places`                                    |
+| `DATABASE_URL`            | lokales Postgres (z. B. Supabase CLI) | Staging-Projekt (Transaction Pooler)            | Production-Projekt (Transaction Pooler)            |
+| `APALEO_CLIENT_ID/SECRET` | optional (sonst Mock-PMS)             | für echte Testreservierungen                    | Pflicht im Modus `secured`                         |
+
+- Ohne `DATABASE_URL` schlagen Link und Login geschlossen fehl (neutrale Seite bzw. Meldung). `/stay` zeigt im Modus `preview` weiter die Preview.
+- Ohne Apaleo-Zugangsdaten nutzt der Login außerhalb von Production das Mock-PMS. Testdaten: `MOCK-HOV-ROS-LIVE` mit Nachname „Muster“.
+- Ein Session-Secret als Env-Variable gibt es nicht: Sessions sind zufällige IDs, in der Datenbank liegt nur ihr Hash.
+
+**Test-Gastzugang erzeugen** (local bzw. staging, `DATABASE_URL` in der Shell):
+
+```bash
+pnpm db:migrate --target local && pnpm db:seed --target local --with-preview-fixtures
+pnpm guest-access:create --target local --tenant unique-places --provider mock --reservation MOCK-HOV-ROS-LIVE
+# → Link wird einmal ausgegeben: http://localhost:3000/de/s/<token>
+pnpm guest-access:revoke --target local --tenant unique-places --provider mock --reservation MOCK-HOV-ROS-LIVE
+```
+
+Auf Staging mit einer Apaleo-Testreservierung: `--provider apaleo --reservation <id> --base-url https://staging.stay.unique-places.com`, dazu `APALEO_CLIENT_ID` und `APALEO_CLIENT_SECRET` in der Shell.
+
 ## Vercel-Setup (einmalig, manuell)
 
 1. Projekt `guest` anlegen und das GitHub-Repo verbinden.

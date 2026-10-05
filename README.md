@@ -5,7 +5,7 @@ Pilotkunde und erster Tenant: **UNIQUE PLACES**. Ziel-Domain: **`stay.unique-pla
 
 > Dies ist **nicht** die bestehende Extras-App (`extras.unique-places.com`). Sie bleibt unverändert und wird zunächst nur verlinkt.
 
-**Status:** Phase 6 – Datenbank-Fundament (Supabase PostgreSQL + Drizzle: Tenant → Property → Unit, External Mappings, Seed UNIQUE PLACES) parallel aufgebaut. Die App liest noch nicht aus der Datenbank: STAY (`/de/stay`) wahlweise mit Mock-Daten oder einem Apaleo-Testaufenthalt (`STAY_DATA_SOURCE`), GUIDE (`/de/guide`) und EXPLORE (`/de/explore`) mit Mock-Inhalten. Noch kein Gastzugang. Design Lab: `/dev/ui` (nur local und staging).
+**Status:** Phase 7 – Sicherer Gastzugang: persönlicher Link (`/de/s/{token}`) und Login per Buchungsnummer + Nachname (`/de/login`) führen in dieselbe serverseitige Guest Session. STAY lädt damit die Reservierung des Gastes (Apaleo oder Mock). Ohne Session zeigt `/de/stay` im Modus `preview` weiter die Preview. Datenbank: Supabase PostgreSQL + Drizzle (Tenant → Property → Unit, External Mappings, Guest Access). GUIDE (`/de/guide`) und EXPLORE (`/de/explore`) laufen mit Mock-Inhalten. Design Lab: `/dev/ui` (nur local und staging).
 
 ## Schnellstart
 
@@ -19,19 +19,21 @@ pnpm dev                      # http://localhost:3000 → /de/stay · Design Lab
 
 ## Befehle
 
-| Befehl              | Zweck                                                  |
-| ------------------- | ------------------------------------------------------ |
-| `pnpm dev`          | Dev-Server aller Apps                                  |
-| `pnpm typecheck`    | TypeScript (strict) in allen Packages                  |
-| `pnpm lint`         | ESLint inkl. Architekturgrenzen                        |
-| `pnpm test`         | Unit-Tests (Vitest)                                    |
-| `pnpm build`        | Production Build (benötigt gültige Env-Variablen)      |
-| `pnpm format`       | Prettier schreiben                                     |
-| `pnpm format:check` | Prettier prüfen                                        |
-| `pnpm check`        | Alles wie in CI: Format, Typecheck, Lint, Tests, Build |
-| `pnpm db:generate`  | Migration aus dem Drizzle-Schema erzeugen              |
-| `pnpm db:migrate`   | Migrationen anwenden (explizit, siehe `packages/db`)   |
-| `pnpm db:seed`      | Stammdaten UNIQUE PLACES idempotent einspielen         |
+| Befehl                     | Zweck                                                  |
+| -------------------------- | ------------------------------------------------------ |
+| `pnpm dev`                 | Dev-Server aller Apps                                  |
+| `pnpm typecheck`           | TypeScript (strict) in allen Packages                  |
+| `pnpm lint`                | ESLint inkl. Architekturgrenzen                        |
+| `pnpm test`                | Unit-Tests (Vitest)                                    |
+| `pnpm build`               | Production Build (benötigt gültige Env-Variablen)      |
+| `pnpm format`              | Prettier schreiben                                     |
+| `pnpm format:check`        | Prettier prüfen                                        |
+| `pnpm check`               | Alles wie in CI: Format, Typecheck, Lint, Tests, Build |
+| `pnpm db:generate`         | Migration aus dem Drizzle-Schema erzeugen              |
+| `pnpm db:migrate`          | Migrationen anwenden (explizit, siehe `packages/db`)   |
+| `pnpm db:seed`             | Stammdaten UNIQUE PLACES idempotent einspielen         |
+| `pnpm guest-access:create` | Test-Gastzugang anlegen, Link einmalig ausgeben        |
+| `pnpm guest-access:revoke` | Gastzugänge einer Reservierung widerrufen              |
 
 ## Struktur
 
@@ -58,5 +60,5 @@ Abhängigkeitsregeln (per ESLint erzwungen):
 - [Architektur](docs/architecture.md)
 - [Design System](docs/design-system.md)
 - [Environments & Deployment](docs/environments.md)
-- [Architecture Decision Records](docs/adr/) – u. a. [PMS-Provider & Apaleo](docs/adr/0008-pms-provider-apaleo.md), [Datenbank-Fundament](docs/adr/0010-database-foundation.md)
+- [Architecture Decision Records](docs/adr/) – u. a. [PMS-Provider & Apaleo](docs/adr/0008-pms-provider-apaleo.md), [Datenbank-Fundament](docs/adr/0010-database-foundation.md), [Gastzugang](docs/adr/0011-guest-access.md)
 - [Datenbank: Migrationen & Seed](packages/db/README.md)

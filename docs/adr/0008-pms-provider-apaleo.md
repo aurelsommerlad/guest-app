@@ -70,6 +70,11 @@ apps/guest          Property-Registry (config/properties.ts), toStaySource(),
 - Die UI erhält nur `StayUnavailableError`. STAY zeigt dann eine ruhige Fehlerseite mit „Erneut versuchen“ (`stay/error.tsx`).
 - GUIDE ruft Apaleo nie auf und bleibt verfügbar, wenn Apaleo ausfällt.
 
+### Ergänzung Phase 7 (Gastzugang)
+
+- Der Port hat zusätzlich `findReservationsByBookingReference()` für den Login per Buchungsnummer. Apaleo nutzt dafür denselben Endpunkt per exakter Reservation-ID. Der Nachname wird nur für den einmaligen Vergleich gelesen. OTA-Nummern sind noch nicht implementiert, Details in [ADR 0011](0011-guest-access.md).
+- Mit Session lädt STAY die Reservierung des Guest Access (`reservation_provider` + `external_reservation_id`). `STAY_DATA_SOURCE` gilt nur noch für die Preview ohne Session.
+
 ## Konsequenzen
 
 - Ein weiteres PMS braucht nur einen neuen Adapter und Registry-Einträge für dessen Provider.

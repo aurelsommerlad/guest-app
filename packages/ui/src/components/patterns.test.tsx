@@ -9,6 +9,7 @@ import { FilterBar } from "./FilterBar";
 import { InfoTile } from "./InfoTile";
 import { LinkList } from "./LinkList";
 import { PropertyName } from "./PropertyName";
+import { TextField } from "./TextField";
 import { type LinkComponentProps } from "./link";
 
 const items = [
@@ -218,5 +219,29 @@ describe("DetailList", () => {
     expect(markup).toContain("<dt");
     expect(markup).toContain("Mi–So ab 17:00 Uhr");
     expect(markup).toContain('aria-hidden="true"');
+  });
+});
+
+describe("TextField", () => {
+  it("links a visible label and the hint to the input", () => {
+    const html = renderToStaticMarkup(
+      <TextField
+        id="booking"
+        name="booking"
+        label="Buchungsnummer"
+        hint="In Deiner Bestätigung"
+        required
+      />,
+    );
+    expect(html).toContain('<label for="booking"');
+    expect(html).toContain('id="booking"');
+    expect(html).toContain('aria-describedby="booking-hint"');
+    expect(html).toContain('id="booking-hint"');
+    expect(html).toContain("required");
+  });
+
+  it("omits aria-describedby without a hint", () => {
+    const html = renderToStaticMarkup(<TextField id="name" label="Nachname" />);
+    expect(html).not.toContain("aria-describedby");
   });
 });

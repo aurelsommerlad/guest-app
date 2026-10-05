@@ -1,4 +1,4 @@
-import { tenantSeedSchema, uniquePlacesSeed } from "@up/db";
+import { previewFixturesSeed, tenantSeedSchema, uniquePlacesSeed } from "@up/db";
 import { describe, expect, it } from "vitest";
 
 import { propertyRegistry } from "./properties";
@@ -46,11 +46,25 @@ describe("property registry ↔ database seed", () => {
     expect(fromSeed).toEqual(fromRegistry);
   });
 
-  it("keeps the Apaleo TEST property out of the seed", () => {
+  it("keeps the Apaleo TEST property out of the master data seed – only in preview fixtures", () => {
     const testProperties = propertyRegistry.filter((property) => property.testOnly);
-    expect(testProperties.map((property) => property.pms.propertyId)).toEqual(["TEST"]);
-    for (const property of testProperties) {
-      expect(uniquePlacesSeed.properties.map((seeded) => seeded.id)).not.toContain(property.id);
-    }
+    expect(uniquePlacesSeed.properties.map((seeded) => seeded.id)).not.toContain("test-run");
+    expect(
+      testProperties.map((property) => ({
+        id: property.id,
+        tenantId: property.tenantId,
+        displayName: property.name,
+        apaleoId: property.pms.propertyId,
+        units: property.units.map((unit) => ({ id: unit.id, apaleoId: unit.externalId })),
+      })),
+    ).toEqual(
+      tenantSeedSchema.parse(previewFixturesSeed).properties.map((property) => ({
+        id: property.id,
+        tenantId: previewFixturesSeed.tenant.id,
+        displayName: property.displayName,
+        apaleoId: property.externalIds.apaleo,
+        units: property.units.map((unit) => ({ id: unit.id, apaleoId: unit.externalIds.apaleo })),
+      })),
+    );
   });
 });

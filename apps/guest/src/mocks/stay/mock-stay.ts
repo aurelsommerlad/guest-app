@@ -23,3 +23,31 @@ export const mockReservation: PmsReservation = {
   externalUnitId: "ALTUS-SWA",
   primaryGuest: { firstName: "Laura" },
 };
+
+/** Primary guest's last name of the mock reservations (for the booking number login). */
+export const MOCK_GUEST_LAST_NAME = "Muster";
+
+/**
+ * Mock reservation for testing guest access locally (link and login): same unit, but
+ * dated around the real "now", so its access window is open. The preview stay above
+ * keeps its fixed dates.
+ */
+export const MOCK_LIVE_RESERVATION_ID = "MOCK-HOV-ROS-LIVE";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function utcDayAt(base: Date, dayOffset: number, utcHour: number): string {
+  const day = new Date(base.getTime() + dayOffset * DAY_MS);
+  day.setUTCHours(utcHour, 0, 0, 0);
+  return day.toISOString();
+}
+
+export function createLiveMockReservation(now: Date): PmsReservation {
+  return {
+    ...mockReservation,
+    externalId: MOCK_LIVE_RESERVATION_ID,
+    // Yesterday 16:00 → in three days 10:00 (Europe/Berlin summer time).
+    arrivalAt: utcDayAt(now, -1, 14),
+    departureAt: utcDayAt(now, 3, 8),
+  };
+}

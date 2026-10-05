@@ -312,7 +312,13 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
   - Jetzt ein Grid-Stapel: Ein Platzhalter trägt das Seitenverhältnis, die Textebene die Mindesthöhe. Bei 390 px sind die Karten wieder exakt 350 px breit, mit 20 px Seitenrand.
 - **Neue Icons:** globe, navigation.
 
-## 15. Offene Punkte (C)
+## 15. Ergänzungen in Phase 7 (Gastzugang)
+
+- **`TextField`** (`@up/ui`): sichtbares Label im Eyebrow-Stil, Feld mit Rahmen in `text-muted` (≥ 3 : 1 Nicht-Text-Kontrast), Höhe 48 px, globaler Fokusring, optionaler Hinweis per `aria-describedby`. Dokumentiert im Design Lab, Abschnitt 13.
+- **Neue Seiten ohne Bottom-Navigation:** `/login` und `/link-invalid`. Sie bestehen aus Wortmarke, H1, Lead, Formular bzw. einer sekundären Aktion. Fehlermeldungen erscheinen ruhig auf der Leinen-Fläche (`bg-surface`) in einer `role="status"`-Region, ohne Warnfarben.
+- STAY, GUIDE und EXPLORE sind unverändert: Ein Pixelvergleich vorher/nachher bei 390 und 1440 px ergibt Diff 0.
+
+## 16. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

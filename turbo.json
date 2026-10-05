@@ -14,7 +14,8 @@
         "VERCEL_*",
         "STAY_DATA_SOURCE",
         "APALEO_*",
-        "DATABASE_URL"
+        "DATABASE_URL",
+        "GUEST_*"
       ]
     },
     "typecheck": {

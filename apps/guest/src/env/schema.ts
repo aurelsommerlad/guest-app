@@ -1,4 +1,4 @@
-import { appEnvironmentSchema, LOG_LEVELS, parseEnv } from "@up/core";
+import { appEnvironmentSchema, isEntityKey, LOG_LEVELS, parseEnv } from "@up/core";
 import { z } from "zod";
 
 /**
@@ -10,6 +10,14 @@ export const clientEnvSchema = z.object({
 });
 
 export const STAY_DATA_SOURCES = ["mock", "apaleo"] as const;
+
+/**
+ * preview: /stay without a guest session shows the preview stay (mock or the configured
+ *          Apaleo preview reservation) – the development workflow.
+ * secured: /stay requires a guest session (personal link or booking number login).
+ * Production must run `secured` before real guests use it (ADR 0011).
+ */
+export const GUEST_ACCESS_MODES = ["preview", "secured"] as const;
 
 const LOCAL_DATABASE_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
@@ -46,6 +54,12 @@ export const serverEnvSchema = clientEnvSchema
      * Server-side Postgres connection (Supabase transaction pooler) – one database per
      * environment. Optional: nothing in the app reads the database yet (Phase 6).
      */
+    GUEST_ACCESS_MODE: z.enum(GUEST_ACCESS_MODES).default("preview"),
+    /**
+     * Tenant served by this deployment (guest login). Precursor of host-based tenant
+     * resolution; guest links carry their tenant themselves.
+     */
+    GUEST_TENANT_SLUG: z.string().refine(isEntityKey, "must be a tenant slug").optional(),
     DATABASE_URL: z
       .string()
       .refine((url) => databaseHost(url) !== undefined, "must be a postgres:// URL")
@@ -84,6 +98,29 @@ export const serverEnvSchema = clientEnvSchema
           path: ["DATABASE_URL"],
           message: "must not point to localhost outside of local development",
         });
+      }
+    }
+    if (env.GUEST_ACCESS_MODE === "secured") {
+      for (const key of ["DATABASE_URL", "GUEST_TENANT_SLUG"] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "required when GUEST_ACCESS_MODE=secured",
+          });
+        }
+      }
+      if (env.APP_ENV === "production") {
+        // The mock PMS is never used in production, so secured mode needs Apaleo.
+        for (const key of ["APALEO_CLIENT_ID", "APALEO_CLIENT_SECRET"] as const) {
+          if (!env[key]) {
+            ctx.addIssue({
+              code: "custom",
+              path: [key],
+              message: "required for secured guest access in production",
+            });
+          }
+        }
       }
     }
     if (env.STAY_DATA_SOURCE === "apaleo") {

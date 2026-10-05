@@ -20,7 +20,7 @@ const baseConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Workspace packages ship TypeScript sources and are compiled by Next.js.
-  transpilePackages: ["@up/core", "@up/integrations", "@up/ui"],
+  transpilePackages: ["@up/core", "@up/db", "@up/integrations", "@up/ui"],
   // Until guest access exists, the app entry points to the default-locale stay screen.
   redirects: () => Promise.resolve([{ source: "/", destination: "/de/stay", permanent: false }]),
   headers: () =>
@@ -34,6 +34,11 @@ const baseConfig: NextConfig = {
         // Later entries override earlier ones for the same header key.
         source: "/dev/ui/frame",
         headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
+      {
+        // Guest link entry: never send the URL (with its token) as Referer anywhere.
+        source: "/:locale/s/:token",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       },
     ]),
 };

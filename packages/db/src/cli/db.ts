@@ -3,6 +3,7 @@
  *
  *   DATABASE_URL=… pnpm db:migrate --target local|staging|production [--confirm-production]
  *   DATABASE_URL=… pnpm db:seed    --target local|staging|production [--confirm-production]
+ *                                  [--with-preview-fixtures]   (never in production)
  *
  * DATABASE_URL is read from the process environment only (no .env files are loaded),
  * so the operator always decides which database is used.
@@ -12,6 +13,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 import { createDatabase, describeDatabaseUrl } from "../client";
 import { MIGRATIONS_FOLDER } from "../migrations-folder";
+import { previewFixturesSeed } from "../seed/preview-fixtures";
 import { seedTenant } from "../seed/seed-tenant";
 import { uniquePlacesSeed } from "../seed/unique-places";
 import { assertTarget, CliUsageError, parseCliOptions } from "./target-guard";
@@ -24,6 +26,10 @@ async function main(): Promise<void> {
     throw new CliUsageError(`command must be one of: ${COMMANDS.join(", ")}`);
   }
   const options = parseCliOptions(args);
+  const withPreviewFixtures = args.includes("--with-preview-fixtures");
+  if (withPreviewFixtures && options.target === "production") {
+    throw new CliUsageError("--with-preview-fixtures is not allowed in production");
+  }
   const url = process.env["DATABASE_URL"];
   if (!url) throw new CliUsageError("DATABASE_URL is not set");
   const target = describeDatabaseUrl(url);
@@ -41,6 +47,10 @@ async function main(): Promise<void> {
     } else {
       const result = await seedTenant(db, uniquePlacesSeed);
       console.log("✓ seed UNIQUE PLACES – rows written:", result.written);
+      if (withPreviewFixtures) {
+        const fixtures = await seedTenant(db, previewFixturesSeed);
+        console.log("✓ preview fixtures (Apaleo TEST) – rows written:", fixtures.written);
+      }
     }
   } finally {
     await close();

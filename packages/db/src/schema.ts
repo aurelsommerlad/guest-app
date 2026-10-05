@@ -9,12 +9,18 @@
  * - Row Level Security is enabled on every table without policies: the Supabase Data API
  *   roles (`anon`, `authenticated`) see nothing. The app connects as the table owner.
  */
-import { ENTITY_KEY_PATTERN, EXTERNAL_ENTITY_TYPES, EXTERNAL_PROVIDERS } from "@up/core";
+import {
+  ENTITY_KEY_PATTERN,
+  EXTERNAL_ENTITY_TYPES,
+  EXTERNAL_PROVIDERS,
+  RESERVATION_PROVIDERS,
+} from "@up/core";
 import { sql, type SQL } from "drizzle-orm";
 import {
   type AnyPgColumn,
   boolean,
   check,
+  integer,
   foreignKey,
   index,
   pgTable,
@@ -36,6 +42,10 @@ function oneOf(column: AnyPgColumn, values: readonly string[]): SQL {
 
 function notBlank(column: AnyPgColumn, maxLength: number): SQL {
   return sql`char_length(btrim(${column})) BETWEEN 1 AND ${sql.raw(String(maxLength))}`;
+}
+
+function isSha256Hex(column: AnyPgColumn): SQL {
+  return sql`${column} ~ '^[0-9a-f]{64}$'`;
 }
 
 const timestamps = {
@@ -106,6 +116,8 @@ export const units = pgTable(
       foreignColumns: [properties.tenantId, properties.id],
     }).onDelete("restrict"),
     unique("units_tenant_id_id_key").on(t.tenantId, t.id),
+    // Target for references that require "unit belongs to this property and tenant".
+    unique("units_tenant_id_property_id_id_key").on(t.tenantId, t.propertyId, t.id),
     unique("units_property_id_slug_key").on(t.propertyId, t.slug),
     index("units_tenant_id_property_id_idx").on(t.tenantId, t.propertyId),
     check("units_id_format", isKey(t.id)),
@@ -166,4 +178,110 @@ export const externalMappings = pgTable(
   ],
 ).enableRLS();
 
-export const schema = { tenants, properties, units, externalMappings };
+/**
+ * Guest access to one reservation (ADR 0011). Stores no personal data: the link to the
+ * guest exists only via the reservation id in the PMS. The link token is stored only as
+ * its SHA-256 hash.
+ */
+export const guestAccess = pgTable(
+  "guest_access",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    /** Optional: units can be assigned late or change; STAY reads the live assignment. */
+    unitId: text("unit_id"),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    validFrom: timestamp("valid_from", { withTimezone: true }).notNull(),
+    validUntil: timestamp("valid_until", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "guest_access_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    // Unit (if set) must belong to the same property and tenant.
+    foreignKey({
+      name: "guest_access_unit_fkey",
+      columns: [t.tenantId, t.propertyId, t.unitId],
+      foreignColumns: [units.tenantId, units.propertyId, units.id],
+    }).onDelete("restrict"),
+    unique("guest_access_token_hash_key").on(t.tokenHash),
+    unique("guest_access_tenant_id_id_key").on(t.tenantId, t.id),
+    index("guest_access_reservation_idx").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+    ),
+    check(
+      "guest_access_reservation_provider_valid",
+      oneOf(t.reservationProvider, RESERVATION_PROVIDERS),
+    ),
+    check("guest_access_external_reservation_id_not_blank", notBlank(t.externalReservationId, 255)),
+    check("guest_access_token_hash_format", isSha256Hex(t.tokenHash)),
+    check("guest_access_valid_range", sql`${t.validUntil} > ${t.validFrom}`),
+  ],
+).enableRLS();
+
+/**
+ * Server-side guest sessions. The cookie carries an opaque random secret; only its hash
+ * is stored. Every request checks session *and* guest access, so revoking either ends
+ * access immediately.
+ */
+export const guestSessions = pgTable(
+  "guest_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    guestAccessId: uuid("guest_access_id").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "guest_sessions_guest_access_fkey",
+      columns: [t.tenantId, t.guestAccessId],
+      foreignColumns: [guestAccess.tenantId, guestAccess.id],
+    }).onDelete("cascade"),
+    unique("guest_sessions_token_hash_key").on(t.tokenHash),
+    index("guest_sessions_guest_access_id_idx").on(t.guestAccessId),
+    check("guest_sessions_token_hash_format", isSha256Hex(t.tokenHash)),
+  ],
+).enableRLS();
+
+/**
+ * Fixed-window counters for rate limiting public endpoints (guest login). Keys are
+ * hashes ("<scope>:<sha256>") – no IP addresses or booking numbers in clear text.
+ * Rows older than a day are pruned on use.
+ */
+export const rateLimitBuckets = pgTable(
+  "rate_limit_buckets",
+  {
+    key: text("key").primaryKey(),
+    windowStartedAt: timestamp("window_started_at", { withTimezone: true }).notNull(),
+    hits: integer("hits").notNull(),
+  },
+  (t) => [
+    index("rate_limit_buckets_window_started_at_idx").on(t.windowStartedAt),
+    check("rate_limit_buckets_hits_positive", sql`${t.hits} > 0`),
+    check("rate_limit_buckets_key_length", sql`char_length(${t.key}) BETWEEN 1 AND 128`),
+  ],
+).enableRLS();
+
+export const schema = {
+  tenants,
+  properties,
+  units,
+  externalMappings,
+  guestAccess,
+  guestSessions,
+  rateLimitBuckets,
+};

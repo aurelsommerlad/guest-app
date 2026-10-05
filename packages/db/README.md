@@ -11,16 +11,20 @@ Regeln:
 
 ## Inhalt
 
-| Datei                                    | Zweck                                                                                        |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `src/schema.ts`                          | Tabellen `tenants`, `properties`, `units`, `external_mappings`                               |
-| `drizzle/`                               | generierte SQL-Migrationen (+ `0001` custom: Supabase Data API sperren)                      |
-| `src/client.ts`                          | `createDatabase(url)`: postgres.js, `prepare: false`, TLS außerhalb localhost                |
-| `src/repositories/tenancy-repository.ts` | `getTenantBySlug`, `getPropertyById/BySlug`, `getUnitsForProperty`, `resolveExternalMapping` |
-| `src/seed/unique-places.ts`              | Stammdaten Tenant UNIQUE PLACES (4 Properties, 8 HØV-Units, 12 Apaleo-Mappings)              |
-| `src/seed/seed-tenant.ts`                | idempotenter Upsert in einer Transaktion                                                     |
-| `src/cli/db.ts`                          | expliziter CLI für `migrate` und `seed` mit Ziel-Absicherung                                 |
-| `src/testing/test-database.ts`           | PGlite (In-Memory-Postgres) für Tests                                                        |
+| Datei                                         | Zweck                                                                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `src/schema.ts`                               | Tabellen `tenants`, `properties`, `units`, `external_mappings`, `guest_access`, `guest_sessions`, `rate_limit_buckets` |
+| `drizzle/`                                    | generierte SQL-Migrationen (+ `0001` custom: Supabase Data API sperren)                                                |
+| `src/client.ts`                               | `createDatabase(url)`: postgres.js, `prepare: false`, TLS außerhalb localhost                                          |
+| `src/repositories/tenancy-repository.ts`      | `getTenantBySlug`, `getPropertyById/BySlug`, `getUnitsForProperty`, `resolveExternalMapping`                           |
+| `src/repositories/guest-access-repository.ts` | Guest Access und Sessions (nur Hashes), Widerruf ([ADR 0011](../../docs/adr/0011-guest-access.md))                     |
+| `src/repositories/rate-limit-repository.ts`   | atomare Rate-Limit-Zähler (festes Fenster)                                                                             |
+| `src/seed/preview-fixtures.ts`                | Apaleo-TEST-Property für local/staging (`--with-preview-fixtures`, nie Production)                                     |
+| `src/seed/unique-places.ts`                   | Stammdaten Tenant UNIQUE PLACES (4 Properties, 8 HØV-Units, 12 Apaleo-Mappings)                                        |
+| `src/seed/seed-tenant.ts`                     | idempotenter Upsert in einer Transaktion                                                                               |
+| `src/cli/db.ts`                               | expliziter CLI für `migrate` und `seed` mit Ziel-Absicherung                                                           |
+| `src/testing/test-database.ts`                | PGlite (In-Memory-Postgres) für Tests, auch als `@up/db/testing` für die App                                           |
+| `src/postgres-driver.test.ts`                 | dieselben Repositories über postgres.js (Wire-Protokoll, PGlite-Socket)                                                |
 
 ## Wann eine Datenbank nötig ist
 
@@ -37,6 +41,7 @@ Regeln:
 pnpm db:generate --name <beschreibung>   # Migration aus schema.ts erzeugen (ohne DB)
 DATABASE_URL=… pnpm db:migrate --target local|staging|production [--confirm-production]
 DATABASE_URL=… pnpm db:seed    --target local|staging|production [--confirm-production]
+                               [--with-preview-fixtures]   # Apaleo TEST, nie Production
 ```
 
 Der CLI liest `DATABASE_URL` **nur aus der Shell**. Er lädt keine `.env`-Dateien, damit nie unbemerkt eine falsche Datenbank verwendet wird. Sicherungen:

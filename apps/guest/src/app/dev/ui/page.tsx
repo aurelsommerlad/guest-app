@@ -1,4 +1,5 @@
 import {
+  TextField,
   baseColorTokens,
   BottomNavigation,
   Button,
@@ -49,6 +50,7 @@ const sections = [
   ["stay", "Stay-Bausteine"],
   ["guide", "Guide-Bausteine"],
   ["explore", "Explore-Bausteine"],
+  ["forms", "Formularfelder"],
 ] as const;
 
 const guideItems = [
@@ -644,6 +646,24 @@ export default function DesignLabPage() {
             />
           </div>
         </Stack>
+      </LabSection>
+
+      {/* ── 13 Formularfelder ─────────────────────────────── */}
+      <LabSection
+        id="forms"
+        index="13"
+        title="Formularfelder"
+        intro="TextField: sichtbares Label (Eyebrow), Rahmen in text-muted für ≥ 3 : 1 Kontrast, globaler Fokusring, optionaler Hinweis per aria-describedby. Eingesetzt im Gastzugang unter /de/login."
+      >
+        <div className="flex max-w-reading flex-col gap-6">
+          <TextField
+            id="lab-booking"
+            label="Buchungsnummer"
+            hint="Du findest Deine Buchungsnummer in Deiner Buchungsbestätigung."
+            autoComplete="off"
+          />
+          <TextField id="lab-name" label="Nachname" defaultValue="Muster" autoComplete="off" />
+        </div>
       </LabSection>
     </main>
   );

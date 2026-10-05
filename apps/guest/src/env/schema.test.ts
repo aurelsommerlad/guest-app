@@ -12,6 +12,7 @@ describe("validateServerEnv", () => {
       NEXT_PUBLIC_APP_URL: "http://localhost:3000",
       LOG_LEVEL: "info",
       STAY_DATA_SOURCE: "mock",
+      GUEST_ACCESS_MODE: "preview",
     });
   });
 
@@ -142,5 +143,63 @@ describe("DATABASE_URL", () => {
         DATABASE_URL: "postgres://postgres:postgres@127.0.0.1:5432/postgres",
       }),
     ).toThrow(/DATABASE_URL/);
+  });
+});
+
+describe("GUEST_ACCESS_MODE", () => {
+  const staging = {
+    APP_ENV: "staging",
+    NEXT_PUBLIC_APP_URL: "https://staging.stay.unique-places.com",
+  };
+  const production = {
+    APP_ENV: "production",
+    NEXT_PUBLIC_APP_URL: "https://stay.unique-places.com",
+  };
+  const database = {
+    DATABASE_URL:
+      "postgresql://postgres.ref:secret@aws-0-eu-central-1.pooler.supabase.com:6543/postgres",
+    GUEST_TENANT_SLUG: "unique-places",
+  };
+
+  it("defaults to preview", () => {
+    expect(validateServerEnv(staging).GUEST_ACCESS_MODE).toBe("preview");
+  });
+
+  it("requires a database and a tenant in secured mode", () => {
+    expect(() => validateServerEnv({ ...staging, GUEST_ACCESS_MODE: "secured" })).toThrow(
+      /DATABASE_URL/,
+    );
+    expect(() =>
+      validateServerEnv({
+        ...staging,
+        GUEST_ACCESS_MODE: "secured",
+        DATABASE_URL: database.DATABASE_URL,
+      }),
+    ).toThrow(/GUEST_TENANT_SLUG/);
+    expect(
+      validateServerEnv({ ...staging, ...database, GUEST_ACCESS_MODE: "secured" })
+        .GUEST_ACCESS_MODE,
+    ).toBe("secured");
+  });
+
+  it("requires Apaleo credentials for secured mode in production", () => {
+    expect(() =>
+      validateServerEnv({ ...production, ...database, GUEST_ACCESS_MODE: "secured" }),
+    ).toThrow(/APALEO_CLIENT_ID/);
+    expect(
+      validateServerEnv({
+        ...production,
+        ...database,
+        GUEST_ACCESS_MODE: "secured",
+        APALEO_CLIENT_ID: "id",
+        APALEO_CLIENT_SECRET: "secret",
+      }).GUEST_ACCESS_MODE,
+    ).toBe("secured");
+  });
+
+  it("rejects malformed tenant slugs", () => {
+    expect(() => validateServerEnv({ ...staging, GUEST_TENANT_SLUG: "Unique Places" })).toThrow(
+      /GUEST_TENANT_SLUG/,
+    );
   });
 });

@@ -25,3 +25,26 @@ describe("MockPmsProvider", () => {
     await expect(new MockPmsProvider([]).getReservation("X")).rejects.toBeInstanceOf(PmsError);
   });
 });
+
+describe("MockPmsProvider.findReservationsByBookingReference", () => {
+  const reservation = {
+    provider: "apaleo",
+    externalId: "MOCK-1",
+    status: "confirmed" as const,
+    arrivalAt: "2026-08-27T16:00:00+02:00",
+    departureAt: "2026-08-31T10:00:00+02:00",
+    externalPropertyId: "ALTUS",
+    primaryGuest: {},
+  };
+
+  it("returns the reservation with its last name, or nothing", async () => {
+    const provider = new MockPmsProvider([reservation], { guestLastNames: { "MOCK-1": "Muster" } });
+    expect(await provider.findReservationsByBookingReference("MOCK-1")).toEqual([
+      { reservation, primaryGuestLastName: "Muster" },
+    ]);
+    expect(await provider.findReservationsByBookingReference("MOCK-2")).toEqual([]);
+    expect(
+      await new MockPmsProvider([reservation]).findReservationsByBookingReference("MOCK-1"),
+    ).toEqual([{ reservation }]);
+  });
+});

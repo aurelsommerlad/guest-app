@@ -45,9 +45,9 @@ describe("schema constraints", () => {
   it("enables row level security on every table", async () => {
     const result = await client.query<{ relname: string; relrowsecurity: boolean }>(
       `SELECT relname, relrowsecurity FROM pg_class
-       WHERE relname IN ('tenants', 'properties', 'units', 'external_mappings')`,
+       WHERE relnamespace = 'public'::regnamespace AND relkind = 'r' AND relname <> '__drizzle_migrations'`,
     );
-    expect(result.rows).toHaveLength(4);
+    expect(result.rows).toHaveLength(7);
     expect(result.rows.every((row) => row.relrowsecurity)).toBe(true);
   });
 

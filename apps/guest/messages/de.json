@@ -80,5 +80,25 @@
     "title": "Diese Seite gibt es nicht.",
     "body": "Vielleicht hat sich die Adresse geändert.",
     "back": "Zu Deinem Aufenthalt"
+  },
+  "access": {
+    "login": {
+      "metaTitle": "Aufenthalt öffnen",
+      "title": "Deinen Aufenthalt öffnen",
+      "lead": "Mit Deiner Buchungsnummer und Deinem Nachnamen.",
+      "bookingReference": "Buchungsnummer",
+      "bookingReferenceHint": "Du findest Deine Buchungsnummer in Deiner Buchungsbestätigung.",
+      "lastName": "Nachname",
+      "submit": "Aufenthalt öffnen",
+      "submitting": "Wird geprüft …",
+      "notFound": "Wir konnten Deinen Aufenthalt mit diesen Angaben nicht finden. Bitte prüfe Buchungsnummer und Nachname.",
+      "rateLimited": "Zu viele Versuche. Bitte versuche es in {minutes, plural, one {einer Minute} other {# Minuten}} noch einmal."
+    },
+    "invalidLink": {
+      "metaTitle": "Zugangslink nicht gültig",
+      "title": "Dieser Zugangslink ist nicht mehr gültig.",
+      "body": "Bitte verwende den aktuellen Link aus Deiner Buchungsnachricht.",
+      "login": "Mit Buchungsnummer anmelden"
+    }
   }
 }

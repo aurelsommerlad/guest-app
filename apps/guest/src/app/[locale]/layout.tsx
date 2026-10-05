@@ -29,7 +29,9 @@ export default async function LocaleLayout({ children }: Readonly<{ children: Re
   const messages = await getMessages();
   return (
     <RootDocument lang={locale}>
-      <NextIntlClientProvider messages={{ stayError: messages.stayError }}>
+      <NextIntlClientProvider
+        messages={{ stayError: messages.stayError, access: { login: messages.access.login } }}
+      >
         {children}
       </NextIntlClientProvider>
     </RootDocument>

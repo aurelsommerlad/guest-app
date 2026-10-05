@@ -6,6 +6,7 @@ import { externalMappings, properties, tenants, units } from "../schema";
 import { createTestDatabase } from "../testing/test-database";
 import { type TenantSeedInput } from "./seed-data";
 import { SeedConflictError, seedTenant } from "./seed-tenant";
+import { previewFixturesSeed } from "./preview-fixtures";
 import { uniquePlacesSeed } from "./unique-places";
 
 /** A standalone property (not part of the UNIQUE PLACES seed) for edge cases. */
@@ -140,5 +141,19 @@ describe("UNIQUE PLACES seed", () => {
     };
     await expect(seedTenant(db, invalidTimezone)).rejects.toThrow(/IANA/);
     expect(await rowCounts()).toEqual({ tenants: 0, properties: 0, units: 0, externalMappings: 0 });
+  });
+});
+
+describe("preview fixtures", () => {
+  it("add the Apaleo TEST property to the same tenant without touching master data", async () => {
+    await seedTenant(db, uniquePlacesSeed);
+    const result = await seedTenant(db, previewFixturesSeed);
+    expect(result.written).toEqual({ tenants: 0, properties: 1, units: 2, externalMappings: 3 });
+    expect(await rowCounts()).toEqual({
+      tenants: 1,
+      properties: 5,
+      units: 10,
+      externalMappings: 15,
+    });
   });
 });

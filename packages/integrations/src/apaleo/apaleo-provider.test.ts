@@ -219,3 +219,45 @@ describe("ApaleoProvider.getReservation", () => {
     });
   });
 });
+
+describe("ApaleoProvider.findReservationsByBookingReference", () => {
+  it("loads the reservation by its exact id and returns the last name for the check", async () => {
+    const { provider, calls, lines } = setup([
+      () => tokenResponse(),
+      () => jsonResponse(apaleoReservationPayload()),
+    ]);
+    const candidates = await provider.findReservationsByBookingReference("ABCDEFGH-1");
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.primaryGuestLastName).toBe("Muster");
+    expect(candidates[0]?.reservation).toMatchObject({
+      externalId: "ABCDEFGH-1",
+      status: "in-house",
+    });
+    // The mapped reservation still carries no last name or contact data.
+    expect(JSON.stringify(candidates[0]?.reservation)).not.toMatch(/Muster|example\.com/);
+    expect(calls[1]?.url).toBe("https://api.apaleo.com/booking/v1/reservations/ABCDEFGH-1");
+    expect(lines.join("\n")).not.toMatch(/Muster|ABCDEFGH/);
+  });
+
+  it("resolves unknown reservations to an empty list", async () => {
+    const { provider } = setup([() => tokenResponse(), () => jsonResponse({}, 404)]);
+    expect(await provider.findReservationsByBookingReference("UNKNOWN-1")).toEqual([]);
+  });
+
+  it("never calls Apaleo for references that cannot be reservation ids", async () => {
+    const { provider, calls } = setup([]);
+    for (const reference of ["abc", "A/B", "../x", "A".repeat(41), ""]) {
+      expect(await provider.findReservationsByBookingReference(reference)).toEqual([]);
+    }
+    expect(calls).toHaveLength(0);
+  });
+
+  it("propagates technical failures", async () => {
+    const { provider } = setup([
+      () => tokenResponse(),
+      () => jsonResponse({}, 500),
+      () => jsonResponse({}, 500),
+    ]);
+    await expectPmsError(provider.findReservationsByBookingReference("ABCDEFGH-1"), "unavailable");
+  });
+});
