@@ -26,7 +26,7 @@ export default async function StayPage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
 
-  const stay = getStay(locale);
+  const stay = await getStay(locale);
 
   return (
     <div className="safe-top">

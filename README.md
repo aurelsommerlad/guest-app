@@ -5,7 +5,7 @@ Pilotkunde und erster Tenant: **UNIQUE PLACES**. Ziel-Domain: **`stay.unique-pla
 
 > Dies ist **nicht** die bestehende Extras-App (`extras.unique-places.com`). Sie bleibt unverändert und wird zunächst nur verlinkt.
 
-**Status:** Phase 3 – STAY (`/de/stay`) und GUIDE (`/de/guide`, erste Detailseite `/de/guide/ankunft-parken`) mit Mock-Daten. Noch keine Anbindung an Datenbank, Apaleo oder Gastzugang. Design Lab: `/dev/ui` (nur local und staging).
+**Status:** Phase 4 – STAY (`/de/stay`) wahlweise mit Mock-Daten oder einem Apaleo-Testaufenthalt (`STAY_DATA_SOURCE`), GUIDE (`/de/guide`) mit Mock-Inhalten. Noch keine Anbindung an Datenbank, Apaleo oder Gastzugang. Design Lab: `/dev/ui` (nur local und staging).
 
 ## Schnellstart
 
@@ -55,4 +55,4 @@ Abhängigkeitsregeln (per ESLint erzwungen):
 - [Architektur](docs/architecture.md)
 - [Design System](docs/design-system.md)
 - [Environments & Deployment](docs/environments.md)
-- [Architecture Decision Records](docs/adr/)
+- [Architecture Decision Records](docs/adr/) – u. a. [PMS-Provider & Apaleo](docs/adr/0008-pms-provider-apaleo.md)

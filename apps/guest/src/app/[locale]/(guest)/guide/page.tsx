@@ -5,8 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { BrandHeader } from "../../../../components/GuestHeader";
-import { getGuideOverview } from "../../../../features/guide/get-guide";
-import { getStay } from "../../../../features/stay/get-stay";
+import { getGuideOverview, getGuideProperty } from "../../../../features/guide/get-guide";
 import { Link } from "../../../../i18n/navigation";
 import { routing } from "../../../../i18n/routing";
 
@@ -26,13 +25,12 @@ export default async function GuidePage({ params }: Props) {
   if (!hasLocale(routing.locales, locale)) notFound();
 
   const t = await getTranslations("guide");
-  const stay = getStay(locale);
   const sections = getGuideOverview(locale);
 
   return (
     <div className="safe-top">
       <Container width="content" className="md:max-w-reading lg:max-w-content lg:pt-10">
-        <BrandHeader property={stay.property} />
+        <BrandHeader property={getGuideProperty()} />
 
         <main className="lg:max-w-reading">
           <div className="mt-6 flex flex-col gap-3 lg:mt-16">

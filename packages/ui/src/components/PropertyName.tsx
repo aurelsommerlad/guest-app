@@ -5,7 +5,9 @@ import { cx } from "../lib/cx";
  * mapped to a typographic substitute rendered with the font's own glyphs.
  */
 const SUBSTITUTES: Readonly<Record<string, { glyph: string; className: string }>> = {
+  // Greek capital lambda (U+039B) and Latin turned V (U+0245, as written in Apaleo).
   Λ: { glyph: "V", className: "glyph-flip-y" },
+  Ʌ: { glyph: "V", className: "glyph-flip-y" },
 };
 
 export type PropertyNameProps = {

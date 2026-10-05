@@ -26,6 +26,17 @@
 - Außerhalb von `local` muss `NEXT_PUBLIC_APP_URL` `https` verwenden.
 - Vorlage: `apps/guest/.env.example`. Neue Variablen werden immer dort **und** im Schema ergänzt.
 
+## STAY-Datenquelle (Phase 4)
+
+| Variable                        | local                           | staging / Preview               | production                                         |
+| ------------------------------- | ------------------------------- | ------------------------------- | -------------------------------------------------- |
+| `STAY_DATA_SOURCE`              | `mock` (Standard) oder `apaleo` | `apaleo` für den Testaufenthalt | `mock` bzw. nicht setzen (`apaleo` wird abgelehnt) |
+| `APALEO_CLIENT_ID`              | nur bei `apaleo`                | ✅ (sensitiv)                   | –                                                  |
+| `APALEO_CLIENT_SECRET`          | nur bei `apaleo`                | ✅ (sensitiv)                   | –                                                  |
+| `APALEO_PREVIEW_RESERVATION_ID` | nur bei `apaleo`                | ✅                              | **nie** (wird abgelehnt)                           |
+
+Die Apaleo-Zugangsdaten gehören ausschließlich in Vercel (Environment „Preview“ bzw. das Custom Environment „staging“) oder lokal in `.env.local`, nie ins Repository.
+
 ## Vercel-Setup (einmalig, manuell)
 
 1. Projekt `guest` anlegen und das GitHub-Repo verbinden.

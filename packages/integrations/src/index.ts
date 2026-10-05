@@ -1,2 +1,4 @@
-// Intentionally empty in Phase 0 (Foundation). Implemented in Phase 4 (Apaleo Integration).
-export {};
+export { ApaleoClient, type ApaleoClientOptions } from "./apaleo/apaleo-client";
+export { ApaleoProvider, createApaleoProvider } from "./apaleo/apaleo-provider";
+export { mapApaleoReservation } from "./apaleo/map-reservation";
+export { MockPmsProvider } from "./mock/mock-pms-provider";

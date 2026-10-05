@@ -20,7 +20,7 @@ const baseConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Workspace packages ship TypeScript sources and are compiled by Next.js.
-  transpilePackages: ["@up/core", "@up/ui"],
+  transpilePackages: ["@up/core", "@up/integrations", "@up/ui"],
   // Until guest access exists, the app entry points to the default-locale stay screen.
   redirects: () => Promise.resolve([{ source: "/", destination: "/de/stay", permanent: false }]),
   headers: () =>

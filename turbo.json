@@ -8,7 +8,7 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"],
-      "env": ["NEXT_PUBLIC_*", "LOG_LEVEL", "VERCEL_*"]
+      "env": ["NEXT_PUBLIC_*", "LOG_LEVEL", "VERCEL_*", "STAY_DATA_SOURCE", "APALEO_*"]
     },
     "typecheck": {
       "dependsOn": ["^typecheck"]

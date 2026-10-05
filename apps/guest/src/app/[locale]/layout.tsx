@@ -1,4 +1,5 @@
 import { hasLocale, NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { locale as rootLocale } from "next/root-params";
 import type { ReactNode } from "react";
@@ -24,10 +25,13 @@ export default async function LocaleLayout({ children }: Readonly<{ children: Re
     notFound();
   }
 
+  // Client components get only the strings they need; everything else stays on the server.
+  const messages = await getMessages();
   return (
     <RootDocument lang={locale}>
-      {/* Client components only need the locale; UI strings are passed as props from the server. */}
-      <NextIntlClientProvider messages={null}>{children}</NextIntlClientProvider>
+      <NextIntlClientProvider messages={{ stayError: messages.stayError }}>
+        {children}
+      </NextIntlClientProvider>
     </RootDocument>
   );
 }

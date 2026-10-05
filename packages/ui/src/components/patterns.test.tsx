@@ -121,6 +121,12 @@ describe("PropertyName", () => {
     expect(markup).not.toContain("Λ");
   });
 
+  it("also draws the Latin turned V (Ʌ, U+0245) used in Apaleo", () => {
+    const markup = renderToStaticMarkup(<PropertyName name="ɅLPILɅ" spokenName="Alpila" />);
+    expect(markup.match(/glyph-flip-y/g)).toHaveLength(2);
+    expect(markup).not.toContain("Ʌ");
+  });
+
   it("uses the spoken name for assistive technology when it differs", () => {
     const markup = renderToStaticMarkup(<PropertyName name="HØV" spokenName="Höv" />);
     expect(markup).toContain('<span class="sr-only">Höv</span>');

@@ -1,4 +1,4 @@
-import { type LocalizedText, type StayPhase } from "@up/core";
+import { type LocalizedText, type PmsReservationStatus, type StayPhase } from "@up/core";
 import { type StaticImageData } from "next/image";
 
 import { type Locale } from "../../i18n/routing";
@@ -9,7 +9,8 @@ import { type Locale } from "../../i18n/routing";
  */
 export type StaySource = {
   tenantId: string;
-  guest: { firstName: string };
+  /** First name may be missing in the PMS – the greeting then omits it. */
+  guest: { firstName?: string };
   property: {
     id: string;
     /** Display name exactly as branded, e.g. "HØV", "ΛLPILΛ". */
@@ -21,10 +22,12 @@ export type StaySource = {
   };
   unit: { id: string; name: string };
   reservation: {
+    status: PmsReservationStatus;
     /** ISO 8601 instants with offset. */
     checkInAt: string;
     checkOutAt: string;
-    onlineCheckIn: { status: "open" | "completed"; stepsRemaining: number };
+    /** Missing while the online check-in feature is not available for this stay. */
+    onlineCheckIn?: { status: "open" | "completed"; stepsRemaining: number };
   };
   cards: readonly StayCardSource[];
 };
@@ -51,7 +54,7 @@ export type ImageAsset = {
 export type StayViewModel = {
   locale: Locale;
   phase: StayPhase;
-  guest: { firstName: string };
+  guest: { firstName?: string };
   property: { name: string; spokenName: string; location: string };
   unit: { name: string; href: string };
   /** The primary tile changes with the stay phase. */

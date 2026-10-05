@@ -11,6 +11,7 @@ describe("validateServerEnv", () => {
       APP_ENV: "local",
       NEXT_PUBLIC_APP_URL: "http://localhost:3000",
       LOG_LEVEL: "info",
+      STAY_DATA_SOURCE: "mock",
     });
   });
 
@@ -46,5 +47,58 @@ describe("validateServerEnv", () => {
         LOG_LEVEL: "verbose",
       }),
     ).toThrow(/LOG_LEVEL/);
+  });
+});
+
+describe("STAY data source", () => {
+  const staging = {
+    APP_ENV: "staging",
+    NEXT_PUBLIC_APP_URL: "https://staging.stay.unique-places.com",
+  };
+  const apaleo = {
+    STAY_DATA_SOURCE: "apaleo",
+    APALEO_CLIENT_ID: "client",
+    APALEO_CLIENT_SECRET: "secret-value",
+    APALEO_PREVIEW_RESERVATION_ID: "ABCDEFGH-1",
+  };
+
+  it("defaults to mock data without any Apaleo variables", () => {
+    expect(validateServerEnv(staging).STAY_DATA_SOURCE).toBe("mock");
+  });
+
+  it("accepts apaleo mode with credentials and a preview reservation outside production", () => {
+    expect(validateServerEnv({ ...staging, ...apaleo }).STAY_DATA_SOURCE).toBe("apaleo");
+  });
+
+  it("requires credentials and the preview reservation in apaleo mode", () => {
+    expect(() => validateServerEnv({ ...staging, STAY_DATA_SOURCE: "apaleo" })).toThrow(
+      /APALEO_CLIENT_ID[\s\S]*APALEO_CLIENT_SECRET[\s\S]*APALEO_PREVIEW_RESERVATION_ID/,
+    );
+  });
+
+  it("never allows apaleo mode or a preview reservation in production", () => {
+    const production = {
+      APP_ENV: "production",
+      NEXT_PUBLIC_APP_URL: "https://stay.unique-places.com",
+    };
+    expect(() => validateServerEnv({ ...production, ...apaleo })).toThrow(/STAY_DATA_SOURCE/);
+    expect(() =>
+      validateServerEnv({ ...production, APALEO_PREVIEW_RESERVATION_ID: "ABCDEFGH-1" }),
+    ).toThrow(/APALEO_PREVIEW_RESERVATION_ID/);
+  });
+
+  it("does not echo secret values in validation errors", () => {
+    let message = "";
+    try {
+      validateServerEnv({
+        APP_ENV: "production",
+        NEXT_PUBLIC_APP_URL: "https://stay.unique-places.com",
+        ...apaleo,
+      });
+    } catch (error) {
+      message = error instanceof Error ? error.message : "";
+    }
+    expect(message).toContain("STAY_DATA_SOURCE");
+    expect(message).not.toContain("secret-value");
   });
 });

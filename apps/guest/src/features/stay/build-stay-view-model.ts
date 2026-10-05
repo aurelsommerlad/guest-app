@@ -17,7 +17,7 @@ export function buildStayViewModel(source: StaySource, locale: Locale, now: Date
   return {
     locale,
     phase,
-    guest: { firstName: source.guest.firstName },
+    guest: source.guest.firstName ? { firstName: source.guest.firstName } : {},
     property: { name: property.name, spokenName: property.spokenName, location: property.location },
     unit: { name: source.unit.name, href: "/guide" },
     status: selectStatus(source, phase, locale),
@@ -37,7 +37,7 @@ function selectStatus(
   locale: Locale,
 ): StayStatus {
   const { onlineCheckIn, checkOutAt } = source.reservation;
-  if (phase === "pre-arrival" && onlineCheckIn.status === "open") {
+  if (phase === "pre-arrival" && onlineCheckIn?.status === "open") {
     return {
       kind: "online-check-in",
       stepsRemaining: onlineCheckIn.stepsRemaining,

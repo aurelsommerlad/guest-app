@@ -9,13 +9,26 @@ export const clientEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.url(),
 });
 
+export const STAY_DATA_SOURCES = ["mock", "apaleo"] as const;
+
 /**
- * Server-only variables (secrets go here in later phases).
+ * Server-only variables. Secrets (APALEO_CLIENT_SECRET) live here and are never
+ * exposed to the client (server.ts is `server-only`).
  */
 export const serverEnvSchema = clientEnvSchema
   .extend({
     APP_ENV: appEnvironmentSchema,
     LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
+    /** Where the STAY screen gets its reservation from. Default: mock data. */
+    STAY_DATA_SOURCE: z.enum(STAY_DATA_SOURCES).default("mock"),
+    /** Apaleo simple client (OAuth client credentials) – required in apaleo mode. */
+    APALEO_CLIENT_ID: z.string().min(1).optional(),
+    APALEO_CLIENT_SECRET: z.string().min(1).optional(),
+    /**
+     * The one Apaleo reservation shown in local/staging (preview) until guest access exists.
+     * Never allowed in production.
+     */
+    APALEO_PREVIEW_RESERVATION_ID: z.string().min(1).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.APP_ENV !== "local" && !env.NEXT_PUBLIC_APP_URL.startsWith("https://")) {
@@ -24,6 +37,38 @@ export const serverEnvSchema = clientEnvSchema
         path: ["NEXT_PUBLIC_APP_URL"],
         message: "must use https outside of local development",
       });
+    }
+    if (env.APP_ENV === "production") {
+      // Without guest access there is no legitimate way to pick a reservation in production.
+      if (env.STAY_DATA_SOURCE === "apaleo") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["STAY_DATA_SOURCE"],
+          message: "apaleo is not allowed in production until guest access exists",
+        });
+      }
+      if (env.APALEO_PREVIEW_RESERVATION_ID) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["APALEO_PREVIEW_RESERVATION_ID"],
+          message: "a preview reservation must never be configured in production",
+        });
+      }
+    }
+    if (env.STAY_DATA_SOURCE === "apaleo") {
+      for (const key of [
+        "APALEO_CLIENT_ID",
+        "APALEO_CLIENT_SECRET",
+        "APALEO_PREVIEW_RESERVATION_ID",
+      ] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "required when STAY_DATA_SOURCE=apaleo",
+          });
+        }
+      }
     }
   });
 

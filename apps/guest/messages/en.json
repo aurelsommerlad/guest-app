@@ -18,6 +18,7 @@
   },
   "stay": {
     "greeting": "Hello {firstName},<br></br>lovely to have you here.",
+    "greetingWithoutName": "Hello,<br></br>lovely to have you here.",
     "subline": "We wish you a wonderful stay.",
     "infoHeading": "Your stay at a glance",
     "checkOut": "Check-out",
@@ -28,6 +29,11 @@
     "apartmentDetails": "View details",
     "apartmentDetailsContext": "for apartment {name}",
     "cardsHeading": "For your stay"
+  },
+  "stayError": {
+    "title": "Your stay is not available right now.",
+    "body": "Please try again in a few minutes.",
+    "retry": "Try again"
   },
   "guide": {
     "eyebrow": "Guide",

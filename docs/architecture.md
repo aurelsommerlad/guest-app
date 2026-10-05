@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 3 (GUIDE-Grundstruktur mit Mock-Daten). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 4 (Apaleo-Integration für STAY, Mock-Modus erhalten). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -166,6 +166,8 @@ interface Visibility {
 - **Erweiterbar** um weitere Felder (z. B. Wochentage, Saison), ohne das Grundprinzip zu ändern.
 
 ## 9. Integrationsarchitektur ([ADR 0003](adr/0003-provider-integrations.md))
+
+> **Ab Phase 4 umgesetzt (vereinfacht):** `PmsProvider` → `ApaleoProvider` lädt eine Reservierung live, ohne lokale Kopie, Webhooks oder Sync. Details in [ADR 0008](adr/0008-pms-provider-apaleo.md). Die unten beschriebene Projektion mit Webhooks und Sync folgt mit der Datenbank.
 
 - **Ports** in `@up/core`: `PMSProvider`, später `AccessProvider`, `GuestRegistrationProvider`, `ExtrasProvider`.
 - **Adapter** in `@up/integrations`: `MockPMSProvider`, `ApaleoProvider` (Phase 4).

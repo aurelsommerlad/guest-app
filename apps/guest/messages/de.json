@@ -18,6 +18,7 @@
   },
   "stay": {
     "greeting": "Hallo {firstName},<br></br>schön, dass Du da bist.",
+    "greetingWithoutName": "Hallo,<br></br>schön, dass Du da bist.",
     "subline": "Wir wünschen Dir einen wunderbaren Aufenthalt.",
     "infoHeading": "Dein Aufenthalt auf einen Blick",
     "checkOut": "Check-out",
@@ -28,6 +29,11 @@
     "apartmentDetails": "Details ansehen",
     "apartmentDetailsContext": "zum Apartment {name}",
     "cardsHeading": "Für Deinen Aufenthalt"
+  },
+  "stayError": {
+    "title": "Dein Aufenthalt ist gerade nicht erreichbar.",
+    "body": "Bitte versuche es in ein paar Minuten noch einmal.",
+    "retry": "Erneut versuchen"
   },
   "guide": {
     "eyebrow": "Guide",

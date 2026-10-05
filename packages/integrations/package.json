@@ -3,15 +3,20 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Provider adapters (PMS, Access, Guest Registration) implementing ports from @up/core.",
+  "description": "Provider adapters (PMS, Access, Guest Registration) implementing ports from @up/core. Server-only.",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@up/config": "workspace:*"
+  },
+  "dependencies": {
+    "@up/core": "workspace:*",
+    "zod": "^4.6.5"
   }
 }

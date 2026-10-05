@@ -15,6 +15,7 @@ const source: StaySource = {
   },
   unit: { id: "ros", name: "ROS" },
   reservation: {
+    status: "confirmed",
     checkInAt: "2026-08-27T15:00:00+02:00",
     checkOutAt: "2026-08-31T10:00:00+02:00",
     onlineCheckIn: { status: "open", stepsRemaining: 2 },
@@ -75,6 +76,20 @@ describe("buildStayViewModel", () => {
       subtitle: "Unsere Lieblingsplätze für Dich",
     });
     expect(card?.image.alt).toBe("Berge");
+  });
+
+  it("omits the first name when the PMS has none", () => {
+    expect(buildStayViewModel({ ...source, guest: {} }, "de", inHouse).guest).toEqual({});
+  });
+
+  it("shows the check-out tile when no online check-in is available", () => {
+    const { onlineCheckIn: _unused, ...reservation } = source.reservation;
+    const model = buildStayViewModel(
+      { ...source, reservation },
+      "de",
+      new Date("2026-08-20T09:00:00+02:00"),
+    );
+    expect(model.status.kind).toBe("check-out");
   });
 
   it("keeps branded property names untouched", () => {

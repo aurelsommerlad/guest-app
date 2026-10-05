@@ -28,3 +28,10 @@ export {
   scopeApplies,
   selectGuideSections,
 } from "./guide/select-guide-sections";
+export {
+  PmsError,
+  type PmsErrorKind,
+  type PmsProvider,
+  type PmsReservation,
+  type PmsReservationStatus,
+} from "./pms/pms-provider";
