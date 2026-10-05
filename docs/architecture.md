@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 1 (Design System). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 2 (STAY-Startscreen mit Mock-Daten). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -209,6 +209,20 @@ Details, Messwerte und offene Punkte: [design-system.md](design-system.md). Live
 - **Responsive:**
   - Mobile: Bottom Navigation (GUIDE | **STAY** | EXPLORE).
   - Desktop: editoriales Raster mit Top-Navigation, keine gestreckte Mobile-Ansicht.
+
+### 11.1 STAY-Datenfluss (ab Phase 2)
+
+```
+StaySource (Mock heute, DB/Apaleo-Projektion später)
+   └─ buildStayViewModel(source, locale, now)   reine Funktion, unit-getestet
+        ├─ deriveStayPhase()  (@up/core)        pre-arrival | in-house | post-departure
+        ├─ Status-Tile: online-check-in (vor Ankunft, Check-in offen) | check-out
+        ├─ Datum/Uhrzeit in der Zeitzone der Property (Intl)
+        └─ LocalizedText → Text der Locale (Fallback: de)
+   └─ StayViewModel → StayHeader · Greeting · StayInfoGrid · StayCards
+```
+
+Für den Austausch der Datenquelle ändert sich nur `features/stay/get-stay.ts`.
 
 ## 12. Testing
 

@@ -17,6 +17,7 @@ export const textTones = {
   default: "text-text",
   muted: "text-text-muted",
   inverse: "text-text-inverse",
+  "on-accent": "text-on-accent",
   action: "text-action",
   inherit: "",
 } as const;

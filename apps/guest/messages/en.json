@@ -1,0 +1,41 @@
+{
+  "brand": {
+    "name": "UNIQUE PLACES"
+  },
+  "metadata": {
+    "stay": "Your stay",
+    "guide": "Guide",
+    "extras": "Extras",
+    "explore": "Explore"
+  },
+  "navigation": {
+    "label": "Main navigation",
+    "guide": "Guide",
+    "stay": "Stay",
+    "explore": "Explore"
+  },
+  "stay": {
+    "notifications": "Notifications",
+    "greeting": "Hello {firstName},<br></br>lovely to have you here.",
+    "subline": "We wish you a wonderful stay.",
+    "infoHeading": "Your stay at a glance",
+    "checkOut": "Check-out",
+    "onlineCheckIn": "Online check-in",
+    "checkInCta": "Complete now",
+    "stepsRemaining": "{count, plural, one {# step left} other {# steps left}}",
+    "apartment": "Apartment",
+    "apartmentDetails": "View details",
+    "apartmentDetailsContext": "for apartment {name}",
+    "cardsHeading": "For your stay"
+  },
+  "placeholder": {
+    "eyebrow": "Coming soon",
+    "body": "We are preparing this section for you.",
+    "back": "Back to your stay"
+  },
+  "notFound": {
+    "title": "This page does not exist.",
+    "body": "The address may have changed.",
+    "back": "To your stay"
+  }
+}

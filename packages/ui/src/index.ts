@@ -23,6 +23,16 @@ export {
   type IconButtonVariant,
 } from "./components/IconButton";
 
+export {
+  BottomNavigation,
+  type BottomNavigationItem,
+  type BottomNavigationProps,
+} from "./components/BottomNavigation";
+export { EditorialImageCard, type EditorialImageCardProps } from "./components/EditorialImageCard";
+export { InfoTile, type InfoTileProps, type InfoTileTone } from "./components/InfoTile";
+export { type LinkComponent, type LinkComponentProps } from "./components/link";
+export { PropertyName, type PropertyNameProps } from "./components/PropertyName";
+
 // Token documentation
 export * from "./tokens/catalog";
 

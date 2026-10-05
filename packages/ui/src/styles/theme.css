@@ -10,6 +10,7 @@
   --*: initial;
 
   /* Breakpoints (mobile first) */
+  --breakpoint-xs: 22.5rem; /* 360px – standard phones (below: compact phones) */
   --breakpoint-sm: 30rem; /* 480px – large phones */
   --breakpoint-md: 48rem; /* 768px – tablet */
   --breakpoint-lg: 64rem; /* 1024px – desktop */
@@ -24,6 +25,7 @@
   --color-text: var(--up-color-text);
   --color-text-muted: var(--up-color-text-muted);
   --color-text-inverse: var(--up-color-text-inverse);
+  --color-on-accent: var(--up-color-on-accent);
   --color-action: var(--up-color-action);
   --color-action-hover: var(--up-color-action-hover);
   --color-on-action: var(--up-color-on-action);
@@ -42,11 +44,14 @@
   --spacing-gutter-md: var(--up-gutter-md);
   --spacing-gutter-lg: var(--up-gutter-lg);
   --spacing-touch: var(--up-touch-target);
+  --spacing-nav-bar: var(--up-nav-height);
+  --spacing-nav-active: var(--up-nav-active-size);
 
   /* Container widths (max-w-reading …) */
   --container-reading: var(--up-width-reading);
   --container-content: var(--up-width-content);
   --container-wide: var(--up-width-wide);
+  --container-nav: 26rem; /* bottom navigation stays phone-sized on wide screens */
 
   /* Aspect ratios (photo cards measured in the reference) */
   --aspect-square: 1 / 1;
@@ -81,9 +86,14 @@
 @utility type-display {
   font-family: var(--up-font-heading);
   font-size: 2rem; /* 32px */
-  font-weight: 300;
+  font-weight: 350; /* between Light and Regular: elegant, but not fragile on mobile */
   line-height: 1.125; /* 36px */
   letter-spacing: 0;
+
+  /* Compact phones (< 360px): keeps the greeting's line breaks intact */
+  @media (width < 22.5rem) {
+    font-size: 1.75rem; /* 28px */
+  }
 
   /* Desktop: editorial scale-up (derived – the reference defines mobile only) */
   @media (width >= 64rem) {
@@ -96,7 +106,7 @@
 @utility type-title-lg {
   font-family: var(--up-font-heading);
   font-size: 1.75rem; /* 28px */
-  font-weight: 300;
+  font-weight: 350;
   line-height: 1.15;
   letter-spacing: 0;
 
@@ -118,7 +128,7 @@
 @utility type-figure {
   font-family: var(--up-font-heading);
   font-size: 2rem; /* 32px */
-  font-weight: 300;
+  font-weight: 350;
   line-height: 1;
   letter-spacing: 0;
   font-variant-numeric: lining-nums;
@@ -143,11 +153,21 @@
   text-transform: uppercase;
 }
 
+/* Text wordmark "UNIQUE PLACES" – placeholder until the logo is available as SVG */
+@utility type-wordmark {
+  font-family: var(--up-font-heading);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 /* Navigation labels ("GUIDE", "STAY", "EXPLORE") */
 @utility type-nav {
   font-family: var(--up-font-heading);
   font-size: 0.6875rem; /* 11px */
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -157,7 +177,7 @@
 @utility type-lead {
   font-family: var(--up-font-body);
   font-size: 0.9375rem; /* 15px */
-  font-weight: 300;
+  font-weight: 400; /* Regular for mobile readability (reference looks lighter) */
   line-height: 1.3;
   letter-spacing: 0;
 }
@@ -187,6 +207,33 @@
   font-weight: 400;
   line-height: 1.4;
   letter-spacing: 0.005em;
+}
+
+/* Safe areas (viewport-fit=cover): keep content clear of notch and home indicator */
+@utility safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@utility safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+}
+
+/* Space reserved at the end of a page so content never hides behind the bottom navigation */
+@utility clear-bottom-nav {
+  padding-bottom: calc(var(--up-nav-height) + env(safe-area-inset-bottom, 0px) + 2rem);
+}
+
+/*
+ * Renders the Greek capital lambda (Λ, used in property names such as ΛLPILΛ) from
+ * Josefin Sans' own "V", mirrored vertically – Josefin Sans has no Greek glyphs.
+ * Axis: 0.36em above the baseline (= 0.39em from the top of a 1em box, ascent 0.75em),
+ * which puts the feet on the baseline and the apex at the height of "A" (0.76em).
+ */
+@utility glyph-flip-y {
+  display: inline-block;
+  line-height: 1;
+  transform: scaleY(-1);
+  transform-origin: 50% 0.39em;
 }
 
 /* Legibility overlay for text on photography */

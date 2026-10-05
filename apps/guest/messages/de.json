@@ -1,0 +1,41 @@
+{
+  "brand": {
+    "name": "UNIQUE PLACES"
+  },
+  "metadata": {
+    "stay": "Dein Aufenthalt",
+    "guide": "Guide",
+    "extras": "Extras",
+    "explore": "Entdecken"
+  },
+  "navigation": {
+    "label": "Hauptnavigation",
+    "guide": "Guide",
+    "stay": "Stay",
+    "explore": "Explore"
+  },
+  "stay": {
+    "notifications": "Benachrichtigungen",
+    "greeting": "Hallo {firstName},<br></br>schön, dass Du da bist.",
+    "subline": "Wir wünschen Dir einen wunderbaren Aufenthalt.",
+    "infoHeading": "Dein Aufenthalt auf einen Blick",
+    "checkOut": "Check-out",
+    "onlineCheckIn": "Online-Check-in",
+    "checkInCta": "Jetzt erledigen",
+    "stepsRemaining": "{count, plural, one {Noch # Schritt} other {Noch # Schritte}}",
+    "apartment": "Apartment",
+    "apartmentDetails": "Details ansehen",
+    "apartmentDetailsContext": "zum Apartment {name}",
+    "cardsHeading": "Für Deinen Aufenthalt"
+  },
+  "placeholder": {
+    "eyebrow": "Bald verfügbar",
+    "body": "Dieser Bereich wird gerade für Dich vorbereitet.",
+    "back": "Zurück zu Deinem Aufenthalt"
+  },
+  "notFound": {
+    "title": "Diese Seite gibt es nicht.",
+    "body": "Vielleicht hat sich die Adresse geändert.",
+    "back": "Zu Deinem Aufenthalt"
+  }
+}

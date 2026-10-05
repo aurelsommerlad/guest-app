@@ -1,0 +1,70 @@
+import { type LocalizedText, type StayPhase } from "@up/core";
+import { type StaticImageData } from "next/image";
+
+import { type Locale } from "../../i18n/routing";
+
+/**
+ * Source data of a stay – the shape the screen needs from the backend.
+ * Today it comes from a mock; later from our database (Apaleo projection).
+ */
+export type StaySource = {
+  guest: { firstName: string };
+  property: {
+    /** Display name exactly as branded, e.g. "HØV", "ΛLPILΛ". */
+    name: string;
+    /** Plain pronounceable name for screen readers, e.g. "Alpila". */
+    spokenName: string;
+    location: string;
+    timeZone: string;
+  };
+  unit: { name: string };
+  reservation: {
+    /** ISO 8601 instants with offset. */
+    checkInAt: string;
+    checkOutAt: string;
+    onlineCheckIn: { status: "open" | "completed"; stepsRemaining: number };
+  };
+  cards: readonly StayCardSource[];
+};
+
+export type StayCardSource = {
+  id: "guide" | "extras" | "explore";
+  /** Locale-less app path, e.g. "/guide". */
+  href: string;
+  title: LocalizedText;
+  subtitle: LocalizedText;
+  image: ImageAsset;
+};
+
+/** A photo. Static imports today, storage URLs (string) later. */
+export type ImageAsset = {
+  src: StaticImageData | string;
+  /** Describes the photo where it carries meaning; card photos are decorative. */
+  alt: LocalizedText;
+  /** CSS object-position, to keep the subject in frame when cropped. */
+  focus?: string;
+};
+
+/** Everything the STAY home screen renders – resolved for one locale. */
+export type StayViewModel = {
+  locale: Locale;
+  phase: StayPhase;
+  guest: { firstName: string };
+  property: { name: string; spokenName: string; location: string };
+  unit: { name: string; href: string };
+  /** The primary tile changes with the stay phase. */
+  status: StayStatus;
+  cards: readonly StayCard[];
+};
+
+export type StayStatus =
+  | { kind: "check-out"; time: string; date: string; dateTime: string }
+  | { kind: "online-check-in"; stepsRemaining: number; href: string };
+
+export type StayCard = {
+  id: StayCardSource["id"];
+  href: string;
+  title: string;
+  subtitle: string;
+  image: { src: StaticImageData | string; alt: string; focus?: string };
+};

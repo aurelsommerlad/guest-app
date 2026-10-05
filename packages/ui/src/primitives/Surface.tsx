@@ -7,8 +7,8 @@ export const surfaceTones = {
   card: "bg-surface text-text",
   /** Chalk white – list cards, elevated content on sand. */
   raised: "bg-surface-raised text-text",
-  /** Sage – the characteristic accent area. Text on it must be large or use action colors. */
-  accent: "bg-surface-accent text-text-inverse",
+  /** Sage – the characteristic accent area, with AA-compliant on-accent text. */
+  accent: "bg-surface-accent text-on-accent",
   /** Ink – rare, high-emphasis surfaces. */
   inverse: "bg-surface-inverse text-text-inverse",
   /** No fill, hairline border. */

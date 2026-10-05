@@ -5,7 +5,7 @@ Pilotkunde und erster Tenant: **UNIQUE PLACES**. Ziel-Domain: **`stay.unique-pla
 
 > Dies ist **nicht** die bestehende Extras-App (`extras.unique-places.com`). Sie bleibt unverändert und wird zunächst nur verlinkt.
 
-**Status:** Phase 1 – Design System. Es gibt noch keine fachliche Funktionalität. Design Lab: `/dev/ui` (nur local und staging).
+**Status:** Phase 2 – STAY-Startscreen mit Mock-Daten unter `/de/stay` (bzw. `/en/stay`). Noch keine Anbindung an Datenbank, Apaleo oder Gastzugang. Design Lab: `/dev/ui` (nur local und staging).
 
 ## Schnellstart
 
@@ -14,7 +14,7 @@ Voraussetzungen: Node.js ≥ 22.12 (siehe `.nvmrc`), pnpm 10 (`corepack enable`)
 ```bash
 pnpm install
 cp apps/guest/.env.example apps/guest/.env.local
-pnpm dev                      # http://localhost:3000 · Health: /api/health
+pnpm dev                      # http://localhost:3000 → /de/stay · Design Lab: /dev/ui · Health: /api/health
 ```
 
 ## Befehle

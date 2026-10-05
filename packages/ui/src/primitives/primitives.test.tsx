@@ -83,9 +83,7 @@ describe("Surface", () => {
     expect(markup).not.toContain("shadow");
   });
 
-  it("uses inverse text on the sage accent surface", () => {
-    expect(html(<Surface tone="accent">x</Surface>)).toContain(
-      "bg-surface-accent text-text-inverse",
-    );
+  it("uses AA-compliant on-accent text on the sage accent surface", () => {
+    expect(html(<Surface tone="accent">x</Surface>)).toContain("bg-surface-accent text-on-accent");
   });
 });

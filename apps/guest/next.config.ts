@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from "next/constants";
+import createNextIntlPlugin from "next-intl/plugin";
 
 import { validateServerEnv } from "./src/env/schema";
 
@@ -13,11 +14,15 @@ const securityHeaders = [
   // A full Content-Security-Policy (nonce-based) follows in the hardening phase.
 ];
 
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
 const baseConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Workspace packages ship TypeScript sources and are compiled by Next.js.
   transpilePackages: ["@up/core", "@up/ui"],
+  // Until guest access exists, the app entry points to the default-locale stay screen.
+  redirects: () => Promise.resolve([{ source: "/", destination: "/de/stay", permanent: false }]),
   headers: () =>
     Promise.resolve([
       {
@@ -42,5 +47,5 @@ export default function nextConfig(phase: string): NextConfig {
   if (isBuildOrDev && process.env.SKIP_ENV_VALIDATION !== "1") {
     validateServerEnv(process.env);
   }
-  return baseConfig;
+  return withNextIntl(baseConfig);
 }

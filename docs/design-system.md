@@ -1,6 +1,6 @@
 # Design System – UNIQUE PLACES Guest App
 
-Stand: Phase 1. Dieses Dokument beschreibt das aus den Referenzen abgeleitete Designsystem und wie es technisch umgesetzt ist.
+Stand: Phase 2 (STAY-Startscreen). Dieses Dokument beschreibt das aus den Referenzen abgeleitete Designsystem und wie es technisch umgesetzt ist.
 
 > **Die Referenzbilder bleiben die visuelle Source of Truth.** Dieses Dokument übersetzt sie in reproduzierbare Regeln.
 >
@@ -59,7 +59,8 @@ Komponenten verwenden ausschließlich semantische Tokens:
 | `surface-inverse`  | text           | Hervorgehobener Navigationspunkt (STAY-Kreis)              |
 | `text`             | text           | Primärtext                                                 |
 | `text-muted`       | text-secondary | Subline, Datum, Ort im Header                              |
-| `text-inverse`     | white          | Text auf Fotos, Salbei, Ink                                |
+| `text-inverse`     | white          | Text auf Fotos und Ink                                     |
+| `on-accent`        | text           | Text auf der Salbei-Fläche (AA, Phase 2)                   |
 | `action`           | primary-dark   | Gefüllte Buttons, Links, kleine Akzenttexte                |
 | `on-action`        | white          | Text auf `action`                                          |
 | `border`           | border         | Linien                                                     |
@@ -98,19 +99,19 @@ Im Design Lab werden diese Werte live aus den Tokens berechnet.
 
 Die Werte gelten bei 390 pt Breite. „Kalibriert“ ist der Messwert aus Zeilenbreite bzw. Versalhöhe.
 
-| Rolle (`type-*`) | Familie | Größe / Zeilenhöhe            | Gewicht      | Tracking  | Kalibriert                                | Einsatz                                    | Status         |
-| ---------------- | ------- | ----------------------------- | ------------ | --------- | ----------------------------------------- | ------------------------------------------ | -------------- |
-| `display`        | Josefin | **32 / 36** (Desktop 44 / 48) | Light 300    | 0         | 30,8–31,5 px · Zeilenabstand 36 pt        | Begrüßung                                  | A (Desktop: B) |
-| `title-lg`       | Josefin | 28 / 32 (Desktop 36)          | Light 300    | 0         | –                                         | Seitentitel (SECONDARY)                    | B              |
-| `title`          | Josefin | **17 / 22**                   | Regular 400  | 0         | 17,0 px                                   | Titel auf Foto-Cards                       | A              |
-| `figure`         | Josefin | **32 / 32**                   | Light 300    | 0         | 28,5–34,1 px (Ø 31)                       | „10:00“, „ROS“                             | A              |
-| `brand`          | Josefin | **13 / 18**                   | Regular 400  | +0,02 em  | 12,2–13,0 px                              | „HØV · Altusried“                          | A              |
-| `eyebrow`        | Josefin | **11 / 14**, VERSAL           | Regular 400  | +0,03 em  | Versalhöhe 8 pt → 11 px                   | „CHECK-OUT“, „APARTMENT“                   | A/C (siehe C3) |
-| `nav`            | Josefin | 11 / 13, VERSAL               | SemiBold 600 | +0,04 em  | Versalhöhe 7,4 pt → 10,3 px               | GUIDE · STAY · EXPLORE                     | A              |
-| `lead`           | Roboto  | **15 / 19,5**                 | Light 300    | 0         | 14,4–14,5 px · Zeilenabstand 18,7 pt      | Subline unter Begrüßung                    | A              |
-| `body`           | Roboto  | 15 / 22,5                     | Regular 400  | 0         | –                                         | Fließtext, Artikel                         | B              |
-| `small`          | Roboto  | **14 / 19,6**                 | Regular 400  | 0         | 12,6–12,7 px Breite; Versalhöhe → 13,6 px | Datum, „Details ansehen“, Card-Sublines    | A/B (siehe C4) |
-| `caption`        | Roboto  | 13 / 18                       | Regular 400  | +0,005 em | –                                         | Listenbeschreibungen, Hinweise (SECONDARY) | B              |
+| Rolle (`type-*`) | Familie | Größe / Zeilenhöhe            | Gewicht               | Tracking  | Kalibriert                                | Einsatz                                    | Status         |
+| ---------------- | ------- | ----------------------------- | --------------------- | --------- | ----------------------------------------- | ------------------------------------------ | -------------- |
+| `display`        | Josefin | **32 / 36** (Desktop 44 / 48) | 350 (Phase 2)         | 0         | 30,8–31,5 px · Zeilenabstand 36 pt        | Begrüßung                                  | A (Desktop: B) |
+| `title-lg`       | Josefin | 28 / 32 (Desktop 36)          | 350 (Phase 2)         | 0         | –                                         | Seitentitel (SECONDARY)                    | B              |
+| `title`          | Josefin | **17 / 22**                   | Regular 400           | 0         | 17,0 px                                   | Titel auf Foto-Cards                       | A              |
+| `figure`         | Josefin | **32 / 32**                   | 350 (Phase 2)         | 0         | 28,5–34,1 px (Ø 31)                       | „10:00“, „ROS“                             | A              |
+| `brand`          | Josefin | **13 / 18**                   | Regular 400           | +0,02 em  | 12,2–13,0 px                              | „HØV · Altusried“                          | A              |
+| `eyebrow`        | Josefin | **11 / 14**, VERSAL           | Regular 400           | +0,03 em  | Versalhöhe 8 pt → 11 px                   | „CHECK-OUT“, „APARTMENT“                   | A/C (siehe C3) |
+| `nav`            | Josefin | 11 / 13, VERSAL               | SemiBold 600          | +0,04 em  | Versalhöhe 7,4 pt → 10,3 px               | GUIDE · STAY · EXPLORE                     | A              |
+| `lead`           | Roboto  | **15 / 19,5**                 | Regular 400 (Phase 2) | 0         | 14,4–14,5 px · Zeilenabstand 18,7 pt      | Subline unter Begrüßung                    | A              |
+| `body`           | Roboto  | 15 / 22,5                     | Regular 400           | 0         | –                                         | Fließtext, Artikel                         | B              |
+| `small`          | Roboto  | **14 / 19,6**                 | Regular 400           | 0         | 12,6–12,7 px Breite; Versalhöhe → 13,6 px | Datum, „Details ansehen“, Card-Sublines    | A/B (siehe C4) |
+| `caption`        | Roboto  | 13 / 18                       | Regular 400           | +0,005 em | –                                         | Listenbeschreibungen, Hinweise (SECONDARY) | B              |
 
 **Weitere Regeln:**
 
@@ -254,17 +255,39 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
 3. **Tenant-Branding:** Tenants überschreiben `--up-*`-Variablen auf `:root`. Utilities referenzieren die Variablen direkt (`@theme inline`), deshalb ist kein Build nötig.
 4. **Komponenten statt Nachbauten.** Neue Screens verwenden die Primitives und Komponenten aus `@up/ui`.
 
-## 12. Offene Punkte (C)
+## 12. Änderungen in Phase 2 (STAY-Startscreen)
 
-| Nr. | Thema                                                     | Befund                                                                                                                                                                                           | Vorschlag                                                                                                                                                                                        |
-| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| C1  | **Weiß auf Salbei** (Apartment-Tile)                      | Kontrast 3,0 : 1, nur für große Schrift ausreichend. „ROS“ (32 px) ist ok. „APARTMENT“ (11 px) und „Details ansehen“ (14 px) erreichen AA nicht.                                                 | a) bewusst wie Referenz belassen (dekorative Fläche, Inhalt redundant über Detailseite); b) Tile-Fläche minimal dunkler; c) kleine Texte auf der Tile in Ink statt Weiß. **Entscheidung nötig.** |
-| C2  | **Logo „UP“**                                             | Monogramm im Header ist ein eigenes Wortbild, keine Schrift.                                                                                                                                     | Logo als SVG bereitstellen (auch für Favicon und App-Icon). Bis dahin zeigt das Lab nur Text.                                                                                                    |
-| C3  | **Josefin-Versalien sind breiter als die Mockup-Schrift** | Das Mockup ist offensichtlich nicht in Josefin Sans gesetzt. Labels und Navigation lassen sich nicht gleichzeitig in Breite _und_ Höhe treffen: Bei Breitengleichheit wären sie nur 8–9 px groß. | Versalhöhe priorisiert (11 px). Labels wirken dadurch etwas weiter gesperrt als im Mockup. Alternativ Labels in Roboto, was aber vom Markenschrift-Prinzip abweicht.                             |
-| C4  | **Sekundärtext-Größe**                                    | Breitenmessung ergibt ca. 12,5–13 px, Versalhöhe ca. 13,6 px.                                                                                                                                    | 14 px gewählt (Lesbarkeit). Card-Sublines in der Referenz eher 13 px.                                                                                                                            |
-| C5  | **Cards breiter als Textspalte**                          | Foto-Cards ragen ca. 2–3 pt über die Textkante hinaus (18 vs. 21 pt Rand).                                                                                                                       | Bewusst einheitliche 20-px-Kante. Bei Wunsch Cards um 2 px verbreitern.                                                                                                                          |
-| C6  | **Griechisches Λ in „ΛLPILΛ“**                            | Josefin Sans hat **keine griechischen Glyphen**. Das Λ fällt in eine Systemschrift zurück.                                                                                                       | Property-Wortmarken als SVG, oder „ALPILA“ als `spokenName` und das Λ als gestaltete Grafik.                                                                                                     |
-| C7  | **Navigation: wandernder Kreis?**                         | PRIMARY: Kreis immer auf STAY (zentrale Startseite). SECONDARY: Kreis markiert die jeweils aktive Seite (GUIDE bzw. EXPLORE).                                                                    | Empfehlung: Kreis markiert den aktiven Bereich, STAY bleibt mittig. Desktop: Top-Navigation.                                                                                                     |
-| C8  | **Gewicht der Subline**                                   | Referenz wirkt Light (300). Bei 15 px und 5,0 : 1 Kontrast ist das lesbar, aber zart.                                                                                                            | Light 300 übernommen. Bei Lesbarkeitsbedenken auf 400 wechseln (eine Zeile im Token).                                                                                                            |
-| C9  | **Platzhalterfotos**                                      | Das Design Lab nutzt Ausschnitte aus dem Referenz-Mockup in niedriger Auflösung.                                                                                                                 | Echte Fotografie je Property (Hoch- und Querformat) für Phase 2 bereitstellen.                                                                                                                   |
-| C10 | **Favicon / Theme Color**                                 | Noch nicht vorhanden (404 auf `/favicon.ico`).                                                                                                                                                   | Kommt mit dem Logo (C2).                                                                                                                                                                         |
+- **Typografie:**
+  - Display, Title Large und Figure in Josefin **350** statt 300. Die Begrüßung wirkt damit nicht mehr filigran und bleibt auf dem Smartphone gut lesbar.
+  - Lead (Subline) in Roboto **400**.
+  - Display auf Smartphones unter 360 px **28 px**, damit die Zeilenumbrüche der Begrüßung erhalten bleiben.
+  - Neue Rolle `type-wordmark`, Navigations-Labels in 500.
+- **Neuer Farb-Token `on-accent`:** Text auf der Salbei-Fläche, Ink (AA). Siehe C1.
+- **Neue Layout-Tokens:**
+  - Breakpoint `xs` (360 px)
+  - `nav-bar` (72 px), `nav-active` (64 px), `container-nav` (416 px)
+  - Utilities `safe-top`, `safe-bottom`, `clear-bottom-nav`, `glyph-flip-y`
+- **Foto-Overlay sanfter:** 55 % bzw. 22 % statt 62 % bzw. 28 %.
+- **Neue Komponenten in `@up/ui`:**
+  - `InfoTile`
+  - `EditorialImageCard`, ganze Card ein Link, Bild als Slot, Mindesthöhe 128 px
+  - `BottomNavigation`, aktiver Kreis an jeder Position, Safe Area
+  - `PropertyName`
+  - Komponenten mit Links nehmen eine `linkComponent` entgegen (Router-unabhängig).
+- **Tablet:** dieselbe Komposition wie auf dem Smartphone, in einer zentrierten Spalte von max. 640 px.
+- **Desktop:** Begrüßung neben den Tiles, drei Foto-Cards in 4 : 3, max. 1040 px.
+
+## 13. Offene Punkte (C)
+
+| Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
+| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | **Weiß auf Salbei** (Apartment-Tile)                      | ✅ **Phase 2 entschieden:** Text auf Salbei nutzt den Token `on-accent` = Ink (5,7 : 1, AA). Weiß (3,0 : 1) ist mit einer Zeile in `tokens.css` wiederherstellbar, dann aber nur AA für große Schrift.                          | –                                                                                                                                                                    |
+| C2  | **Logo „UP“**                                             | Monogramm im Header ist ein eigenes Wortbild. Phase 2: Text-Wordmark „UNIQUE PLACES“ (`type-wordmark`) als Platzhalter.                                                                                                         | Logo als SVG bereitstellen; ersetzt die Wordmark in `StayHeader` (auch Favicon und App-Icon).                                                                        |
+| C3  | **Josefin-Versalien sind breiter als die Mockup-Schrift** | Das Mockup ist offensichtlich nicht in Josefin Sans gesetzt. Labels und Navigation lassen sich nicht gleichzeitig in Breite _und_ Höhe treffen: Bei Breitengleichheit wären sie nur 8–9 px groß.                                | Versalhöhe priorisiert (11 px). Labels wirken dadurch etwas weiter gesperrt als im Mockup. Alternativ Labels in Roboto, was aber vom Markenschrift-Prinzip abweicht. |
+| C4  | **Sekundärtext-Größe**                                    | Breitenmessung ergibt ca. 12,5–13 px, Versalhöhe ca. 13,6 px.                                                                                                                                                                   | 14 px gewählt (Lesbarkeit). Card-Sublines in der Referenz eher 13 px.                                                                                                |
+| C5  | **Cards breiter als Textspalte**                          | Foto-Cards ragen ca. 2–3 pt über die Textkante hinaus (18 vs. 21 pt Rand).                                                                                                                                                      | Bewusst einheitliche 20-px-Kante. Bei Wunsch Cards um 2 px verbreitern.                                                                                              |
+| C6  | **Griechisches Λ in „ΛLPILΛ“**                            | ✅ **Phase 2 gelöst:** `PropertyName` zeichnet das Λ aus Josefins eigenem „V“, vertikal gespiegelt (`glyph-flip-y`, Achse 0,36 em über der Grundlinie). Screenreader erhalten den `spokenName`.                                 | –                                                                                                                                                                    |
+| C7  | **Navigation: wandernder Kreis**                          | ✅ **Phase 2:** Der Kreis gehört zum aktiven Punkt und wandert mit (GUIDE · STAY · EXPLORE). Offen: „EXPLORE“ füllt den 64-px-Kreis bis an den Rand; Desktop nutzt vorerst dieselbe Bottom Navigation (zentriert, max. 416 px). | Mit Umsetzung von EXPLORE die Label-Laufweite im aktiven Kreis prüfen; Top-Navigation für Desktop später entscheiden.                                                |
+| C8  | **Gewicht der Subline**                                   | ✅ **Phase 2:** Roboto 400 statt 300 (Lesbarkeit auf dem Smartphone).                                                                                                                                                           | –                                                                                                                                                                    |
+| C9  | **Platzhalterfotos**                                      | Phase 2: Ausschnitte aus dem Referenz-Mockup, mit Lanczos ×3 hochskaliert (`src/mocks/stay/images`). Externe Bildquellen sind aus der Entwicklungsumgebung nicht erreichbar.                                                    | Echte Fotografie je Property (Quer- und Hochformat, mind. 2000 px breit). Austausch nur in den Mock-/später DB-Daten, keine Komponentenänderung.                     |
+| C10 | **Favicon / Theme Color**                                 | Noch nicht vorhanden (404 auf `/favicon.ico`).                                                                                                                                                                                  | Kommt mit dem Logo (C2).                                                                                                                                             |

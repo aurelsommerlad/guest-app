@@ -31,7 +31,13 @@
 
   --up-color-text: var(--up-base-ink);
   --up-color-text-muted: var(--up-base-stone);
-  --up-color-text-inverse: var(--up-base-chalk); /* on photos, ink and accent surfaces */
+  --up-color-text-inverse: var(--up-base-chalk); /* on photos and ink surfaces */
+  /*
+   * Text on the sage accent surface. Chalk on sage reaches only 3.0:1 (large text only),
+   * so small labels and links use ink (5.7:1, WCAG AA). Switch to --up-base-chalk here to
+   * restore the white-on-sage look of the reference (then AA for large text only).
+   */
+  --up-color-on-accent: var(--up-base-ink);
 
   --up-color-action: var(--up-base-sage-dark); /* buttons, links, small accent text */
   --up-color-action-hover: color-mix(in srgb, var(--up-base-sage-dark) 88%, var(--up-base-ink));
@@ -43,9 +49,9 @@
   /* Legibility gradient for text on photography (bottom-up darkening). */
   --up-overlay-image: linear-gradient(
     to top,
-    color-mix(in srgb, var(--up-base-ink) 62%, transparent) 0%,
-    color-mix(in srgb, var(--up-base-ink) 28%, transparent) 45%,
-    transparent 75%
+    color-mix(in srgb, var(--up-base-ink) 55%, transparent) 0%,
+    color-mix(in srgb, var(--up-base-ink) 22%, transparent) 45%,
+    transparent 72%
   );
 
   /* ── Typography ─────────────────────────────────────────────── */
@@ -77,4 +83,6 @@
   --up-width-content: 1040px; /* standard pages */
   --up-width-wide: 1280px; /* lab, wide grids */
   --up-touch-target: 44px;
+  --up-nav-height: 72px; /* bottom navigation, excluding the safe-area inset */
+  --up-nav-active-size: 64px; /* circular active navigation item */
 }

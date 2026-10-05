@@ -1,5 +1,6 @@
 import {
   baseColorTokens,
+  BottomNavigation,
   Button,
   buttonStyles,
   Container,
@@ -7,6 +8,8 @@ import {
   Icon,
   IconButton,
   iconNames,
+  InfoTile,
+  PropertyName,
   radiusTokens,
   semanticColorTokens,
   spacingScale,
@@ -39,6 +42,20 @@ const sections = [
   ["icons", "Icons"],
   ["bild", "Bild & Text"],
   ["breiten", "Breiten"],
+  ["stay", "Stay-Bausteine"],
+] as const;
+
+const navItems = [
+  { id: "guide", href: "#stay", label: "Guide", icon: "map" },
+  { id: "stay", href: "#stay", label: "Stay", icon: "bed" },
+  { id: "explore", href: "#stay", label: "Explore", icon: "compass" },
+] as const;
+
+const properties = [
+  { name: "HØV", spokenName: "Höv" },
+  { name: "HŪSLE", spokenName: "Husle" },
+  { name: "ΛLPILΛ", spokenName: "Alpila" },
+  { name: "LÆKE", spokenName: "Laeke" },
 ] as const;
 
 /** Sample copy per type style, taken from the PRIMARY DESIGN REFERENCE where possible. */
@@ -471,6 +488,86 @@ export default function DesignLabPage() {
             Kompositionsprobe aus Primitives zur Prüfung von Rhythmus und Proportionen – nicht die
             STAY-Seite.
           </Text>
+        </Stack>
+      </LabSection>
+
+      {/* ── 10 Stay-Bausteine ─────────────────────────────── */}
+      <LabSection
+        id="stay"
+        index="10"
+        title="Stay-Bausteine"
+        intro="Die Komponenten des STAY-Startscreens in ihren Zuständen. Der echte Screen liegt unter /de/stay."
+      >
+        <Stack gap={12}>
+          <Stack gap={4}>
+            <Heading level={3}>Info-Tiles: während und vor dem Aufenthalt</Heading>
+            <dl className="grid max-w-96 grid-cols-2 gap-2">
+              <InfoTile icon="calendar" label="Check-out" value="10:00" meta="31. August 2026" />
+              <InfoTile
+                icon="home"
+                label="Apartment"
+                value="ROS"
+                tone="accent"
+                meta="Details ansehen →"
+              />
+            </dl>
+            <dl className="grid max-w-96 grid-cols-2 gap-2">
+              <InfoTile
+                icon="check"
+                label="Online-Check-in"
+                value="Jetzt erledigen"
+                valueStyle="text"
+                meta="Noch 2 Schritte →"
+              />
+              <InfoTile
+                icon="home"
+                label="Apartment"
+                value="ROS"
+                tone="accent"
+                meta="Details ansehen →"
+              />
+            </dl>
+          </Stack>
+
+          <Stack gap={4}>
+            <Heading level={3}>Property-Namen</Heading>
+            <ul className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              {properties.map((property) => (
+                <li key={property.name}>
+                  <Surface className="flex min-h-28 flex-col justify-between gap-4">
+                    <span className="type-display">
+                      <PropertyName name={property.name} spokenName={property.spokenName} />
+                    </span>
+                    <span className="type-brand">
+                      <PropertyName name={property.name} spokenName={property.spokenName} />
+                      <span className="px-1.5 text-text-muted">·</span>
+                      <span className="text-text-muted">{property.spokenName}</span>
+                    </span>
+                  </Surface>
+                </li>
+              ))}
+            </ul>
+            <Text variant="caption" tone="muted">
+              Ø, Ū und Æ kommen direkt aus Josefin Sans. Das Λ wird aus Josefins eigenem „V“
+              gespiegelt, weil die Schrift keine griechischen Zeichen enthält. Screenreader hören
+              den aussprechbaren Namen.
+            </Text>
+          </Stack>
+
+          <Stack gap={4}>
+            <Heading level={3}>Navigation: der Kreis wandert mit</Heading>
+            <div className="grid gap-2 md:grid-cols-3">
+              {navItems.map((item) => (
+                <div key={item.id} className="overflow-hidden rounded-card border border-border">
+                  <BottomNavigation
+                    items={navItems}
+                    activeId={item.id}
+                    label={`Beispiel: ${item.label} aktiv`}
+                  />
+                </div>
+              ))}
+            </div>
+          </Stack>
         </Stack>
       </LabSection>
     </main>

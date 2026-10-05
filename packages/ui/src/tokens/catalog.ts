@@ -97,14 +97,14 @@ export const typeStyles: readonly TypeStyle[] = [
     utility: "type-display",
     name: "Display",
     family: "Josefin Sans",
-    spec: "32 / 36 · Light 300 · Desktop 44 / 48",
+    spec: "32 / 36 · 350 · < 360 px: 28 · Desktop 44 / 48",
     usage: "Begrüßung, Seiten-Hero",
   },
   {
     utility: "type-title-lg",
     name: "Title Large",
     family: "Josefin Sans",
-    spec: "28 / 32 · Light 300 · Desktop 36 / 41",
+    spec: "28 / 32 · 350 · Desktop 36 / 41",
     usage: "Seitentitel (Guide, WLAN, Check-out)",
   },
   {
@@ -118,7 +118,7 @@ export const typeStyles: readonly TypeStyle[] = [
     utility: "type-figure",
     name: "Figure",
     family: "Josefin Sans",
-    spec: "32 / 32 · Light 300",
+    spec: "32 / 32 · 350",
     usage: "Kennzahlen in Tiles (10:00, ROS)",
   },
   {
@@ -139,14 +139,14 @@ export const typeStyles: readonly TypeStyle[] = [
     utility: "type-nav",
     name: "Navigation",
     family: "Josefin Sans",
-    spec: "11 / 13 · SemiBold 600 · +0.04em · VERSAL",
+    spec: "11 / 13 · Medium 500 · +0.04em · VERSAL",
     usage: "GUIDE · STAY · EXPLORE",
   },
   {
     utility: "type-lead",
     name: "Lead",
     family: "Roboto",
-    spec: "15 / 19.5 · Light 300",
+    spec: "15 / 19.5 · Regular 400",
     usage: "Subline unter der Begrüßung",
   },
   {

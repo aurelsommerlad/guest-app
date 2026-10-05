@@ -3,6 +3,8 @@ packages:
   - "packages/*"
 
 # Dependency install scripts are blocked by default (supply-chain protection).
-# unrs-resolver ships prebuilt binaries via optional deps; its script is not needed.
+# These packages ship prebuilt binaries via optional deps; their scripts are not needed.
 ignoredBuiltDependencies:
+  - "@parcel/watcher"
+  - "@swc/core"
   - unrs-resolver
