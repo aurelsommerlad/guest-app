@@ -1,0 +1,41 @@
+/* Global base styles. Kept minimal: tokens do the work. */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--up-color-background);
+    color: var(--up-color-text);
+    font-family: var(--up-font-body);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--up-color-surface-accent);
+    color: var(--up-color-text-inverse);
+  }
+
+  /* One consistent, clearly visible focus indicator for keyboard users. */
+  :focus-visible {
+    outline: 2px solid var(--up-color-focus);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -1,6 +1,7 @@
-import { baseConfig, boundaries } from "@up/config/eslint/base";
+import { boundaries } from "@up/config/eslint/base";
+import { reactConfig } from "@up/config/eslint/react";
 
-export default baseConfig({
+export default reactConfig({
   tsconfigRootDir: import.meta.dirname,
   forbiddenImports: boundaries.ui,
 });

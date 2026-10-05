@@ -17,12 +17,18 @@ const baseConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Workspace packages ship TypeScript sources and are compiled by Next.js.
-  transpilePackages: ["@up/core"],
+  transpilePackages: ["@up/core", "@up/ui"],
   headers: () =>
     Promise.resolve([
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        // The Design Lab embeds this specimen in same-origin iframes (local/staging only).
+        // Later entries override earlier ones for the same header key.
+        source: "/dev/ui/frame",
+        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
       },
     ]),
 };

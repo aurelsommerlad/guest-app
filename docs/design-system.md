@@ -1,0 +1,270 @@
+# Design System – UNIQUE PLACES Guest App
+
+Stand: Phase 1. Dieses Dokument beschreibt das aus den Referenzen abgeleitete Designsystem und wie es technisch umgesetzt ist.
+
+> **Die Referenzbilder bleiben die visuelle Source of Truth.** Dieses Dokument übersetzt sie in reproduzierbare Regeln.
+>
+> - **PRIMARY DESIGN REFERENCE:** STAY-Startseite (`01_PRIMARY_stay-design-reference.png`). Sie ist verbindlich für Gesamtwirkung, Typografie, Weißraum, Proportionen, Cards, Bildwirkung, Navigation, Farbe, Radien und Ruhe.
+> - **SECONDARY DESIGN REFERENCE:** weitere Seitentypen (`02_SECONDARY_guest-app-pages-reference.png`). Sie dient nur zur Ableitung wiederkehrender Muster. Bei Widerspruch gilt die PRIMARY.
+
+**Kennzeichnung**
+
+- **A**: klar aus der Referenz erkennbar bzw. gemessen
+- **B**: technisch sinnvoll abgeleitet
+- **C**: noch nicht eindeutig entschieden, Entscheidung nötig
+
+## 0. Methode
+
+- **Maßstab:** Der Screen-Inhalt der PRIMARY-Referenz ist ca. 604 px breit und entspricht einem iPhone mit **390 pt**. 1 pt entspricht ca. 1,55 px im Bild. Alle Werte unten sind in CSS-px bzw. pt bei 390 pt Breite angegeben.
+- **Typografie objektiv kalibriert:**
+  1. Josefin Sans und Roboto wurden im Browser gerendert.
+  2. Gesucht war die Schriftgröße, bei der die Zeilenbreite der Referenz entspricht.
+  3. Gegenprüfung über die gemessene Versalhöhe (Josefin Sans: Versalhöhe 0,72 em, x-Höhe 0,40 em; Roboto: 0,71 em bzw. 0,54 em).
+- **Gegenprobe:** Die Kompositionsprobe im Design Lab (`/dev/ui/frame`) wurde bei 390 px Breite neben die Referenz gelegt und Messpunkt für Messpunkt abgeglichen (Abstände, Höhen, Zeilenumbrüche).
+
+## 1. Gesamtwirkung (A)
+
+- Ruhige, warme, papierartige Fläche (Sand) mit sehr wenigen UI-Elementen.
+- Hierarchie entsteht über **Größe und Weißraum**, nicht über Farbe, Linien oder Schatten.
+- Eine große, leichte Headline trägt die Seite. Alles Weitere ordnet sich darunter in **wenigen, klaren Blöcken** an: Info-Tiles, dann Foto-Cards.
+- Fotografie ist großformatig und warm, mit Text direkt im Bild.
+- Akzentfarbe Salbei erscheint **einmal** als Fläche (Apartment-Tile), nicht als Dekoration überall.
+- **Kein** Dashboard-Raster, keine Badges, keine Trennlinien zwischen Inhalten, keine Card-Schatten.
+
+## 2. Farben
+
+### Basiswerte (A, vorgegeben)
+
+| Token            | Wert      | Rolle                                             |
+| ---------------- | --------- | ------------------------------------------------- |
+| `background`     | `#F8F6F1` | Seitenhintergrund                                 |
+| `card`           | `#F1EDE4` | Tiles, Cards                                      |
+| `primary`        | `#87977E` | Charakteristische Farbfläche: groß, dekorativ     |
+| `primary-dark`   | `#52664E` | Buttons, Links, kleine Akzenttexte                |
+| `text`           | `#171817` | Headlines, Fließtext                              |
+| `text-secondary` | `#6B6A65` | Sekundärtext (von `#74736E` abgedunkelt, WCAG AA) |
+| `border`         | `#E4E0D8` | Haarlinien, Outline-Buttons                       |
+| `white`          | `#FAFAF7` | Text auf Fotos und Akzentflächen, gehobene Cards  |
+
+### Semantische Rollen (B)
+
+Komponenten verwenden ausschließlich semantische Tokens:
+
+| Semantischer Token | Basis          | Einsatz                                                    |
+| ------------------ | -------------- | ---------------------------------------------------------- |
+| `background`       | background     | Seite                                                      |
+| `surface`          | card           | Standard-Tile/-Card (Check-out-Tile)                       |
+| `surface-raised`   | white          | Listen-Cards (SECONDARY), Kreis-Buttons auf Fotos          |
+| `surface-accent`   | primary        | Salbei-Fläche (Apartment-Tile, Check-out-Abschluss)        |
+| `surface-inverse`  | text           | Hervorgehobener Navigationspunkt (STAY-Kreis)              |
+| `text`             | text           | Primärtext                                                 |
+| `text-muted`       | text-secondary | Subline, Datum, Ort im Header                              |
+| `text-inverse`     | white          | Text auf Fotos, Salbei, Ink                                |
+| `action`           | primary-dark   | Gefüllte Buttons, Links, kleine Akzenttexte                |
+| `on-action`        | white          | Text auf `action`                                          |
+| `border`           | border         | Linien                                                     |
+| `focus`            | primary-dark   | Fokusrahmen                                                |
+| Overlay            | text (Alpha)   | Verlauf auf Fotos (unten ca. 62 %, Mitte ca. 28 %, oben 0) |
+
+### Kontraste (gemessen, WCAG 2.2)
+
+| Paar                                 | Verhältnis | Ergebnis              |
+| ------------------------------------ | ---------- | --------------------- |
+| text / background                    | 16,5       | AAA                   |
+| text-secondary / background          | 5,0        | AA                    |
+| text-secondary / card                | 4,6        | AA                    |
+| primary-dark / background            | 5,8        | AA                    |
+| white / primary-dark (Button)        | 6,0        | AA                    |
+| white / ink (STAY)                   | 17,0       | AAA                   |
+| **white / primary (Apartment-Tile)** | **3,0**    | **nur große Schrift** |
+
+Im Design Lab werden diese Werte live aus den Tokens berechnet.
+
+## 3. Typografie
+
+**Familien (A, vorgegeben):**
+
+- Josefin Sans für Headlines, Labels, Kennzahlen und Navigation.
+- Roboto für Fließtext und Sekundärinformationen.
+
+**Implementierung (B):**
+
+- `next/font/google`, selbst gehostet: Die Dateien werden beim Build geladen und von der eigenen Domain ausgeliefert. Es gibt keine Requests an Google zur Laufzeit (DSGVO).
+- Beide Schriften als **Variable Fonts**, also eine Datei pro Subset für alle Gewichte.
+- Subsets `latin` und `latin-ext` (z. B. „Ū“ in HŪSLE).
+- `display: swap`, CSS-Variablen `--font-josefin` und `--font-roboto`.
+
+### Typo-Rollen
+
+Die Werte gelten bei 390 pt Breite. „Kalibriert“ ist der Messwert aus Zeilenbreite bzw. Versalhöhe.
+
+| Rolle (`type-*`) | Familie | Größe / Zeilenhöhe            | Gewicht      | Tracking  | Kalibriert                                | Einsatz                                    | Status         |
+| ---------------- | ------- | ----------------------------- | ------------ | --------- | ----------------------------------------- | ------------------------------------------ | -------------- |
+| `display`        | Josefin | **32 / 36** (Desktop 44 / 48) | Light 300    | 0         | 30,8–31,5 px · Zeilenabstand 36 pt        | Begrüßung                                  | A (Desktop: B) |
+| `title-lg`       | Josefin | 28 / 32 (Desktop 36)          | Light 300    | 0         | –                                         | Seitentitel (SECONDARY)                    | B              |
+| `title`          | Josefin | **17 / 22**                   | Regular 400  | 0         | 17,0 px                                   | Titel auf Foto-Cards                       | A              |
+| `figure`         | Josefin | **32 / 32**                   | Light 300    | 0         | 28,5–34,1 px (Ø 31)                       | „10:00“, „ROS“                             | A              |
+| `brand`          | Josefin | **13 / 18**                   | Regular 400  | +0,02 em  | 12,2–13,0 px                              | „HØV · Altusried“                          | A              |
+| `eyebrow`        | Josefin | **11 / 14**, VERSAL           | Regular 400  | +0,03 em  | Versalhöhe 8 pt → 11 px                   | „CHECK-OUT“, „APARTMENT“                   | A/C (siehe C3) |
+| `nav`            | Josefin | 11 / 13, VERSAL               | SemiBold 600 | +0,04 em  | Versalhöhe 7,4 pt → 10,3 px               | GUIDE · STAY · EXPLORE                     | A              |
+| `lead`           | Roboto  | **15 / 19,5**                 | Light 300    | 0         | 14,4–14,5 px · Zeilenabstand 18,7 pt      | Subline unter Begrüßung                    | A              |
+| `body`           | Roboto  | 15 / 22,5                     | Regular 400  | 0         | –                                         | Fließtext, Artikel                         | B              |
+| `small`          | Roboto  | **14 / 19,6**                 | Regular 400  | 0         | 12,6–12,7 px Breite; Versalhöhe → 13,6 px | Datum, „Details ansehen“, Card-Sublines    | A/B (siehe C4) |
+| `caption`        | Roboto  | 13 / 18                       | Regular 400  | +0,005 em | –                                         | Listenbeschreibungen, Hinweise (SECONDARY) | B              |
+
+**Weitere Regeln:**
+
+- **Leichte Headlines (A):** Groß und Light, nie fett. Die Hierarchie entsteht über Größe.
+- **Ausbalancierter Umbruch (A):** Die Referenz bricht Sublines in gleich lange Zeilen um („Wir wünschen Dir einen / wunderbaren Aufenthalt.“, „Mach Deinen Aufenthalt / noch schöner“). Umgesetzt mit `text-wrap: balance` und einer begrenzten Breite.
+- **Headlines (B):** Headings nutzen ebenfalls `text-balance`.
+- **Mindestgrößen (B):** Fließ- und Sekundärtext nicht unter 13 px, Versal-Labels nicht unter 11 px.
+
+## 4. Abstände & Raster
+
+Gemessen in pt bei 390 pt Breite:
+
+| Abstand                                    | Referenz           | Token / Umsetzung                       | Status |
+| ------------------------------------------ | ------------------ | --------------------------------------- | ------ |
+| Horizontaler Seitenrand (Text)             | ~21 pt             | `gutter` = 20 px                        | A      |
+| Horizontaler Seitenrand (Cards)            | ~18 pt             | Cards sitzen auf demselben 20-px-Raster | B (C5) |
+| Header-Mitte → Versalhöhe Begrüßung        | ~52 pt             | Header 44 px + `mt-6` (24 px)           | A      |
+| Begrüßung → Subline                        | ~12 pt Box-Abstand | `gap-3` (12 px)                         | A      |
+| Subline → Tiles                            | ~20 pt             | `gap-5` (20 px)                         | A      |
+| Tile ↔ Tile                                | ~8 pt              | `gap-2` (8 px)                          | A      |
+| Tiles → erste Foto-Card                    | ~12 pt             | `mt-3` (12 px)                          | A      |
+| Foto-Card ↔ Foto-Card                      | ~8 pt              | `gap-2` (8 px)                          | A      |
+| Tile-Innenabstand                          | ~16 pt             | `p-4` (16 px)                           | A      |
+| Text auf Foto: links / unten               | ~15 / ~12 pt       | `px-4` / `pb-3`                         | A      |
+| Label-Zeile → Kennzahl → Datum (Baselines) | 26 / 23 pt         | `gap-4` / `gap-1`                       | A      |
+
+**Prinzip (A):** Großzügig nach außen, eng innerhalb von Gruppen. Zusammengehörige Elemente liegen 8 px auseinander, Gruppen 12 px, Abschnitte 24–40 px und mehr.
+
+**Raster (B):**
+
+- 4-px-Basisraster (`--spacing: 0.25rem`).
+- Benannte Layout-Abstände: `gutter` 20 px, `gutter-md` 32 px, `gutter-lg` 48 px, `touch` 44 px.
+
+## 5. Formen
+
+| Element                 | Referenz          | Token                               | Status    |
+| ----------------------- | ----------------- | ----------------------------------- | --------- |
+| Tile-/Card-Radius       | ~9 pt             | `radius-card` = 10 px               | A (±1 px) |
+| Bildradius (Foto-Cards) | ~8–9 pt           | `radius-card` = 10 px               | A         |
+| Kreis-Button auf Foto   | Ø ~37 pt          | 40 px sichtbar, 44 px Trefferfläche | A/B       |
+| STAY-Hervorhebung       | Ø ~63 pt          | `radius-full`, 64 px (Phase 2)      | A         |
+| Button-Radius           | (SECONDARY) klein | `radius-control` = 8 px             | B/C       |
+| Badges/Chips            | (SECONDARY)       | `radius-sm` = 6 px                  | B         |
+
+### Bild-Seitenverhältnisse (A)
+
+| Element             | Maße         | Verhältnis | Token                           |
+| ------------------- | ------------ | ---------- | ------------------------------- |
+| Erste Foto-Card     | 353 × 161 pt | 2,2 : 1    | `aspect-photo-feature` = 11 : 5 |
+| Folgende Foto-Cards | 353 × 127 pt | 2,75 : 1   | `aspect-photo` = 11 : 4         |
+| Desktop             | –            | 4 : 3      | einheitlich (B)                 |
+
+### Schatten (A)
+
+- **Bewusster Verzicht.** Tiles, Cards und Bilder sind flach und trennen sich nur durch Tonwert.
+- `shadow-float` ist nur für künftige schwebende Elemente (Sheets, Toasts) definiert (B).
+
+### Bewegung (B)
+
+- Dauern: 150 ms (Hover), 250 ms (Standard), 400 ms (Übergänge).
+- Easing: ruhiges Ease-out `cubic-bezier(0.22, 1, 0.36, 1)`.
+- `prefers-reduced-motion` deaktiviert Animationen systemweit.
+
+## 6. Icons
+
+- **Stil (A):** feine Outline-Icons, ca. 1,5 px Strich, runde Enden, ohne Füllung.
+- **Größen (A/B):** 16 px (Tiles, Inline-Pfeile), 20 px (Header, Kreis-Buttons), 24 px (Navigation, STAY).
+- **Glyphengröße (A):** Das Glyph füllt ca. 75–85 % der Box. Gemessen: Tile-Icons ca. 15 pt, Glocke ca. 19 pt, Navigation ca. 21–25 pt, Pfeil im Kreis ca. 12 pt.
+- **Umsetzung (B):** Eigenes, kuratiertes Set als Inline-SVG in `@up/ui`, Geometrie von Lucide (ISC-Lizenz, Hinweis liegt bei). Keine Icon-Library als Dependency.
+- **Barrierefreiheit:** Dekorative Icons sind `aria-hidden`. Icon-only-Buttons verlangen ein `label`.
+
+## 7. Navigation (A, umgesetzt in Phase 2)
+
+- Drei Punkte: GUIDE | **STAY** | EXPLORE. STAY sitzt mittig in einem dunklen Kreis (Ink, Ø ca. 64 px) mit Icon und Label in Weiß.
+- GUIDE und EXPLORE: Outline-Icon (ca. 22 px) über einem Versal-Label (`type-nav`), Farbe Ink.
+- Navigationsleiste auf `background`, mit Haarlinie (`border`) nach oben. Keine Schatten, keine Unterstreichung.
+- Safe Area (Home-Indicator) wird freigehalten.
+
+## 8. Komponenten-Muster
+
+- **Info-Tile (A, Phase 2):**
+  - `surface` bzw. `surface-accent`, Radius `card`, Padding 16 px.
+  - Zeile aus Icon und `eyebrow`, darunter `figure`, darunter `small` (muted bzw. inverse).
+  - Zwei Tiles stehen nebeneinander, mit 8 px Abstand.
+- **Foto-Card (A, Phase 2):**
+  - Vollflächiges Bild mit Verlauf von unten.
+  - `title` und `small` unten links in `text-inverse`.
+  - Kreis-Pfeil-Button (`surface-raised`) unten rechts.
+  - Die ganze Card ist klickbar.
+- **Text-Link (A):** „Details ansehen →“ als `small` mit 16-px-Pfeil. Erbt die Farbe vom Kontext.
+- **Aus SECONDARY abgeleitete Muster (B, spätere Phasen):**
+  - Listen-Cards (Icon, Titel, Beschreibung, Chevron) auf `surface-raised`
+  - Zurück-Pfeil mit Breadcrumb
+  - Seitentitel in `title-lg` mit Lead
+  - Info-Hinweis-Box auf `surface`
+  - Primär- und Outline-Button nebeneinander
+  - runder „+“-Button (`action`)
+  - Abschluss-Banner auf `surface-accent`
+
+## 9. Responsive-Prinzipien (B)
+
+- **Mobile First.** Die Referenz definiert Smartphone (390 pt).
+- **Breakpoints:** `sm` 480 · `md` 768 (Tablet) · `lg` 1024 (Desktop) · `xl` 1280.
+- **Tablet:** Der Seitenrand wächst auf 32 px. Foto-Cards stehen teilweise zweispaltig.
+- **Desktop:** eigenes editoriales Layout, keine gestreckte Mobile-Ansicht.
+  - Inhaltsbreite max. 1040 px (`content`), Seitenrand 48 px.
+  - Begrüßung (7/12) neben Tiles (5/12).
+  - Foto-Cards dreispaltig in 4 : 3.
+  - Display-Schrift 44 px.
+- **Lesbreite für Artikel:** max. 640 px (`reading`).
+- **Navigation auf Desktop:** voraussichtlich Top-Navigation (C7).
+
+## 10. Barrierefreiheit (B)
+
+- Semantik und Optik sind getrennt: `Heading level` bestimmt die Gliederung, `variant` die Optik.
+- Einheitlicher, gut sichtbarer Fokusrahmen (2 px `focus`, 3 px Abstand) über `:focus-visible`.
+- Touch-Ziele mindestens 44 × 44 px. Kleine Kreise vergrößern ihre Trefferfläche unsichtbar.
+- Kontraste nach Abschnitt 2. Weiß auf Salbei nur für große Schrift (siehe C1).
+- `prefers-reduced-motion` wird respektiert.
+
+## 11. Technische Umsetzung
+
+```
+packages/ui/src/styles/tokens.css   ← EINZIGE Stelle mit Rohwerten (Farben, Radien, Breiten …)
+packages/ui/src/styles/theme.css    ← Tailwind v4 @theme: Default-Theme komplett entfernt,
+                                       nur Tokens als Utilities; Typo-Rollen als @utility type-*
+packages/ui/src/styles/base.css     ← Body, Fokus, Selection, reduced motion
+packages/ui/src/tokens/catalog.ts   ← Namen & Rollen für Dokumentation (keine Werte)
+packages/ui/src/primitives/         ← Text, Heading, Container, Stack, Surface
+packages/ui/src/icons/              ← Icon + kuratiertes SVG-Set
+packages/ui/src/components/         ← Button (+ buttonStyles), IconButton
+apps/guest/src/app/fonts.ts         ← next/font (Josefin Sans, Roboto)
+apps/guest/src/app/dev/ui           ← Design Lab (nur local/staging)
+scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values außerhalb der Tokens
+```
+
+**Regeln:**
+
+1. **Keine Rohwerte in Komponenten.** HEX-Farben und Tailwind-Arbitrary-Values (`bg-[#…]`, `p-[13px]`) bricht `pnpm lint` ab.
+2. **Nur Token-Utilities.** Das Tailwind-Default-Theme ist entfernt. `bg-red-500` oder `text-xl` erzeugen daher nichts.
+3. **Tenant-Branding:** Tenants überschreiben `--up-*`-Variablen auf `:root`. Utilities referenzieren die Variablen direkt (`@theme inline`), deshalb ist kein Build nötig.
+4. **Komponenten statt Nachbauten.** Neue Screens verwenden die Primitives und Komponenten aus `@up/ui`.
+
+## 12. Offene Punkte (C)
+
+| Nr. | Thema                                                     | Befund                                                                                                                                                                                           | Vorschlag                                                                                                                                                                                        |
+| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| C1  | **Weiß auf Salbei** (Apartment-Tile)                      | Kontrast 3,0 : 1, nur für große Schrift ausreichend. „ROS“ (32 px) ist ok. „APARTMENT“ (11 px) und „Details ansehen“ (14 px) erreichen AA nicht.                                                 | a) bewusst wie Referenz belassen (dekorative Fläche, Inhalt redundant über Detailseite); b) Tile-Fläche minimal dunkler; c) kleine Texte auf der Tile in Ink statt Weiß. **Entscheidung nötig.** |
+| C2  | **Logo „UP“**                                             | Monogramm im Header ist ein eigenes Wortbild, keine Schrift.                                                                                                                                     | Logo als SVG bereitstellen (auch für Favicon und App-Icon). Bis dahin zeigt das Lab nur Text.                                                                                                    |
+| C3  | **Josefin-Versalien sind breiter als die Mockup-Schrift** | Das Mockup ist offensichtlich nicht in Josefin Sans gesetzt. Labels und Navigation lassen sich nicht gleichzeitig in Breite _und_ Höhe treffen: Bei Breitengleichheit wären sie nur 8–9 px groß. | Versalhöhe priorisiert (11 px). Labels wirken dadurch etwas weiter gesperrt als im Mockup. Alternativ Labels in Roboto, was aber vom Markenschrift-Prinzip abweicht.                             |
+| C4  | **Sekundärtext-Größe**                                    | Breitenmessung ergibt ca. 12,5–13 px, Versalhöhe ca. 13,6 px.                                                                                                                                    | 14 px gewählt (Lesbarkeit). Card-Sublines in der Referenz eher 13 px.                                                                                                                            |
+| C5  | **Cards breiter als Textspalte**                          | Foto-Cards ragen ca. 2–3 pt über die Textkante hinaus (18 vs. 21 pt Rand).                                                                                                                       | Bewusst einheitliche 20-px-Kante. Bei Wunsch Cards um 2 px verbreitern.                                                                                                                          |
+| C6  | **Griechisches Λ in „ΛLPILΛ“**                            | Josefin Sans hat **keine griechischen Glyphen**. Das Λ fällt in eine Systemschrift zurück.                                                                                                       | Property-Wortmarken als SVG, oder „ALPILA“ als `spokenName` und das Λ als gestaltete Grafik.                                                                                                     |
+| C7  | **Navigation: wandernder Kreis?**                         | PRIMARY: Kreis immer auf STAY (zentrale Startseite). SECONDARY: Kreis markiert die jeweils aktive Seite (GUIDE bzw. EXPLORE).                                                                    | Empfehlung: Kreis markiert den aktiven Bereich, STAY bleibt mittig. Desktop: Top-Navigation.                                                                                                     |
+| C8  | **Gewicht der Subline**                                   | Referenz wirkt Light (300). Bei 15 px und 5,0 : 1 Kontrast ist das lesbar, aber zart.                                                                                                            | Light 300 übernommen. Bei Lesbarkeitsbedenken auf 400 wechseln (eine Zeile im Token).                                                                                                            |
+| C9  | **Platzhalterfotos**                                      | Das Design Lab nutzt Ausschnitte aus dem Referenz-Mockup in niedriger Auflösung.                                                                                                                 | Echte Fotografie je Property (Hoch- und Querformat) für Phase 2 bereitstellen.                                                                                                                   |
+| C10 | **Favicon / Theme Color**                                 | Noch nicht vorhanden (404 auf `/favicon.ico`).                                                                                                                                                   | Kommt mit dem Logo (C2).                                                                                                                                                                         |

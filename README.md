@@ -5,7 +5,7 @@ Pilotkunde und erster Tenant: **UNIQUE PLACES**. Ziel-Domain: **`stay.unique-pla
 
 > Dies ist **nicht** die bestehende Extras-App (`extras.unique-places.com`). Sie bleibt unverändert und wird zunächst nur verlinkt.
 
-**Status:** Phase 0 – Foundation. Es gibt noch keine fachliche Funktionalität.
+**Status:** Phase 1 – Design System. Es gibt noch keine fachliche Funktionalität. Design Lab: `/dev/ui` (nur local und staging).
 
 ## Schnellstart
 
@@ -38,7 +38,7 @@ apps/
 packages/
   config/           Geteilte TypeScript- und ESLint-Konfiguration
   core/             Domain, Use Cases, Provider-Interfaces, Env-Validierung, Logger (framework-frei)
-  ui/               Design Tokens + Komponenten           (Phase 1)
+  ui/               Design Tokens, Primitives, Icons, Buttons
   db/               Drizzle-Schema, Repositories, Seeds   (Phase 3)
   integrations/     Provider-Adapter (Apaleo …)           (Phase 4)
 docs/
@@ -53,5 +53,6 @@ Abhängigkeitsregeln (per ESLint erzwungen):
 ## Dokumentation
 
 - [Architektur](docs/architecture.md)
+- [Design System](docs/design-system.md)
 - [Environments & Deployment](docs/environments.md)
 - [Architecture Decision Records](docs/adr/)

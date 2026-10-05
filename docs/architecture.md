@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 0 (Foundation). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 1 (Design System). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -186,6 +186,8 @@ interface Visibility {
 - Die Anrede („Du“) ist Teil der Messages bzw. des Contents, nicht des Codes.
 
 ## 11. Design System
+
+Details, Messwerte und offene Punkte: [design-system.md](design-system.md). Live-Ansicht: `/dev/ui` (nur local und staging).
 
 - `packages/ui/tokens` ist die einzige Stelle mit HEX-Werten. Es gibt Basiswerte und **semantische Tokens**, Komponenten nutzen nur die semantischen.
 - Tenant-Branding überschreibt CSS-Variablen serverseitig (Zod-validiert).

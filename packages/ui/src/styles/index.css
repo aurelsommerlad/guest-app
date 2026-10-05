@@ -1,0 +1,10 @@
+/*
+ * Entry point of the design system styles.
+ * Import AFTER `@import "tailwindcss";` in the app stylesheet.
+ */
+@import "./tokens.css";
+@import "./theme.css";
+@import "./base.css";
+
+/* Let Tailwind find utility classes used inside the UI package. */
+@source "../";

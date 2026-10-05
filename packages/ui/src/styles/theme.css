@@ -1,0 +1,195 @@
+/*
+ * Tailwind CSS v4 theme for UNIQUE PLACES.
+ *
+ * All default Tailwind values (palette, type scale, radii, shadows …) are removed,
+ * so only design-system tokens exist as utilities. `inline` makes utilities reference
+ * the --up-* custom properties directly, which keeps tenant overrides working at runtime.
+ */
+
+@theme inline {
+  --*: initial;
+
+  /* Breakpoints (mobile first) */
+  --breakpoint-sm: 30rem; /* 480px – large phones */
+  --breakpoint-md: 48rem; /* 768px – tablet */
+  --breakpoint-lg: 64rem; /* 1024px – desktop */
+  --breakpoint-xl: 80rem; /* 1280px – wide desktop */
+
+  /* Colors */
+  --color-background: var(--up-color-background);
+  --color-surface: var(--up-color-surface);
+  --color-surface-raised: var(--up-color-surface-raised);
+  --color-surface-accent: var(--up-color-surface-accent);
+  --color-surface-inverse: var(--up-color-surface-inverse);
+  --color-text: var(--up-color-text);
+  --color-text-muted: var(--up-color-text-muted);
+  --color-text-inverse: var(--up-color-text-inverse);
+  --color-action: var(--up-color-action);
+  --color-action-hover: var(--up-color-action-hover);
+  --color-on-action: var(--up-color-on-action);
+  --color-border: var(--up-color-border);
+  --color-focus: var(--up-color-focus);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* Font families */
+  --font-heading: var(--up-font-heading);
+  --font-body: var(--up-font-body);
+
+  /* Spacing: 4px grid (p-4 = 16px) plus named layout spacing */
+  --spacing: 0.25rem;
+  --spacing-gutter: var(--up-gutter);
+  --spacing-gutter-md: var(--up-gutter-md);
+  --spacing-gutter-lg: var(--up-gutter-lg);
+  --spacing-touch: var(--up-touch-target);
+
+  /* Container widths (max-w-reading …) */
+  --container-reading: var(--up-width-reading);
+  --container-content: var(--up-width-content);
+  --container-wide: var(--up-width-wide);
+
+  /* Aspect ratios (photo cards measured in the reference) */
+  --aspect-square: 1 / 1;
+  --aspect-landscape: 4 / 3;
+  --aspect-portrait: 4 / 5;
+  --aspect-photo-feature: 11 / 5; /* first photo card, ~2.2 : 1 */
+  --aspect-photo: 11 / 4; /* following photo cards, ~2.75 : 1 */
+
+  /* Radii */
+  --radius-sm: var(--up-radius-sm);
+  --radius-control: var(--up-radius-control);
+  --radius-card: var(--up-radius-card);
+  --radius-full: var(--up-radius-full);
+
+  /* Shadows */
+  --shadow-none: var(--up-shadow-none);
+  --shadow-float: var(--up-shadow-float);
+
+  /* Motion */
+  --ease-standard: var(--up-ease-standard);
+  --default-transition-duration: var(--up-duration-base);
+  --default-transition-timing-function: var(--up-ease-standard);
+}
+
+/*
+ * Typography styles – one utility per role, combining family, size, weight,
+ * line-height and tracking. Sizes are calibrated against the PRIMARY DESIGN
+ * REFERENCE at a 390pt viewport (see docs/design-system.md, "Typografie").
+ */
+
+/* Greeting / page hero ("Hallo Laura, schön, dass Du da bist.") */
+@utility type-display {
+  font-family: var(--up-font-heading);
+  font-size: 2rem; /* 32px */
+  font-weight: 300;
+  line-height: 1.125; /* 36px */
+  letter-spacing: 0;
+
+  /* Desktop: editorial scale-up (derived – the reference defines mobile only) */
+  @media (width >= 64rem) {
+    font-size: 2.75rem; /* 44px */
+    line-height: 1.1;
+  }
+}
+
+/* Page titles on sub pages (Guide, WLAN, Check-out) */
+@utility type-title-lg {
+  font-family: var(--up-font-heading);
+  font-size: 1.75rem; /* 28px */
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: 0;
+
+  @media (width >= 64rem) {
+    font-size: 2.25rem; /* 36px */
+  }
+}
+
+/* Card titles on photography ("Alles für Deinen Aufenthalt") */
+@utility type-title {
+  font-family: var(--up-font-heading);
+  font-size: 1.0625rem; /* 17px */
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+/* Key figures in tiles ("10:00", "ROS") */
+@utility type-figure {
+  font-family: var(--up-font-heading);
+  font-size: 2rem; /* 32px */
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: lining-nums;
+}
+
+/* Property name in the header ("HØV · Altusried") */
+@utility type-brand {
+  font-family: var(--up-font-heading);
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+
+/* Uppercase labels ("CHECK-OUT", "APARTMENT") */
+@utility type-eyebrow {
+  font-family: var(--up-font-heading);
+  font-size: 0.6875rem; /* 11px – cap height matches the reference */
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Navigation labels ("GUIDE", "STAY", "EXPLORE") */
+@utility type-nav {
+  font-family: var(--up-font-heading);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Sub-line under the greeting ("Wir wünschen Dir einen wunderbaren Aufenthalt.") */
+@utility type-lead {
+  font-family: var(--up-font-body);
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 300;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+/* Running text (articles, descriptions) */
+@utility type-body {
+  font-family: var(--up-font-body);
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+/* Secondary information ("31. August 2026", "Details ansehen", card sub-lines) */
+@utility type-small {
+  font-family: var(--up-font-body);
+  font-size: 0.875rem; /* 14px */
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+/* Fine print, list descriptions */
+@utility type-caption {
+  font-family: var(--up-font-body);
+  font-size: 0.8125rem; /* 13px */
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.005em;
+}
+
+/* Legibility overlay for text on photography */
+@utility overlay-image {
+  background-image: var(--up-overlay-image);
+}

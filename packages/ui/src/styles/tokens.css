@@ -1,0 +1,80 @@
+/*
+ * UNIQUE PLACES Design Tokens
+ *
+ * The ONLY place in the codebase where raw design values (colors, sizes) live.
+ * Derived from the PRIMARY DESIGN REFERENCE (STAY home screen), see docs/design-system.md.
+ *
+ * Layers:
+ *   1. Base tokens      --up-base-*  raw brand values
+ *   2. Semantic tokens  --up-*       roles used by components (may be overridden per tenant)
+ *
+ * Tenant branding later overrides semantic (or base) custom properties on :root.
+ */
+
+:root {
+  /* ── 1. Base colors ─────────────────────────────────────────── */
+  --up-base-sand: #f8f6f1; /* background */
+  --up-base-linen: #f1ede4; /* card */
+  --up-base-sage: #87977e; /* primary */
+  --up-base-sage-dark: #52664e; /* primary-dark */
+  --up-base-ink: #171817; /* text */
+  --up-base-stone: #6b6a65; /* text-secondary (darkened from #74736E for WCAG AA) */
+  --up-base-mist: #e4e0d8; /* border */
+  --up-base-chalk: #fafaf7; /* white */
+
+  /* ── 2. Semantic colors ─────────────────────────────────────── */
+  --up-color-background: var(--up-base-sand);
+  --up-color-surface: var(--up-base-linen); /* tiles, cards */
+  --up-color-surface-raised: var(--up-base-chalk); /* list cards, circular image buttons */
+  --up-color-surface-accent: var(--up-base-sage); /* characteristic sage area (large, decorative) */
+  --up-color-surface-inverse: var(--up-base-ink); /* highlighted nav item (STAY) */
+
+  --up-color-text: var(--up-base-ink);
+  --up-color-text-muted: var(--up-base-stone);
+  --up-color-text-inverse: var(--up-base-chalk); /* on photos, ink and accent surfaces */
+
+  --up-color-action: var(--up-base-sage-dark); /* buttons, links, small accent text */
+  --up-color-action-hover: color-mix(in srgb, var(--up-base-sage-dark) 88%, var(--up-base-ink));
+  --up-color-on-action: var(--up-base-chalk);
+
+  --up-color-border: var(--up-base-mist);
+  --up-color-focus: var(--up-base-sage-dark);
+
+  /* Legibility gradient for text on photography (bottom-up darkening). */
+  --up-overlay-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--up-base-ink) 62%, transparent) 0%,
+    color-mix(in srgb, var(--up-base-ink) 28%, transparent) 45%,
+    transparent 75%
+  );
+
+  /* ── Typography ─────────────────────────────────────────────── */
+  /* --font-josefin / --font-roboto are provided by next/font in the app. */
+  --up-font-heading: var(--font-josefin, "Josefin Sans"), ui-sans-serif, system-ui, sans-serif;
+  --up-font-body: var(--font-roboto, "Roboto"), ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Radii ──────────────────────────────────────────────────── */
+  --up-radius-sm: 6px; /* small chips, inline badges */
+  --up-radius-control: 8px; /* buttons, inputs */
+  --up-radius-card: 10px; /* tiles, cards, images */
+  --up-radius-full: 9999px; /* circular buttons, nav highlight */
+
+  /* ── Shadows (deliberately almost unused) ───────────────────── */
+  --up-shadow-none: none;
+  --up-shadow-float: 0 12px 32px -12px color-mix(in srgb, var(--up-base-ink) 18%, transparent);
+
+  /* ── Motion ─────────────────────────────────────────────────── */
+  --up-duration-fast: 150ms;
+  --up-duration-base: 250ms;
+  --up-duration-slow: 400ms;
+  --up-ease-standard: cubic-bezier(0.22, 1, 0.36, 1); /* calm ease-out */
+
+  /* ── Layout ─────────────────────────────────────────────────── */
+  --up-gutter: 20px; /* horizontal page margin, mobile */
+  --up-gutter-md: 32px; /* tablet */
+  --up-gutter-lg: 48px; /* desktop */
+  --up-width-reading: 640px; /* article text */
+  --up-width-content: 1040px; /* standard pages */
+  --up-width-wide: 1280px; /* lab, wide grids */
+  --up-touch-target: 44px;
+}
