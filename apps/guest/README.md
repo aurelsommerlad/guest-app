@@ -21,7 +21,9 @@ pnpm dev            # http://localhost:3000 → /de/stay
 
 - `src/app/[locale]`: root layout per locale (`<html lang>` from `next/root-params`), guest shell with bottom navigation
 - `src/features/stay`: view model (`model.ts`, `build-stay-view-model.ts`), data access (`get-stay.ts`), screen components
-- `src/mocks/stay`: mock stay and placeholder photos. Replace with real data and photos without touching components.
+- `src/features/guide`: GUIDE view models, resolver (content → locale), data access, block renderer
+- `src/components/GuestHeader.tsx`: `BrandHeader` (section start pages) and `BackHeader` (detail pages)
+- `src/mocks/stay`, `src/mocks/guide`: mock data and placeholder photos. Replace with real data and photos without touching components.
 - `src/i18n` + `messages/*.json`: next-intl (UI strings). Content translations live in the data (`LocalizedText`).
 - `src/env`: Zod-validated environment (`server.ts` server-only, `client.ts` public variables only)
 - `src/instrumentation.ts`: startup hook (env check, later error monitoring)

@@ -15,16 +15,18 @@ import stillLife from "./images/extras-still-life.webp";
 export const MOCK_NOW = new Date("2026-08-29T12:00:00+02:00");
 
 export const mockStay: StaySource = {
+  tenantId: "unique-places",
   guest: { firstName: "Laura" },
   property: {
+    id: "hov",
     name: "HØV",
     spokenName: "Höv",
     location: "Altusried",
     timeZone: "Europe/Berlin",
   },
-  unit: { name: "ROS" },
+  unit: { id: "ros", name: "ROS" },
   reservation: {
-    checkInAt: "2026-08-27T15:00:00+02:00",
+    checkInAt: "2026-08-27T16:00:00+02:00",
     checkOutAt: "2026-08-31T10:00:00+02:00",
     onlineCheckIn: { status: "completed", stepsRemaining: 0 },
   },

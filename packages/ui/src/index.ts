@@ -29,7 +29,9 @@ export {
   type BottomNavigationProps,
 } from "./components/BottomNavigation";
 export { EditorialImageCard, type EditorialImageCardProps } from "./components/EditorialImageCard";
+export { Callout, type CalloutProps } from "./components/Callout";
 export { InfoTile, type InfoTileProps, type InfoTileTone } from "./components/InfoTile";
+export { LinkList, type LinkListItem, type LinkListProps } from "./components/LinkList";
 export { type LinkComponent, type LinkComponentProps } from "./components/link";
 export { PropertyName, type PropertyNameProps } from "./components/PropertyName";
 

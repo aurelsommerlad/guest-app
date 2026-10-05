@@ -8,8 +8,10 @@ import { type Locale } from "../../i18n/routing";
  * Today it comes from a mock; later from our database (Apaleo projection).
  */
 export type StaySource = {
+  tenantId: string;
   guest: { firstName: string };
   property: {
+    id: string;
     /** Display name exactly as branded, e.g. "HØV", "ΛLPILΛ". */
     name: string;
     /** Plain pronounceable name for screen readers, e.g. "Alpila". */
@@ -17,7 +19,7 @@ export type StaySource = {
     location: string;
     timeZone: string;
   };
-  unit: { name: string };
+  unit: { id: string; name: string };
   reservation: {
     /** ISO 8601 instants with offset. */
     checkInAt: string;

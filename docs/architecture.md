@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 2 (STAY-Startscreen mit Mock-Daten). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 3 (GUIDE-Grundstruktur mit Mock-Daten). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -109,6 +109,8 @@ Tests: Integrationstests mit zwei Tenants (Phase 3) beweisen die Isolation.
 - Gast- und Admin-Sessions sind getrennt.
 
 ## 8. Content-Modell (GUIDE & EXPLORE)
+
+> **Ab Phase 3 implementiert:** Das GUIDE-Modell ist in [ADR 0007](adr/0007-guide-content-model.md) beschrieben und liegt in `packages/core/src/guide`. Die folgenden Abschnitte bleiben als Planungsgrundlage, die Details stehen im ADR.
 
 **Quelle:**
 
@@ -262,6 +264,8 @@ Für den Austausch der Datenquelle ändert sich nur `features/stay/get-stay.ts`.
 | 8     | **Hardening / Pilot**: Error-, Empty- und Loading-States, A11y-Audit, CSP, Performance, Production              |
 | 9     | **Einfacher Content-Editor** für GUIDE und EXPLORE (geschützt, ohne vollständige Admin-App)                     |
 | 10+   | Admin-App, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI                             |
+
+> \* Die Reihenfolge wurde angepasst: GUIDE (Struktur mit Mock-Daten) kommt vor Datenbank und Apaleo. Die übrigen Phasen verschieben sich entsprechend.
 
 ## 15. Abgrenzung
 

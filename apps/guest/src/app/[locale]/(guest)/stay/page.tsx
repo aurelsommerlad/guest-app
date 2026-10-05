@@ -4,9 +4,9 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { BrandHeader } from "../../../../components/GuestHeader";
 import { Greeting } from "../../../../features/stay/components/Greeting";
 import { StayCards } from "../../../../features/stay/components/StayCards";
-import { StayHeader } from "../../../../features/stay/components/StayHeader";
 import { StayInfoGrid } from "../../../../features/stay/components/StayInfoGrid";
 import { getStay } from "../../../../features/stay/get-stay";
 import { routing } from "../../../../i18n/routing";
@@ -32,7 +32,7 @@ export default async function StayPage({ params }: Props) {
     <div className="safe-top">
       {/* Tablet keeps the phone composition in a calm centered column; desktop gets its own grid. */}
       <Container width="content" className="md:max-w-reading lg:max-w-content lg:pt-10">
-        <StayHeader property={stay.property} />
+        <BrandHeader property={stay.property} />
 
         <main>
           <div className="mt-6 grid gap-5 lg:mt-16 lg:grid-cols-12 lg:items-end lg:gap-12">

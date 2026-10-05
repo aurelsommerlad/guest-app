@@ -1,6 +1,8 @@
 {
-  "brand": {
-    "name": "UNIQUE PLACES"
+  "header": {
+    "brand": "UNIQUE PLACES",
+    "notifications": "Notifications",
+    "backTo": "Back to"
   },
   "metadata": {
     "stay": "Your stay",
@@ -15,7 +17,6 @@
     "explore": "Explore"
   },
   "stay": {
-    "notifications": "Notifications",
     "greeting": "Hello {firstName},<br></br>lovely to have you here.",
     "subline": "We wish you a wonderful stay.",
     "infoHeading": "Your stay at a glance",
@@ -27,6 +28,14 @@
     "apartmentDetails": "View details",
     "apartmentDetailsContext": "for apartment {name}",
     "cardsHeading": "For your stay"
+  },
+  "guide": {
+    "eyebrow": "Guide",
+    "title": "Everything for your stay",
+    "intro": "Useful information about the house and your apartment – all in one place.",
+    "sectionsHeading": "Topics",
+    "comingSoon": "We are preparing the content for this section.",
+    "backLabel": "Guide"
   },
   "placeholder": {
     "eyebrow": "Coming soon",

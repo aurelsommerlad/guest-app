@@ -59,6 +59,7 @@
   --aspect-portrait: 4 / 5;
   --aspect-photo-feature: 11 / 5; /* first photo card, ~2.2 : 1 */
   --aspect-photo: 11 / 4; /* following photo cards, ~2.75 : 1 */
+  --aspect-hero: 3 / 2; /* hero image on guide detail pages (secondary reference) */
 
   /* Radii */
   --radius-sm: var(--up-radius-sm);

@@ -4,9 +4,16 @@ import { type StaySource } from "./model";
 import { buildStayViewModel } from "./build-stay-view-model";
 
 const source: StaySource = {
+  tenantId: "unique-places",
   guest: { firstName: "Laura" },
-  property: { name: "HØV", spokenName: "Höv", location: "Altusried", timeZone: "Europe/Berlin" },
-  unit: { name: "ROS" },
+  property: {
+    id: "hov",
+    name: "HØV",
+    spokenName: "Höv",
+    location: "Altusried",
+    timeZone: "Europe/Berlin",
+  },
+  unit: { id: "ros", name: "ROS" },
   reservation: {
     checkInAt: "2026-08-27T15:00:00+02:00",
     checkOutAt: "2026-08-31T10:00:00+02:00",

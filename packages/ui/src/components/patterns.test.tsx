@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 
 import { BottomNavigation } from "./BottomNavigation";
 import { EditorialImageCard } from "./EditorialImageCard";
+import { Callout } from "./Callout";
 import { InfoTile } from "./InfoTile";
+import { LinkList } from "./LinkList";
 import { PropertyName } from "./PropertyName";
 import { type LinkComponentProps } from "./link";
 
@@ -122,5 +124,45 @@ describe("PropertyName", () => {
   it("uses the spoken name for assistive technology when it differs", () => {
     const markup = renderToStaticMarkup(<PropertyName name="HØV" spokenName="Höv" />);
     expect(markup).toContain('<span class="sr-only">Höv</span>');
+  });
+});
+
+describe("LinkList", () => {
+  const listItems = [
+    {
+      id: "arrival",
+      href: "/de/guide/ankunft-parken",
+      title: "Ankunft & Parken",
+      description: "Anreise, Parken, Self-Check-in",
+      icon: "car",
+    },
+    { id: "wifi", href: "/de/guide/wlan", title: "WLAN", icon: "wifi" },
+  ] as const;
+
+  it("renders one link per item with a heading and decorative icons", () => {
+    const markup = renderToStaticMarkup(<LinkList items={listItems} />);
+    expect(markup.match(/<li/g)).toHaveLength(2);
+    expect(markup.match(/<a /g)).toHaveLength(2);
+    expect(markup).toContain('<h2 class="type-title text-text">Ankunft &amp; Parken</h2>');
+    expect(markup).toContain("Anreise, Parken, Self-Check-in");
+    expect(markup).not.toContain('role="img"');
+  });
+
+  it("uses hairlines instead of cards", () => {
+    const markup = renderToStaticMarkup(<LinkList items={listItems} headingLevel={3} />);
+    expect(markup).toContain("border-b border-border");
+    expect(markup).not.toContain("shadow");
+    expect(markup).toContain("<h3");
+  });
+});
+
+describe("Callout", () => {
+  it("is a complementary hint with optional title", () => {
+    const markup = renderToStaticMarkup(
+      <Callout title="Gut zu wissen">Folge der Beschilderung.</Callout>,
+    );
+    expect(markup).toMatch(/^<aside/);
+    expect(markup).toContain("Gut zu wissen");
+    expect(markup).toContain("bg-surface");
   });
 });

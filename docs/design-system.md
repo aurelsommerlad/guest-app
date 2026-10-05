@@ -1,6 +1,6 @@
 # Design System – UNIQUE PLACES Guest App
 
-Stand: Phase 2 (STAY-Startscreen). Dieses Dokument beschreibt das aus den Referenzen abgeleitete Designsystem und wie es technisch umgesetzt ist.
+Stand: Phase 3 (GUIDE). Dieses Dokument beschreibt das aus den Referenzen abgeleitete Designsystem und wie es technisch umgesetzt ist.
 
 > **Die Referenzbilder bleiben die visuelle Source of Truth.** Dieses Dokument übersetzt sie in reproduzierbare Regeln.
 >
@@ -277,7 +277,22 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
 - **Tablet:** dieselbe Komposition wie auf dem Smartphone, in einer zentrierten Spalte von max. 640 px.
 - **Desktop:** Begrüßung neben den Tiles, drei Foto-Cards in 4 : 3, max. 1040 px.
 
-## 13. Offene Punkte (C)
+## 13. Ergänzungen in Phase 3 (GUIDE)
+
+- **Header-System:**
+  - `BrandHeader` auf Bereichs-Startseiten (STAY, GUIDE): Wordmark, Property, Glocke. Auf STAY ist er pixelgleich zu Phase 2.
+  - `BackHeader` auf Detailseiten: „← Guide“ mit 44 px Trefferfläche, Glocke. Die Property wird hier nicht wiederholt.
+- **Seitenkopf:** dieselbe Abfolge wie auf STAY: Eyebrow, Display-Überschrift, Lead in `text-muted`, Abstand 24 px unter dem Header.
+- **`LinkList`** (`@up/ui`):
+  - Themenliste mit Outline-Icon (24 px), Titel (`type-title`), Beschreibung (`type-caption`) und Chevron
+  - Haarlinien statt Cards, Zeilenhöhe mindestens 64 px, Hover als ruhige Linen-Fläche
+- **`Callout`** (`@up/ui`): Hinweisfläche „Gut zu wissen“ auf `surface` mit Glühbirne und Eyebrow-Titel.
+- **Detailseiten:**
+  - Lesebreite max. 640 px, Titelbild 3 : 2 (`aspect-hero`) mit `radius-card`
+  - Blöcke im ruhigen Rhythmus: Zwischenüberschrift 32 px Abstand, Absatz 8 px, Liste zwischen Haarlinien, Hinweis 32 px
+- **Neue Icons:** car, plug, thermometer, trash, book-open, log-out, key, phone, mail.
+
+## 14. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

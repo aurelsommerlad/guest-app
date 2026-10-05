@@ -2,6 +2,7 @@ import {
   baseColorTokens,
   BottomNavigation,
   Button,
+  Callout,
   buttonStyles,
   Container,
   Heading,
@@ -9,6 +10,7 @@ import {
   IconButton,
   iconNames,
   InfoTile,
+  LinkList,
   PropertyName,
   radiusTokens,
   semanticColorTokens,
@@ -43,6 +45,25 @@ const sections = [
   ["bild", "Bild & Text"],
   ["breiten", "Breiten"],
   ["stay", "Stay-Bausteine"],
+  ["guide", "Guide-Bausteine"],
+] as const;
+
+const guideItems = [
+  {
+    id: "arrival",
+    href: "#guide",
+    title: "Ankunft & Parken",
+    description: "Anreise, Parken und Self-Check-in",
+    icon: "car",
+  },
+  { id: "wifi", href: "#guide", title: "WLAN", description: "Netzwerk und Passwort", icon: "wifi" },
+  {
+    id: "check-out",
+    href: "#guide",
+    title: "Check-out",
+    description: "Abreise und letzte Schritte",
+    icon: "log-out",
+  },
 ] as const;
 
 const navItems = [
@@ -568,6 +589,25 @@ export default function DesignLabPage() {
               ))}
             </div>
           </Stack>
+        </Stack>
+      </LabSection>
+
+      {/* ── 11 Guide-Bausteine ────────────────────────────── */}
+      <LabSection
+        id="guide"
+        index="11"
+        title="Guide-Bausteine"
+        intro="Ruhige Themenliste mit Haarlinien statt Cards und die Hinweisfläche „Gut zu wissen“. Der echte Bereich liegt unter /de/guide."
+      >
+        <Stack gap={10}>
+          <div className="max-w-reading">
+            <LinkList items={guideItems} headingLevel={3} />
+          </div>
+          <div className="max-w-reading">
+            <Callout title="Gut zu wissen">
+              Die Beschilderung vor Ort führt Dich zu Parkplatz und Eingang.
+            </Callout>
+          </div>
         </Stack>
       </LabSection>
     </main>
