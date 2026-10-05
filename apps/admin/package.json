@@ -1,0 +1,35 @@
+{
+  "name": "@up/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "UNIQUE PLACES Admin (admin.unique-places.com) – content and operations backend.",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "typecheck": "SKIP_ENV_VALIDATION=1 next typegen && tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "admin-user:create": "tsx scripts/admin-user.ts"
+  },
+  "dependencies": {
+    "@up/core": "workspace:*",
+    "@up/db": "workspace:*",
+    "@up/ui": "workspace:*",
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@up/config": "workspace:*",
+    "drizzle-orm": "^0.45.3",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15"
+  }
+}

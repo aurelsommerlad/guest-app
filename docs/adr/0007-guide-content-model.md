@@ -1,6 +1,6 @@
 # 0007 – GUIDE-Content-Modell
 
-**Status:** Akzeptiert (Phase 3). Implementiert in `packages/core/src/guide`, Mock-Daten in `apps/guest/src/mocks/guide`.
+**Status:** Akzeptiert (Phase 3). Implementiert in `packages/core/src/guide`. Ab Phase 9 liegen die Inhalte in der Datenbank und werden über die Admin App gepflegt, siehe [ADR 0013](0013-guide-content-management.md); die Mock-Daten sind nur noch lokale Fixtures.
 
 ## Kontext
 

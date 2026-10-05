@@ -19,7 +19,7 @@ async function loadArticle(params: Props["params"]) {
   // Sections depend on the guest's property/unit, so pages render per request;
   // unknown slugs (or a slug of another locale) are 404s.
   const context = await requireGuestContext(locale);
-  const article = getGuideArticle(context, locale, slug);
+  const article = await getGuideArticle(context, locale, slug);
   if (!article) notFound();
   return article;
 }

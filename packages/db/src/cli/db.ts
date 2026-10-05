@@ -4,6 +4,7 @@
  *   DATABASE_URL=… pnpm db:migrate --target local|staging|production [--confirm-production]
  *   DATABASE_URL=… pnpm db:seed    --target local|staging|production [--confirm-production]
  *                                  [--with-preview-fixtures]   (never in production)
+ *                                  [--with-guide-fixtures]     (local only)
  *
  * DATABASE_URL is read from the process environment only (no .env files are loaded),
  * so the operator always decides which database is used.
@@ -13,6 +14,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 import { createDatabase, describeDatabaseUrl } from "../client";
 import { MIGRATIONS_FOLDER } from "../migrations-folder";
+import { seedGuideFixtures } from "../seed/guide-fixtures";
 import { previewFixturesSeed } from "../seed/preview-fixtures";
 import { seedTenant } from "../seed/seed-tenant";
 import { uniquePlacesSeed } from "../seed/unique-places";
@@ -29,6 +31,11 @@ async function main(): Promise<void> {
   const withPreviewFixtures = args.includes("--with-preview-fixtures");
   if (withPreviewFixtures && options.target === "production") {
     throw new CliUsageError("--with-preview-fixtures is not allowed in production");
+  }
+  // Mock GUIDE content never leaves local databases (staging gets real content via admin).
+  const withGuideFixtures = args.includes("--with-guide-fixtures");
+  if (withGuideFixtures && options.target !== "local") {
+    throw new CliUsageError("--with-guide-fixtures is only allowed with --target local");
   }
   const url = process.env["DATABASE_URL"];
   if (!url) throw new CliUsageError("DATABASE_URL is not set");
@@ -50,6 +57,10 @@ async function main(): Promise<void> {
       if (withPreviewFixtures) {
         const fixtures = await seedTenant(db, previewFixturesSeed);
         console.log("✓ preview fixtures (Apaleo TEST) – rows written:", fixtures.written);
+      }
+      if (withGuideFixtures) {
+        const guide = await seedGuideFixtures(db, { tenantId: uniquePlacesSeed.tenant.id });
+        console.log("✓ GUIDE development fixtures (local only) – topics written:", guide.written);
       }
     }
   } finally {

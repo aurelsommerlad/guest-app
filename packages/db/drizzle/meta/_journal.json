@@ -29,6 +29,20 @@
       "when": 1791213933549,
       "tag": "0003_lock_data_api_all_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791239327654,
+      "tag": "0004_guide_content_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791239372671,
+      "tag": "0005_lock_data_api_guide_admin",
+      "breakpoints": true
     }
   ]
 }

@@ -318,7 +318,15 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
 - **Neue Seiten ohne Bottom-Navigation:** `/login` und `/link-invalid`. Sie bestehen aus Wortmarke, H1, Lead, Formular bzw. einer sekundären Aktion. Fehlermeldungen erscheinen ruhig auf der Leinen-Fläche (`bg-surface`) in einer `role="status"`-Region, ohne Warnfarben.
 - STAY, GUIDE und EXPLORE sind unverändert: Ein Pixelvergleich vorher/nachher bei 390 und 1440 px ergibt Diff 0.
 
-## 16. Offene Punkte (C)
+## 16. Ergänzungen in Phase 9 (Admin App, GUIDE aus der DB)
+
+- **Admin App** (`apps/admin`) nutzt dieselben Tokens, Fonts und Komponenten aus `@up/ui` (`Button`, `TextField`-Stil, Icons). Keine eigenen Farben, keine Hex-Werte und keine arbiträren Tailwind-Werte; der Token-Guard (`pnpm lint:tokens`) gilt auch für `apps/admin`.
+- **Flächen:** Seitenhintergrund Off-White, Hover und Hervorhebungen auf `surface` (Leinen), Aktionen in Salbei (`action`), Text in Ink. Trennungen über Haarlinien statt Schatten.
+- **Layout:** Desktop mit fester Seitennavigation (16 rem) und Inhaltsbereich, mobil gestapelt. Dichte und Typo bewusst ruhiger und kompakter als in der Guest App (`type-body`, `type-caption`, Eyebrows für Feldlabels).
+- **Status** als ruhige Badges mit Punkt: Veröffentlicht auf `surface-accent` (Salbei), Entwurf und Archiviert auf `surface` in `text-muted`, ohne Warnfarben. Meldungen in `role="status"`-Regionen auf `surface`.
+- **Guest App:** GUIDE ohne veröffentlichte Inhalte zeigt einen leeren Zustand mit kurzem Lead. Mit denselben Inhalten aus der Datenbank sind STAY, GUIDE und EXPLORE pixelgleich zu Phase 8 (Diff 0 bei 390 und 1440 px, DE/EN).
+
+## 17. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

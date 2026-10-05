@@ -16,5 +16,7 @@ Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue
 | 0010 | [Datenbank-Fundament](0010-database-foundation.md)               | Akzeptiert |
 | 0011 | [Sicherer Gastzugang](0011-guest-access.md)                      | Akzeptiert |
 | 0012 | [Zentraler Guest/Stay Context](0012-guest-context.md)            | Akzeptiert |
+| 0013 | [GUIDE-Content-Management](0013-guide-content-management.md)     | Akzeptiert |
+| 0014 | [Admin App und Admin-Auth](0014-admin-app-and-auth.md)           | Akzeptiert |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.

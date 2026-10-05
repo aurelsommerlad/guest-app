@@ -17,17 +17,48 @@ export {
   type VisibilityContext,
 } from "./content/visibility";
 export {
+  CONTENT_LOCALES,
   type ContentImage,
+  type ContentLocale,
   type ContentScope,
+  GUIDE_ICONS,
+  GUIDE_STATUSES,
   type GuideBlock,
+  type GuideContent,
+  type GuideEntry,
   type GuideIcon,
+  type GuideOverride,
   type GuideSection,
+  type GuideStatus,
+  type GuideTopic,
+  SOURCE_LOCALE,
+  type TranslationState,
+  type TranslationStatus,
 } from "./guide/guide-model";
 export {
   type GuideContext,
+  resolveGuideSections,
   scopeApplies,
-  selectGuideSections,
-} from "./guide/select-guide-sections";
+} from "./guide/resolve-guide-sections";
+export {
+  contentImageSchema,
+  guideBlockSchema,
+  guideContentSchema,
+  guideKeySchema,
+  guideStatusSchema,
+  guideTopicMetaSchema,
+  localizedSlugSchema,
+  localizedTextSchema,
+  optionalLocalizedTextSchema,
+  slugify,
+} from "./guide/guide-schema";
+export {
+  dummyPasswordHash,
+  hashPassword,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  verifyPassword,
+} from "./auth/password";
 export {
   PmsError,
   type PmsErrorKind,

@@ -168,3 +168,14 @@ describe("tenancy repository", () => {
     ).rejects.toThrow("Unsupported external entity type");
   });
 });
+
+describe("listPropertiesForTenant", () => {
+  it("lists only the tenant's properties", async () => {
+    const { listPropertiesForTenant } = await import("./tenancy-repository");
+    const ids = (await listPropertiesForTenant(db, uniquePlaces)).map((property) => property.id);
+    expect(ids.sort()).toEqual(["alpila", "hov", "huesle", "laeke"]);
+    expect((await listPropertiesForTenant(db, otherTenant)).map((property) => property.id)).toEqual(
+      ["other-hov"],
+    );
+  });
+});

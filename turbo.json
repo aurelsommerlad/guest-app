@@ -15,7 +15,10 @@
         "STAY_DATA_SOURCE",
         "APALEO_*",
         "DATABASE_URL",
-        "GUEST_*"
+        "GUEST_*",
+        "SUPABASE_*",
+        "GUIDE_MEDIA_BUCKET",
+        "ADMIN_*"
       ]
     },
     "typecheck": {

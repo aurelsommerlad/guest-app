@@ -7,8 +7,13 @@ export {
   describeDatabaseUrl,
 } from "./client";
 export {
+  ADMIN_USER_STATUSES,
+  adminSessions,
+  adminUsers,
   externalMappings,
+  GUIDE_ENTRY_KINDS,
   guestAccess,
+  guideSections,
   guestSessions,
   properties,
   rateLimitBuckets,
@@ -30,6 +35,34 @@ export {
 } from "./repositories/guest-access-repository";
 export { hitRateLimit } from "./repositories/rate-limit-repository";
 export {
+  createGuideOverride,
+  createGuideTopic,
+  deleteUnpublishedGuideEntry,
+  getGuideEntry,
+  type GuideEntryRecord,
+  listGuideEntriesForProperty,
+  listPublishedGuideEntries,
+  type NewGuideOverride,
+  type NewGuideTopic,
+  setGuideEntryStatus,
+  setGuideTopicOrder,
+  type TopicMetaUpdate,
+  updateGuideContent,
+  updateGuideTopicMeta,
+} from "./repositories/guide-repository";
+export {
+  type AdminUser,
+  type AdminUserWithHash,
+  countAdminUsers,
+  createAdminSession,
+  createAdminUser,
+  findAdminSessionByTokenHash,
+  findAdminUserByEmail,
+  normalizeAdminEmail,
+  recordAdminLogin,
+  revokeAdminSession,
+} from "./repositories/admin-repository";
+export {
   assertTarget as assertDatabaseTarget,
   CliUsageError,
   type CliOptions as DatabaseCliOptions,
@@ -43,9 +76,11 @@ export {
   getPropertyBySlug,
   getTenantBySlug,
   getUnitsForProperty,
+  listPropertiesForTenant,
   resolveExternalMapping,
 } from "./repositories/tenancy-repository";
 export { type TenantSeed, type TenantSeedInput, tenantSeedSchema } from "./seed/seed-data";
 export { SeedConflictError, type SeedResult, seedTenant } from "./seed/seed-tenant";
+export { guideFixtures, seedGuideFixtures } from "./seed/guide-fixtures";
 export { previewFixturesSeed } from "./seed/preview-fixtures";
 export { uniquePlacesSeed } from "./seed/unique-places";

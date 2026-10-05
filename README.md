@@ -5,7 +5,7 @@ Pilotkunde und erster Tenant: **UNIQUE PLACES**. Ziel-Domain: **`stay.unique-pla
 
 > Dies ist **nicht** die bestehende Extras-App (`extras.unique-places.com`). Sie bleibt unverändert und wird zunächst nur verlinkt.
 
-**Status:** Phase 8 – Zentraler Guest/Stay Context: STAY, GUIDE und EXPLORE beziehen Property, Unit und Reservierung aus derselben Guest Session ([ADR 0012](docs/adr/0012-guest-context.md)). Phase 7 – Sicherer Gastzugang: persönlicher Link (`/de/s/{token}`) und Login per Buchungsnummer + Nachname (`/de/login`) führen in dieselbe serverseitige Guest Session. STAY lädt damit die Reservierung des Gastes (Apaleo oder Mock). Ohne Session zeigt `/de/stay` im Modus `preview` weiter die Preview. Datenbank: Supabase PostgreSQL + Drizzle (Tenant → Property → Unit, External Mappings, Guest Access). GUIDE (`/de/guide`) und EXPLORE (`/de/explore`) laufen mit Mock-Inhalten. Design Lab: `/dev/ui` (nur local und staging).
+**Status:** Phase 9 – GUIDE-Content-Management: GUIDE liest veröffentlichte Inhalte aus der Datenbank; UNIQUE PLACES pflegt sie in der neuen Admin App (`apps/admin`, Login mit E-Mail + Passwort, Block-Editor DE/EN, Apartment-Varianten, Bilder in Supabase Storage; [ADR 0013](docs/adr/0013-guide-content-management.md), [ADR 0014](docs/adr/0014-admin-app-and-auth.md)). Phase 8 – Zentraler Guest/Stay Context: STAY, GUIDE und EXPLORE beziehen Property, Unit und Reservierung aus derselben Guest Session ([ADR 0012](docs/adr/0012-guest-context.md)). Phase 7 – Sicherer Gastzugang: persönlicher Link (`/de/s/{token}`) und Login per Buchungsnummer + Nachname (`/de/login`) führen in dieselbe serverseitige Guest Session. STAY lädt damit die Reservierung des Gastes (Apaleo oder Mock). Ohne Session zeigt `/de/stay` im Modus `preview` weiter die Preview. Datenbank: Supabase PostgreSQL + Drizzle (Tenant → Property → Unit, External Mappings, Guest Access). EXPLORE (`/de/explore`) läuft mit Mock-Inhalten. Design Lab: `/dev/ui` (nur local und staging).
 
 ## Schnellstart
 
@@ -15,6 +15,7 @@ Voraussetzungen: Node.js ≥ 22.12 (siehe `.nvmrc`), pnpm 10 (`corepack enable`)
 pnpm install
 cp apps/guest/.env.example apps/guest/.env.local
 pnpm dev                      # http://localhost:3000 → /de/stay · Design Lab: /dev/ui · Health: /api/health
+                              # Admin App: http://localhost:3001 (siehe apps/admin/README.md)
 ```
 
 ## Befehle
@@ -34,12 +35,14 @@ pnpm dev                      # http://localhost:3000 → /de/stay · Design Lab
 | `pnpm db:seed`             | Stammdaten UNIQUE PLACES idempotent einspielen         |
 | `pnpm guest-access:create` | Test-Gastzugang anlegen, Link einmalig ausgeben        |
 | `pnpm guest-access:revoke` | Gastzugänge einer Reservierung widerrufen              |
+| `pnpm admin-user:create`   | Admin-Konto anlegen (Passwort aus `ADMIN_PASSWORD`)    |
 
 ## Struktur
 
 ```
 apps/
   guest/            Next.js Guest App (App Router)
+  admin/            Next.js Admin App (GUIDE-Pflege), eigenes Vercel-Projekt
 packages/
   config/           Geteilte TypeScript- und ESLint-Konfiguration
   core/             Domain, Use Cases, Provider-Interfaces, Env-Validierung, Logger (framework-frei)

@@ -45,7 +45,7 @@ Details zu Schema, Isolation und RLS: [ADR 0010](adr/0010-database-foundation.md
 
 - **Zwei getrennte Supabase-Projekte:** `unique-places-guest-staging` und `unique-places-guest-production`, beide in der Region **Central EU (Frankfurt)**, passend zu Vercel `fra1`.
 - Preview- und Staging-Deployments nutzen nie die Production-Datenbank.
-- Supabase dient nur als Postgres. Supabase Auth, Storage und die Data API werden nicht genutzt.
+- Supabase dient als Postgres und (ab Phase 9) als Storage für GUIDE-Bilder. Supabase Auth und die Data API werden nicht genutzt; die deaktivierte Data API betrifft Storage nicht.
 - Die App verbindet sich serverseitig über den **Transaction Pooler** (Port 6543). Migrationen und Seed laufen über den **Session Pooler** (Port 5432). Beide sind IPv4-fähig.
 - `DATABASE_URL` ist nie `NEXT_PUBLIC_` und wird nie an den Browser ausgeliefert.
 
@@ -91,9 +91,39 @@ pnpm guest-access:revoke --target local --tenant unique-places --provider mock -
 
 Auf Staging mit einer Apaleo-Testreservierung: `--provider apaleo --reservation <id> --base-url https://staging.stay.unique-places.com`, dazu `APALEO_CLIENT_ID` und `APALEO_CLIENT_SECRET` in der Shell.
 
+## Admin App und GUIDE-Medien (Phase 9)
+
+Die Admin App (`apps/admin`, [ADR 0014](adr/0014-admin-app-and-auth.md)) ist ein eigenes Vercel-Projekt und nutzt pro Environment dieselbe Datenbank wie die Guest App.
+
+|         | local                   | staging                                       | production                |
+| ------- | ----------------------- | --------------------------------------------- | ------------------------- |
+| URL     | `http://localhost:3001` | eigene Staging-Domain bzw. Preview-Deploys    | `admin.unique-places.com` |
+| Secrets | `apps/admin/.env.local` | Vercel-Projekt `admin`, Env „Staging/Preview“ | Vercel Env „Production“   |
+
+**Variablen `apps/admin`** (Schema: `apps/admin/src/env/schema.ts`, Vorlage: `apps/admin/.env.example`):
+
+| Variable                    | Pflicht          | Hinweis                                                                                       |
+| --------------------------- | ---------------- | --------------------------------------------------------------------------------------------- |
+| `APP_ENV`                   | ja               | `local`, `staging`, `production`                                                              |
+| `NEXT_PUBLIC_APP_URL`       | ja               | URL der Admin App selbst, außerhalb von local `https`                                         |
+| `DATABASE_URL`              | zur Laufzeit     | Supabase **Transaction Pooler** (Port 6543), als „Sensitive“ markieren                        |
+| `SUPABASE_URL`              | für Bild-Uploads | `https://<projekt>.supabase.co`                                                               |
+| `SUPABASE_SERVICE_ROLE_KEY` | für Bild-Uploads | nur serverseitig, nur im Admin-Projekt, „Sensitive“; nie `NEXT_PUBLIC_`, nie in der Guest App |
+| `GUIDE_MEDIA_BUCKET`        | nein             | Standard `guide-media`                                                                        |
+| `ADMIN_SETUP_TOKEN`         | nur für `/setup` | mindestens 32 zufällige Zeichen; nach dem Anlegen des ersten Kontos entfernen                 |
+| `LOG_LEVEL`                 | nein             | Standard `info`                                                                               |
+
+**Guest App:** zusätzlich `SUPABASE_URL` setzen, damit `next/image` Bilder aus dem öffentlichen Bucket laden darf. Die Guest App braucht keinen Storage-Key.
+
+**Supabase-Storage-Bucket (einmalig pro Projekt, im Dashboard):** Storage → New bucket → Name `guide-media`, **Public bucket** an, File size limit 8 MB, Allowed MIME types `image/jpeg, image/png, image/webp`. Weitere Policies sind nicht nötig: Uploads laufen ausschließlich serverseitig mit dem Service-Role-Key.
+
+**Vercel-Projekt `admin`:** wie unten für `guest`, aber Root Directory `apps/admin` (Region `fra1` über `apps/admin/vercel.json`), Domain `admin.unique-places.com` für Production, Staging idealerweise mit Deployment Protection.
+
+**Erstes Admin-Konto:** `ADMIN_SETUP_TOKEN` setzen, deployen, `/setup` öffnen, Token, Tenant-Slug, E-Mail und Passwort eingeben. Danach ist `/setup` gesperrt (404); das Token aus Vercel entfernen. Lokal oder mit direkter DB-Verbindung alternativ `pnpm admin-user:create` (siehe `apps/admin/README.md`).
+
 ## Vercel-Setup (einmalig, manuell)
 
-1. Projekt `guest` anlegen und das GitHub-Repo verbinden.
+1. Projekt `guest` anlegen und das GitHub-Repo verbinden (für die Admin App analog Projekt `admin`, siehe oben).
 2. **Root Directory:** `apps/guest`. Framework: Next.js. Install- und Build-Befehle erkennt Vercel im pnpm-Monorepo automatisch.
 3. **Region:** `fra1`, gesetzt über `apps/guest/vercel.json`.
 4. **Production Branch:** `main`.

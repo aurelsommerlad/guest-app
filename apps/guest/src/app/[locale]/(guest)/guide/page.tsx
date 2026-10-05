@@ -28,7 +28,7 @@ export default async function GuidePage({ params }: Props) {
 
   const t = await getTranslations("guide");
   const context = await requireGuestContext(locale);
-  const sections = getGuideOverview(context, locale);
+  const sections = await getGuideOverview(context, locale);
 
   return (
     <div className="safe-top">
@@ -50,7 +50,11 @@ export default async function GuidePage({ params }: Props) {
             <h2 id="guide-sections-heading" className="sr-only">
               {t("sectionsHeading")}
             </h2>
-            <LinkList items={sections} headingLevel={3} linkComponent={Link} />
+            {sections.length > 0 ? (
+              <LinkList items={sections} headingLevel={3} linkComponent={Link} />
+            ) : (
+              <Text tone="muted">{t("empty")}</Text>
+            )}
           </section>
         </main>
       </Container>

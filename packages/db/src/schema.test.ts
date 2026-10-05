@@ -47,7 +47,7 @@ describe("schema constraints", () => {
       `SELECT relname, relrowsecurity FROM pg_class
        WHERE relnamespace = 'public'::regnamespace AND relkind = 'r' AND relname <> '__drizzle_migrations'`,
     );
-    expect(result.rows).toHaveLength(7);
+    expect(result.rows).toHaveLength(10);
     expect(result.rows.every((row) => row.relrowsecurity)).toBe(true);
   });
 

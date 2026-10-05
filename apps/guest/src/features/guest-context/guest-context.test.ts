@@ -3,10 +3,10 @@ import {
   createLogger,
   generateSecret,
   hashSecret,
-  type GuideSection,
+  type GuideTopic,
   type PmsProvider,
   type PmsReservation,
-  selectGuideSections,
+  resolveGuideSections,
 } from "@up/core";
 import {
   createGuestAccess,
@@ -177,12 +177,14 @@ describe("central guest context", () => {
 });
 
 describe("GUIDE uses the central context", () => {
-  const section = (id: string, scope: GuideSection["scope"]): GuideSection => ({
+  const section = (id: string, scope: GuideTopic["scope"]): GuideTopic => ({
+    kind: "topic",
     id,
     tenantId: "unique-places",
     key: id,
     scope,
     status: "published",
+    translationState: {},
     slug: { de: id, en: id },
     title: { de: id, en: id },
     shortDescription: { de: id, en: id },
@@ -200,7 +202,7 @@ describe("GUIDE uses the central context", () => {
   it("selects HØV property content plus ESL – not ROS", async () => {
     const guide = guideContextOf(await contextOf());
     expect(guide).toMatchObject({ tenantId: "unique-places", propertyId: "hov", unitId: "esl" });
-    expect(selectGuideSections(sections, guide).map((item) => item.id)).toEqual([
+    expect(resolveGuideSections(sections, guide).map((item) => item.id)).toEqual([
       "house-rules",
       "esl-sauna",
     ]);
@@ -208,7 +210,7 @@ describe("GUIDE uses the central context", () => {
 
   it("selects ROS content in the development preview", async () => {
     const guide = guideContextOf(await contextOf({ access: undefined, allowPreview: true }));
-    expect(selectGuideSections(sections, guide).map((item) => item.id)).toEqual([
+    expect(resolveGuideSections(sections, guide).map((item) => item.id)).toEqual([
       "house-rules",
       "ros-fireplace",
     ]);

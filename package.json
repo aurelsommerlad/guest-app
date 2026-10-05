@@ -21,7 +21,8 @@
     "db:migrate": "pnpm --filter @up/db db:migrate",
     "db:seed": "pnpm --filter @up/db db:seed",
     "guest-access:create": "pnpm --filter @up/guest guest-access:create",
-    "guest-access:revoke": "pnpm --filter @up/guest guest-access:revoke"
+    "guest-access:revoke": "pnpm --filter @up/guest guest-access:revoke",
+    "admin-user:create": "pnpm --filter @up/admin admin-user:create"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

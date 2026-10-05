@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 8 (Zentraler Guest/Stay Context für STAY, GUIDE und EXPLORE). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 9 (GUIDE-Content-Management: Inhalte in der Datenbank, Admin App `apps/admin`). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -34,7 +34,8 @@ Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 ## 3. Repository-Struktur
 
 ```
-apps/guest          Guest App                        apps/admin  (später, ggf. zuerst nur Content-Editor)
+apps/guest          Guest App
+apps/admin          Admin App (ab Phase 9: GUIDE-Pflege, Login für Admin-Konten)
 packages/config     TS-/ESLint-Konfiguration
 packages/core       Domain, Use Cases, Ports, Env, Logger – framework-frei
 packages/ui         Design Tokens + Komponenten – ohne Domain-Wissen
@@ -45,7 +46,7 @@ packages/integrations  Provider-Adapter (Mock, Apaleo …)
 - Packages liefern TypeScript-Quellen aus, die Next.js über `transpilePackages` kompiliert. Es gibt keinen eigenen Build-Schritt.
 - Abhängigkeitsrichtung: `apps → ui | core | db | integrations`, `db → core`, `integrations → core`.
 - Diese Regeln werden per ESLint erzwungen (`packages/config/eslint/base.js`, `boundaries`).
-- Ein `auth`-Package wird erst mit der Admin-App bzw. dem Content-Editor herausgelöst.
+- Passwort-Hashing liegt in `@up/core` (`auth/password.ts`), Admin-Sessions in `apps/admin` ([ADR 0014](adr/0014-admin-app-and-auth.md)). Ein eigenes `auth`-Package lohnt sich erst mit einer zweiten App, die Admin-Sessions braucht.
 
 ## 4. Domain Model
 
@@ -118,6 +119,8 @@ Tests: Integrationstests mit zwei Tenants (Phase 3) beweisen die Isolation.
 > **EXPLORE ab Phase 5 implementiert:** siehe [ADR 0009](adr/0009-explore-content-model.md).
 >
 > **Ab Phase 3 implementiert:** Das GUIDE-Modell ist in [ADR 0007](adr/0007-guide-content-model.md) beschrieben und liegt in `packages/core/src/guide`. Die folgenden Abschnitte bleiben als Planungsgrundlage, die Details stehen im ADR.
+>
+> **Ab Phase 9:** GUIDE-Inhalte liegen in `guide_sections` und werden in der Admin App gepflegt (Themen + Apartment-Varianten über einen stabilen Key, Bilder in Supabase Storage). Siehe [ADR 0013](adr/0013-guide-content-management.md).
 
 **Quelle:**
 
@@ -270,9 +273,10 @@ Für den Austausch der Datenquelle ändert sich nur `features/stay/get-stay.ts`.
 | 5\*     | **EXPLORE**: Übersicht, Kategorien, Detailseite (Mock-Inhalte) ✅                                             |
 | 6\*     | **Datenbank-Fundament**: Tenant → Property → Unit, External Mappings, Migrationen, Seed, Repositories ✅      |
 | 7\*     | **Sicherer Gastzugang**: Link, Buchungsnummer + Nachname, Guest Session, Widerruf, Rate Limit ✅              |
-| **8\*** | **Zentraler Guest/Stay Context**: eine Session-basierte Kontextquelle für alle Bereiche (in Abnahme)          |
-| 9+      | Versand der Links, Umstellung der App auf die Datenbank, Content in der DB, Content-Editor, Hardening / Pilot |
-| später  | Admin-App, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI                           |
+| 8\*     | **Zentraler Guest/Stay Context**: eine Session-basierte Kontextquelle für alle Bereiche ✅                    |
+| **9\*** | **GUIDE-Content-Management**: GUIDE aus der DB, Admin App mit Login, Block-Editor, Varianten (in Abnahme)     |
+| 10+     | Versand der Links, EXPLORE in der DB, weitere Admin-Module, Hardening / Pilot                                 |
+| später  | Rollen in der Admin App, MFA, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI        |
 
 > \* Die Reihenfolge wurde angepasst: GUIDE, Apaleo und EXPLORE kamen vor der Datenbank. Die Reihenfolge ab Phase 7 wird jeweils bei der Freigabe festgelegt.
 

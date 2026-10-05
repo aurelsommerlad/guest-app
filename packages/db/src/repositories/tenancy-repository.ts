@@ -83,6 +83,19 @@ export async function getPropertyBySlug(
   return property;
 }
 
+/** All properties of the tenant, ordered by display name. */
+export async function listPropertiesForTenant(
+  db: Database,
+  context: TenantContext,
+): Promise<Property[]> {
+  assertTenantContext(context);
+  return db
+    .select(propertyColumns)
+    .from(properties)
+    .where(eq(properties.tenantId, context.tenantId))
+    .orderBy(asc(properties.displayName));
+}
+
 /** Units of a property, ordered by slug. Inactive units only on request. */
 export async function getUnitsForProperty(
   db: Database,

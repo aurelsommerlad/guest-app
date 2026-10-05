@@ -60,6 +60,11 @@ export const serverEnvSchema = clientEnvSchema
      * resolution; guest links carry their tenant themselves.
      */
     GUEST_TENANT_SLUG: z.string().refine(isEntityKey, "must be a tenant slug").optional(),
+    /**
+     * Supabase project URL – only to allow its public Storage images (GUIDE media) in
+     * next/image. No key: the guest app never talks to Supabase APIs.
+     */
+    SUPABASE_URL: z.url().optional(),
     DATABASE_URL: z
       .string()
       .refine((url) => databaseHost(url) !== undefined, "must be a postgres:// URL")

@@ -17,6 +17,11 @@ import {
   findGuestSessionByTokenHash,
   revokeGuestAccessForReservation,
 } from "./repositories/guest-access-repository";
+import {
+  createGuideTopic,
+  listPublishedGuideEntries,
+  setGuideEntryStatus,
+} from "./repositories/guide-repository";
 import { hitRateLimit } from "./repositories/rate-limit-repository";
 import { getUnitsForProperty, resolveExternalMapping } from "./repositories/tenancy-repository";
 import { seedTenant } from "./seed/seed-tenant";
@@ -100,5 +105,37 @@ describe("repositories via postgres.js", () => {
     const fresh = await hitRateLimit(db, "driver:a", 60_000, new Date(now.getTime() + 60_000));
     expect(fresh.hits).toBe(1);
     expect(fresh.windowStartedAt.getTime()).toBe(now.getTime() + 60_000);
+  });
+
+  it("stores and reads guide content (jsonb) unchanged", async () => {
+    const { db } = connection;
+    const blocks = [
+      { id: "h", type: "heading" as const, text: { de: "Überschrift", en: "Heading" } },
+      {
+        id: "l",
+        type: "list" as const,
+        style: "steps" as const,
+        items: [{ de: "Eins" }, { de: "Zwei" }],
+      },
+    ];
+    const topic = await createGuideTopic(db, context, {
+      key: "driver-topic",
+      scope: { level: "property", propertyId: "hov" },
+      sortOrder: 10,
+      icon: "info",
+      slug: { de: "treiber" },
+      title: { de: "Treiber", en: "Driver" },
+      shortDescription: { de: "Test" },
+      intro: { de: "Einleitung" },
+      blocks,
+      translationState: { en: "missing" },
+    });
+    await setGuideEntryStatus(db, context, topic.id, "published", now);
+    const [entry] = (await listPublishedGuideEntries(db, context, { propertyId: "hov" })).filter(
+      (item) => item.key === "driver-topic",
+    );
+    expect(entry?.blocks).toEqual(blocks);
+    expect(entry?.kind === "topic" && entry.title).toEqual({ de: "Treiber", en: "Driver" });
+    expect(entry?.translationState).toEqual({ en: "missing" });
   });
 });

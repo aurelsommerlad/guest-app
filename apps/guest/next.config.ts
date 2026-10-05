@@ -16,7 +16,22 @@ const securityHeaders = [
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+/** Public GUIDE media in Supabase Storage (uploaded by the admin app, ADR 0013). */
+function storageImagePatterns(): NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]> {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  if (!supabaseUrl) return [];
+  const url = new URL(supabaseUrl);
+  return [
+    {
+      protocol: "https",
+      hostname: url.hostname,
+      pathname: "/storage/v1/object/public/**",
+    },
+  ];
+}
+
 const baseConfig: NextConfig = {
+  images: { remotePatterns: storageImagePatterns() },
   reactStrictMode: true,
   poweredByHeader: false,
   // Workspace packages ship TypeScript sources and are compiled by Next.js.

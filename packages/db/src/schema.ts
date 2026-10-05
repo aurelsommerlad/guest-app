@@ -10,10 +10,19 @@
  *   roles (`anon`, `authenticated`) see nothing. The app connects as the table owner.
  */
 import {
+  CONTENT_LOCALES,
+  type ContentImage,
   ENTITY_KEY_PATTERN,
   EXTERNAL_ENTITY_TYPES,
   EXTERNAL_PROVIDERS,
+  GUIDE_ICONS,
+  GUIDE_STATUSES,
+  type GuideBlock,
+  type GuideIcon,
+  type LocalizedText,
   RESERVATION_PROVIDERS,
+  type TranslationState,
+  type Visibility,
 } from "@up/core";
 import { sql, type SQL } from "drizzle-orm";
 import {
@@ -23,10 +32,12 @@ import {
   integer,
   foreignKey,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -276,6 +287,156 @@ export const rateLimitBuckets = pgTable(
   ],
 ).enableRLS();
 
+export const GUIDE_ENTRY_KINDS = ["topic", "override"] as const;
+export const SCOPE_LEVELS = ["tenant", "property", "unit"] as const;
+
+/**
+ * GUIDE content (ADR 0013): one row per topic or per apartment override.
+ *
+ * - topic:    title, slug, icon, order + default content; scope tenant | property | unit.
+ * - override: content only (intro, hero image, blocks) for one unit; belongs to the topic
+ *             with the same `key`. Metadata columns must be NULL.
+ * Localised fields are jsonb `{ de, en }`. Blocks are a validated jsonb array – no HTML.
+ * Only `published` rows are ever shown to guests; `archived` replaces deletion.
+ */
+export const guideSections = pgTable(
+  "guide_sections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    key: text("key").notNull(),
+    kind: text("kind", { enum: GUIDE_ENTRY_KINDS }).notNull(),
+    scopeLevel: text("scope_level", { enum: SCOPE_LEVELS }).notNull(),
+    propertyId: text("property_id"),
+    unitId: text("unit_id"),
+    status: text("status", { enum: GUIDE_STATUSES }).notNull().default("draft"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    icon: text("icon").$type<GuideIcon>(),
+    slug: jsonb("slug").$type<LocalizedText>(),
+    eyebrow: jsonb("eyebrow").$type<LocalizedText>(),
+    title: jsonb("title").$type<LocalizedText>(),
+    shortDescription: jsonb("short_description").$type<LocalizedText>(),
+    visibility: jsonb("visibility").$type<Visibility>(),
+    intro: jsonb("intro").$type<LocalizedText>(),
+    heroImage: jsonb("hero_image").$type<ContentImage>(),
+    blocks: jsonb("blocks").$type<GuideBlock[]>().notNull().default([]),
+    sourceLocale: text("source_locale").notNull().default("de"),
+    translationState: jsonb("translation_state").$type<TranslationState>().notNull().default({}),
+    /** Set on the first publication – a published entry can only be archived, not deleted. */
+    firstPublishedAt: timestamp("first_published_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "guide_sections_tenant_fkey",
+      columns: [t.tenantId],
+      foreignColumns: [tenants.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "guide_sections_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "guide_sections_unit_fkey",
+      columns: [t.tenantId, t.propertyId, t.unitId],
+      foreignColumns: [units.tenantId, units.propertyId, units.id],
+    }).onDelete("restrict"),
+    // One live topic per key and scope target, one live override per key and unit.
+    uniqueIndex("guide_sections_live_key_idx")
+      .on(
+        t.tenantId,
+        t.kind,
+        sql`coalesce(${t.propertyId}, '')`,
+        sql`coalesce(${t.unitId}, '')`,
+        t.key,
+      )
+      .where(sql`${t.status} <> 'archived'`),
+    index("guide_sections_tenant_property_idx").on(t.tenantId, t.propertyId),
+    check("guide_sections_key_format", isKey(t.key)),
+    check("guide_sections_kind_valid", oneOf(t.kind, GUIDE_ENTRY_KINDS)),
+    check("guide_sections_scope_level_valid", oneOf(t.scopeLevel, SCOPE_LEVELS)),
+    check("guide_sections_status_valid", oneOf(t.status, GUIDE_STATUSES)),
+    check("guide_sections_source_locale_valid", oneOf(t.sourceLocale, CONTENT_LOCALES)),
+    check(
+      "guide_sections_scope_shape",
+      sql`(${t.scopeLevel} = 'tenant' AND ${t.propertyId} IS NULL AND ${t.unitId} IS NULL)
+        OR (${t.scopeLevel} = 'property' AND ${t.propertyId} IS NOT NULL AND ${t.unitId} IS NULL)
+        OR (${t.scopeLevel} = 'unit' AND ${t.propertyId} IS NOT NULL AND ${t.unitId} IS NOT NULL)`,
+    ),
+    check(
+      "guide_sections_topic_shape",
+      sql`${t.kind} <> 'topic' OR (${t.title} IS NOT NULL AND ${t.slug} IS NOT NULL
+        AND ${t.shortDescription} IS NOT NULL AND ${t.icon} IS NOT NULL)`,
+    ),
+    check(
+      "guide_sections_override_shape",
+      sql`${t.kind} <> 'override' OR (${t.scopeLevel} = 'unit' AND ${t.title} IS NULL
+        AND ${t.slug} IS NULL AND ${t.shortDescription} IS NULL AND ${t.eyebrow} IS NULL
+        AND ${t.icon} IS NULL AND ${t.visibility} IS NULL)`,
+    ),
+    check("guide_sections_icon_valid", sql`${t.icon} IS NULL OR ${oneOf(t.icon, GUIDE_ICONS)}`),
+    check("guide_sections_blocks_array", sql`jsonb_typeof(${t.blocks}) = 'array'`),
+  ],
+).enableRLS();
+
+export const ADMIN_USER_STATUSES = ["active", "disabled"] as const;
+
+/**
+ * Admin accounts (ADR 0014). One account belongs to exactly one tenant; e-mail is the
+ * login name (stored lowercased, globally unique). Passwords only as scrypt hashes.
+ * MFA can be added later as separate factor data without changing this table's role.
+ */
+export const adminUsers = pgTable(
+  "admin_users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    email: text("email").notNull(),
+    displayName: text("display_name"),
+    passwordHash: text("password_hash").notNull(),
+    status: text("status", { enum: ADMIN_USER_STATUSES }).notNull().default("active"),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("admin_users_email_key").on(t.email),
+    unique("admin_users_tenant_id_id_key").on(t.tenantId, t.id),
+    check(
+      "admin_users_email_format",
+      sql`${t.email} = lower(${t.email}) AND char_length(${t.email}) BETWEEN 3 AND 254 AND position('@' in ${t.email}) > 1`,
+    ),
+    check("admin_users_password_hash_format", sql`${t.passwordHash} LIKE 'scrypt$%'`),
+    check("admin_users_status_valid", oneOf(t.status, ADMIN_USER_STATUSES)),
+  ],
+).enableRLS();
+
+/** Server-side admin sessions: opaque secret in the cookie, only its hash stored. */
+export const adminSessions = pgTable(
+  "admin_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    adminUserId: uuid("admin_user_id").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "admin_sessions_admin_user_fkey",
+      columns: [t.tenantId, t.adminUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("cascade"),
+    unique("admin_sessions_token_hash_key").on(t.tokenHash),
+    index("admin_sessions_admin_user_id_idx").on(t.adminUserId),
+    check("admin_sessions_token_hash_format", isSha256Hex(t.tokenHash)),
+  ],
+).enableRLS();
+
 export const schema = {
   tenants,
   properties,
@@ -284,4 +445,7 @@ export const schema = {
   guestAccess,
   guestSessions,
   rateLimitBuckets,
+  guideSections,
+  adminUsers,
+  adminSessions,
 };
