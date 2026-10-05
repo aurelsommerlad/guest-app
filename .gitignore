@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# builds
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# turbo / vercel
+.turbo/
+.vercel/
+
+# tests
+coverage/
+
+# env – never commit secrets; only .env.example is tracked
+.env
+.env.*
+!.env.example
+
+# logs / os
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store

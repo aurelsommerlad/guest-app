@@ -1,0 +1,17 @@
+{
+  "name": "@up/integrations",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Provider adapters (PMS, Access, Guest Registration) implementing ports from @up/core.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@up/config": "workspace:*"
+  }
+}

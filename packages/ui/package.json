@@ -1,0 +1,17 @@
+{
+  "name": "@up/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Design tokens and UI components. No domain logic, no data access.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@up/config": "workspace:*"
+  }
+}

@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Dependency install scripts are blocked by default (supply-chain protection).
+# unrs-resolver ships prebuilt binaries via optional deps; its script is not needed.
+ignoredBuiltDependencies:
+  - unrs-resolver
