@@ -24,6 +24,14 @@ export const iconPaths = {
     </>
   ),
   "chevron-right": <path d="m9 18 6-6-6-6" />,
+  "chevron-down": <path d="m6 9 6 6 6-6" />,
+  menu: (
+    <>
+      <path d="M4 6h16" />
+      <path d="M4 12h16" />
+      <path d="M4 18h16" />
+    </>
+  ),
   bell: (
     <>
       <path d="M10.268 21a2 2 0 0 0 3.464 0" />

@@ -23,18 +23,19 @@ Für `staging`/`production` gelten dieselben Ziel-Sicherungen wie bei `pnpm db:m
 
 ## Aufbau
 
-| Pfad                            | Zweck                                                                      |
-| ------------------------------- | -------------------------------------------------------------------------- |
-| `src/navigation.ts`             | Registry der Hauptbereiche und Property-Module (neue Module hier ergänzen) |
-| `src/components/AdminShell.tsx` | Layout mit Seitennavigation                                                |
-| `src/features/auth/`            | Login, Sessions, `/setup`, Rate Limits                                     |
-| `src/features/guide/`           | GUIDE-Service, Server Actions, Editoren                                    |
-| `src/server/media-storage.ts`   | signierter Direkt-Upload: Pfad, Token, Prüfung des gespeicherten Bildes    |
-| `scripts/admin-user.ts`         | CLI zum Anlegen eines Admin-Kontos                                         |
+| Pfad                            | Zweck                                                                       |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| `src/navigation.ts`             | Modul-Registry: Gruppen, URLs, Property Context (neue Module hier ergänzen) |
+| `src/features/property-context` | Property Selector, Context-Provider, Tenant-Properties                      |
+| `src/components/AdminShell.tsx` | Layout mit Seitennavigation                                                 |
+| `src/features/auth/`            | Login, Sessions, `/setup`, Rate Limits                                      |
+| `src/features/guide/`           | GUIDE-Service, Server Actions, Editoren                                     |
+| `src/server/media-storage.ts`   | signierter Direkt-Upload: Pfad, Token, Prüfung des gespeicherten Bildes     |
+| `scripts/admin-user.ts`         | CLI zum Anlegen eines Admin-Kontos                                          |
 
 ## GUIDE pflegen
 
-- **Objekte → Property → Guide** listet die Themen in Gast-Reihenfolge (↑/↓ zum Sortieren), mit Status und Varianten.
+- **Guide** (Sidebar) mit gewähltem Objekt im Property Selector, z. B. `/guide/hov`, listet die Themen in Gast-Reihenfolge (↑/↓ zum Sortieren), mit Status und Varianten. Bei „Alle Objekte“ (`/guide`) wählst Du zuerst das Objekt.
 - **Neues Thema:** für das gesamte Objekt oder ein einzelnes Apartment. Key und Slug werden aus dem Titel erzeugt.
 - **Inhalt:** Intro, Titelbild und Blöcke (Überschrift, Absatz, Liste, Hinweis, Link, Bild), jeweils Deutsch und Englisch.
 - **Variante für ein Apartment:** bei Objekt-Themen; startet als Kopie des allgemeinen Inhalts und ersetzt für Gäste dieses Apartments nur den Inhalt.

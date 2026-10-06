@@ -35,7 +35,7 @@ async function tenant() {
   return { tenantId: admin.tenantId };
 }
 
-const guidePath = (propertyId: string) => `/properties/${propertyId}/guide`;
+const guidePath = (propertyId: string) => `/guide/${encodeURIComponent(propertyId)}`;
 
 export async function createTopicAction(
   propertyId: string,
@@ -113,7 +113,7 @@ export async function changeStatusAction(entryId: string, status: GuideStatus): 
   const context = await tenant();
   const deps = guideDeps();
   const loaded = await loadGuideEntry(deps, context, entryId);
-  if (!loaded) redirect("/properties");
+  if (!loaded) redirect("/guide");
   await changeStatus(deps, context, entryId, status);
   redirect(`${guidePath(loaded.property.id)}/${entryId}`);
 }
@@ -122,7 +122,7 @@ export async function moveTopicAction(entryId: string, direction: "up" | "down")
   const context = await tenant();
   const deps = guideDeps();
   const loaded = await loadGuideEntry(deps, context, entryId);
-  if (!loaded) redirect("/properties");
+  if (!loaded) redirect("/guide");
   await moveTopic(deps, context, entryId, direction === "up" ? "up" : "down");
   redirect(guidePath(loaded.property.id));
 }
@@ -135,7 +135,7 @@ export async function deleteEntryAction(entryId: string): Promise<void> {
     redirect(
       loaded
         ? `${guidePath(loaded.property.id)}/${entryId}?error=${encodeURIComponent(result.error)}`
-        : "/properties",
+        : "/guide",
     );
   }
   redirect(

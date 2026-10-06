@@ -1,15 +1,27 @@
-import { Heading, Text, buttonStyles } from "@up/ui";
+import { buttonStyles } from "@up/ui";
+import { getPropertyById } from "@up/db";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { StatusBadge } from "../../../../../components/StatusBadge";
-import { requireAdmin } from "../../../../../features/auth/server";
-import { moveTopicAction } from "../../../../../features/guide/actions";
-import { loadPropertyGuide } from "../../../../../features/guide/guide-admin-service";
-import { guideDeps } from "../../../../../features/guide/server";
+import { EmptyState, PageHeader } from "../../../../components/PageHeader";
+import { StatusBadge } from "../../../../components/StatusBadge";
+import { requireAdmin } from "../../../../features/auth/server";
+import { moveTopicAction } from "../../../../features/guide/actions";
+import { loadPropertyGuide } from "../../../../features/guide/guide-admin-service";
+import { guideDeps } from "../../../../features/guide/server";
+import { getDatabase } from "../../../../server/database";
 
-export const metadata: Metadata = { title: "Guide" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ propertyId: string }>;
+}): Promise<Metadata> {
+  const { propertyId } = await params;
+  const admin = await requireAdmin();
+  const property = await getPropertyById(getDatabase(), { tenantId: admin.tenantId }, propertyId);
+  return { title: property ? `Guide · ${property.displayName}` : "Guide" };
+}
 
 type Props = {
   params: Promise<{ propertyId: string }>;
@@ -25,29 +37,38 @@ export default async function GuideTopicsPage({ params, searchParams }: Props) {
     includeArchived: showArchived,
   });
   if (!guide) notFound();
-  const base = `/properties/${propertyId}/guide`;
+  const base = `/guide/${propertyId}`;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <Heading level={1} variant="title">
-          Guide-Themen
-        </Heading>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={showArchived ? base : `${base}?archived=1`}
-            className={buttonStyles("secondary")}
-          >
-            {showArchived ? "Archivierte ausblenden" : "Archivierte anzeigen"}
-          </Link>
-          <Link href={`${base}/new`} className={buttonStyles("primary")}>
-            Neues Thema
-          </Link>
-        </div>
-      </div>
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Guide"
+        description="Themen und Inhalte, die Gäste dieses Objekts in der App sehen – in der Reihenfolge der Gäste-Ansicht."
+        actions={
+          <>
+            <Link
+              href={showArchived ? base : `${base}?archived=1`}
+              className={buttonStyles("secondary")}
+            >
+              {showArchived ? "Archivierte ausblenden" : "Archivierte anzeigen"}
+            </Link>
+            <Link href={`${base}/new`} className={buttonStyles("primary")}>
+              Neues Thema
+            </Link>
+          </>
+        }
+      />
 
       {guide.topics.length === 0 ? (
-        <Text tone="muted">Für dieses Objekt gibt es noch keine Guide-Themen.</Text>
+        <EmptyState
+          title="Noch keine Guide-Themen"
+          description="Lege das erste Thema an, z. B. Anreise, WLAN oder Hausregeln."
+          action={
+            <Link href={`${base}/new`} className={buttonStyles("primary")}>
+              Neues Thema
+            </Link>
+          }
+        />
       ) : (
         <ol className="flex flex-col gap-2">
           {guide.topics.map((topic, index) => (
@@ -95,7 +116,9 @@ export default async function GuideTopicsPage({ params, searchParams }: Props) {
                   {!topic.hasContent && " · noch ohne Inhalt"}
                 </p>
               </div>
-              <StatusBadge status={topic.status} />
+              <div className="self-start md:self-center">
+                <StatusBadge status={topic.status} />
+              </div>
             </li>
           ))}
         </ol>

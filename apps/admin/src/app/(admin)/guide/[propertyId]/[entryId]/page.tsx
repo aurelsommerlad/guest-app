@@ -1,27 +1,28 @@
-import { Heading, Text } from "@up/ui";
+import { Text } from "@up/ui";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { StatusBadge } from "../../../../../../components/StatusBadge";
-import { requireAdmin } from "../../../../../../features/auth/server";
+import { PageHeader, SectionHeader } from "../../../../../components/PageHeader";
+import { StatusBadge } from "../../../../../components/StatusBadge";
+import { requireAdmin } from "../../../../../features/auth/server";
 import {
   confirmImageUploadAction,
   createOverrideAction,
   requestImageUploadAction,
   saveContentAction,
   updateTopicAction,
-} from "../../../../../../features/guide/actions";
-import { CreateOverrideForm } from "../../../../../../features/guide/components/CreateOverrideForm";
-import { ContentEditor } from "../../../../../../features/guide/components/ContentEditor";
-import { toEditorContent } from "../../../../../../features/guide/components/content-mapping";
-import { StatusActions } from "../../../../../../features/guide/components/StatusActions";
-import { TopicMetaForm } from "../../../../../../features/guide/components/TopicMetaForm";
+} from "../../../../../features/guide/actions";
+import { CreateOverrideForm } from "../../../../../features/guide/components/CreateOverrideForm";
+import { ContentEditor } from "../../../../../features/guide/components/ContentEditor";
+import { toEditorContent } from "../../../../../features/guide/components/content-mapping";
+import { StatusActions } from "../../../../../features/guide/components/StatusActions";
+import { TopicMetaForm } from "../../../../../features/guide/components/TopicMetaForm";
 import {
   loadGuideEntry,
   loadPropertyGuide,
-} from "../../../../../../features/guide/guide-admin-service";
-import { guideDeps, mediaStorageConfig } from "../../../../../../features/guide/server";
+} from "../../../../../features/guide/guide-admin-service";
+import { guideDeps, mediaStorageConfig } from "../../../../../features/guide/server";
 
 export const metadata: Metadata = { title: "Thema bearbeiten" };
 
@@ -39,7 +40,8 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
   const loaded = await loadGuideEntry(deps, context, entryId);
   if (!loaded || loaded.property.id !== propertyId) notFound();
   const { entry, topic, units } = loaded;
-  const base = `/properties/${propertyId}/guide`;
+  const base = `/guide/${propertyId}`;
+  const guideCrumb = { label: "Guide", href: base };
   const editor = (
     <ContentEditor
       // A fresh editor per entry: never carry state from one topic/variant to another.
@@ -59,23 +61,16 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
   if (entry.kind === "override") {
     return (
       <div className="flex max-w-4xl flex-col gap-8">
-        <Link
-          href={topic ? `${base}/${topic.id}` : base}
-          className="type-small self-start rounded-sm text-text-muted hover:underline"
-        >
-          ← {topic?.title.de ?? "Guide-Themen"}
-        </Link>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <Text variant="eyebrow" tone="muted">
-              Apartment-Variante
-            </Text>
-            <Heading level={1} variant="title">
-              {topic?.title.de ?? entry.key} · {unitName(entry.scope.unitId)}
-            </Heading>
-          </div>
-          <StatusBadge status={entry.status} />
-        </div>
+        <PageHeader
+          breadcrumbs={
+            topic
+              ? [guideCrumb, { label: topic.title.de ?? topic.key, href: `${base}/${topic.id}` }]
+              : [guideCrumb]
+          }
+          eyebrow="Apartment-Variante"
+          title={`Apartment ${unitName(entry.scope.unitId)}`}
+          status={<StatusBadge status={entry.status} />}
+        />
         <Text variant="small" tone="muted">
           Gäste dieses Apartments sehen diesen Inhalt statt des allgemeinen Inhalts – sobald die
           Variante veröffentlicht ist. Titel und Reihenfolge kommen vom Thema.
@@ -104,25 +99,16 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
 
   return (
     <div className="flex max-w-4xl flex-col gap-10">
-      <Link
-        href={base}
-        className="type-small self-start rounded-sm text-text-muted hover:underline"
-      >
-        ← Guide-Themen
-      </Link>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <Text variant="eyebrow" tone="muted">
-            {entry.scope.level === "unit"
-              ? `Nur Apartment ${unitName(entry.scope.unitId)}`
-              : "Gilt für das gesamte Objekt"}
-          </Text>
-          <Heading level={1} variant="title">
-            {entry.title.de}
-          </Heading>
-        </div>
-        <StatusBadge status={entry.status} />
-      </div>
+      <PageHeader
+        breadcrumbs={[guideCrumb]}
+        eyebrow={
+          entry.scope.level === "unit"
+            ? `Nur Apartment ${unitName(entry.scope.unitId)}`
+            : "Gilt für das gesamte Objekt"
+        }
+        title={entry.title.de}
+        status={<StatusBadge status={entry.status} />}
+      />
       {error && (
         <p role="status" className="type-small rounded-card bg-surface p-3">
           {error}
@@ -131,9 +117,7 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
       <StatusActions entryId={entry.id} status={entry.status} deletable={!entry.firstPublishedAt} />
 
       <section className="flex flex-col gap-4" aria-labelledby="meta-heading">
-        <h2 id="meta-heading" className="type-title text-text">
-          Angaben
-        </h2>
+        <SectionHeader id="meta-heading" title="Angaben" />
         <TopicMetaForm
           key={entry.id}
           topic={entry}
@@ -142,21 +126,20 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
       </section>
 
       <section className="flex flex-col gap-4" aria-labelledby="content-heading">
-        <h2 id="content-heading" className="type-title text-text">
-          {entry.scope.level === "property" ? "Allgemeiner Inhalt" : "Inhalt"}
-        </h2>
+        <SectionHeader
+          id="content-heading"
+          title={entry.scope.level === "property" ? "Allgemeiner Inhalt" : "Inhalt"}
+        />
         {editor}
       </section>
 
       {entry.scope.level === "property" && (
         <section className="flex flex-col gap-4" aria-labelledby="variants-heading">
-          <h2 id="variants-heading" className="type-title text-text">
-            Apartment-Varianten
-          </h2>
-          <Text variant="small" tone="muted">
-            Für Apartments mit eigenen Angaben (z. B. WLAN). Alle anderen Apartments sehen den
-            allgemeinen Inhalt.
-          </Text>
+          <SectionHeader
+            id="variants-heading"
+            title="Apartment-Varianten"
+            description="Für Apartments mit eigenen Angaben (z. B. WLAN). Alle anderen Apartments sehen den allgemeinen Inhalt."
+          />
           {overrides.length > 0 && (
             <ul className="flex flex-col gap-2">
               {overrides.map((override) => (

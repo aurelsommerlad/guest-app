@@ -337,7 +337,16 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
 - Login: Die Subline hat keine künstliche Breitenbegrenzung mehr. Ab Tablet steht sie in einer Zeile (DE und EN), auf schmalen Screens bricht sie ausgeglichen um (`text-balance`).
 - Pixelvergleich vorher/nachher (390 und 1440 px): STAY, GUIDE, EXPLORE-Übersicht und Link-ungültig unverändert (Diff 0). Geändert sind nur Login (DE/EN) und der Primär-Button der EXPLORE-Detailseite.
 
-## 18. Offene Punkte (C)
+## 18. Admin-Shell (Phase 9.2)
+
+- **Aufbau:** Sidebar auf `surface` (Leinen) ohne Trennlinie zur Arbeitsfläche auf `background`. Aktiver Menüpunkt als helle Fläche (`surface-raised`) in `text`, inaktive in `text-muted`. Gruppenüberschriften als Eyebrow. Icons nur in der Navigation (20 px, Outline).
+- **Globaler Kontext:** Property Selector oben links in der Arbeitsfläche: Eyebrow „Objekt“, Name in der Markenschrift (`type-title`, Λ über `PropertyName`), dezentes Chevron. Die Auswahl öffnet eine helle Liste (`surface-raised`, `shadow-float`) mit Ort als Caption und Haken beim aktiven Eintrag.
+- **Seitenkopf:** Pfad (nur übergeordnete Seiten, ohne das Objekt zu wiederholen), Titel `title-lg`, kurze Beschreibung, Aktionen rechts. Abschnitte mit `SectionHeader`, leere Zustände ruhig auf `surface`.
+- **Objektlisten:** Haarlinien statt Cards: Name in der Markenschrift, Ort in `text-muted`, Ziel und Chevron rechts.
+- **Responsive:** Ab 1024 px feste Sidebar, darunter Kopfzeile mit Menü-Button und Drawer (natives `dialog`: Fokusfalle, Escape, Backdrop).
+- Sekundärtext bleibt beim Token `text-muted` (`#6B6A65`, statt `#74736E` für WCAG AA). Dunkle Primäraktionen nutzen `cta` (`#17160F`), Fließtext weiter `text` (`#171817`).
+
+## 19. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

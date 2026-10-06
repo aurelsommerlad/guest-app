@@ -1,36 +1,31 @@
-import { Heading, Text } from "@up/ui";
-import { listPropertiesForTenant } from "@up/db";
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { requireAdmin } from "../../../features/auth/server";
-import { getDatabase } from "../../../server/database";
+import { EmptyState, PageHeader } from "../../../components/PageHeader";
+import { PropertyList } from "../../../components/PropertyList";
+import { getTenantProperties } from "../../../features/property-context/server";
+import { adminModules, moduleHref } from "../../../navigation";
 
 export const metadata: Metadata = { title: "Objekte" };
 
+/** The tenant's properties – choosing one opens its first property module. */
 export default async function PropertiesPage() {
-  const admin = await requireAdmin();
-  const properties = await listPropertiesForTenant(getDatabase(), { tenantId: admin.tenantId });
+  const properties = await getTenantProperties();
+  const firstModule = adminModules.find((candidate) => candidate.scope.kind === "property");
   return (
-    <div className="flex flex-col gap-8">
-      <Heading level={1} variant="title-lg">
-        Objekte
-      </Heading>
-      <ul className="grid gap-3 md:grid-cols-2">
-        {properties.map((property) => (
-          <li key={property.id}>
-            <Link
-              href={`/properties/${property.id}/guide`}
-              className="flex min-h-24 flex-col justify-between gap-2 rounded-card bg-surface p-5 hover:bg-surface-raised"
-            >
-              <span className="type-title text-text">{property.displayName}</span>
-              <Text variant="small" tone="muted">
-                {property.locationName}
-              </Text>
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div className="flex flex-col gap-10">
+      <PageHeader title="Objekte" description="Alle Objekte Deines Unternehmens." />
+      {properties.length === 0 || !firstModule ? (
+        <EmptyState
+          title="Noch keine Objekte"
+          description="Objekte werden aus den Stammdaten übernommen."
+        />
+      ) : (
+        <PropertyList
+          properties={properties}
+          href={(propertyId) => moduleHref(firstModule, propertyId)}
+          destination={firstModule.label}
+        />
+      )}
     </div>
   );
 }

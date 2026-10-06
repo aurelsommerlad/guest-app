@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from "next/constants";
 
 import { validateServerEnv } from "./src/env/schema";
+import { legacyRedirects } from "./src/navigation";
 
 const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
@@ -31,6 +32,7 @@ const baseConfig: NextConfig = {
   transpilePackages: ["@up/core", "@up/db", "@up/ui"],
   images: { remotePatterns: storageImagePatterns() },
   headers: () => Promise.resolve([{ source: "/:path*", headers: securityHeaders }]),
+  redirects: () => Promise.resolve([...legacyRedirects]),
 };
 
 export default function nextConfig(phase: string): NextConfig {

@@ -12,7 +12,11 @@ UNIQUE PLACES braucht ein zentrales Backend für die Pflege von Inhalten, beginn
 
 - Eigene Next.js-App `apps/admin` im Monorepo, eigenes Vercel-Projekt (Root Directory `apps/admin`, Region `fra1`). Production: `admin.unique-places.com`, Staging und Previews getrennt.
 - Dieselbe Datenbank pro Environment wie die Guest App, Zugriff ausschließlich serverseitig über `@up/db`.
-- Navigation über eine Registry (`src/navigation.ts`): Hauptbereiche (heute „Objekte“) und Module pro Property (heute „Guide“). Neue Module sind ein Eintrag plus Route; Platzhalterseiten gibt es nicht.
+- **Admin-Shell (ab Phase 9.2):** feste Sidebar (Desktop) bzw. Drawer (Tablet/Mobile, natives `<dialog>`), darüber der globale Kontext mit dem Property Selector, rechts die Arbeitsfläche des Moduls.
+- **Modul-Registry** (`src/navigation.ts`): langfristige Gruppen (Dashboard, Gäste, Kommunikation, Inhalte, Services, Verwaltung); jedes Modul hat Gruppe, URL-Segment, Icon und Scope. Angezeigt werden nur vorhandene Module, leere Gruppen entfallen. Neue Module sind ein Eintrag plus Route; Platzhalterseiten gibt es nicht.
+- **Property Context:** Die URL ist die Quelle. Property-Module liegen unter `/{modul}` („Alle Objekte“) und `/{modul}/{propertyId}/…`; tenant-weite Module (z. B. Objekte) unter `/{modul}`. Deep Links, Reload und Zurück/Vor funktionieren dadurch ohne Zusatzlogik. Ein Cookie `up_admin_property` merkt sich die letzte Wahl nur als Komfort (Startseite, Seiten ohne Property in der URL). Er wird serverseitig gegen die Properties des Tenants geprüft und nie für Berechtigungen verwendet. Jede Property-Route prüft die Property tenant-scoped (sonst 404).
+- Module, die eine Property brauchen (Guide), zeigen bei „Alle Objekte“ eine Objektauswahl statt gemischter Inhalte. Künftige Module können „Alle Objekte“ aggregieren (Scope `allProperties: "aggregate"`, z. B. Inbox, Dashboard).
+- Alte URLs `/properties/{id}/guide/…` leiten auf `/guide/{id}/…` weiter.
 - Alle Seiten sind dynamisch und `noindex`; Security-Header wie in der Guest App, zusätzlich `Referrer-Policy: same-origin`.
 - Design: dieselben Tokens und Fonts aus `@up/ui`.
 
