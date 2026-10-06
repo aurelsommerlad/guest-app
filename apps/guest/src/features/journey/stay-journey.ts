@@ -25,6 +25,8 @@ import {
   getRegistrationForReservation,
   type GuestRegistrationRecord,
   type JourneySettings,
+  listRegistrationSyncs,
+  type RegistrationSyncRecord,
 } from "@up/db";
 
 import { type GuestContext } from "../guest-context/guest-context";
@@ -45,7 +47,29 @@ export type StayJourney = {
   window: { checkInAt: string; checkOutAt: string; timeZone: string };
   /** Property-local arrival date (YYYY-MM-DD) – children rules, birth date limits. */
   arrivalDate: string;
+  /** Sync state per target (only after submission) – ids and codes, no data. */
+  syncs: readonly Pick<RegistrationSyncRecord, "provider" | "status">[];
 };
+
+/** Targets that are an official guest registration (not a PMS write-back). */
+const GUEST_REGISTRATION_TARGETS = new Set(["feratel"]);
+
+/**
+ * Status of the official guest registration as the guest may see it: "submitted" only
+ * when every such target really synced; undefined when the property reports to none.
+ */
+export function guestRegistrationStatus(
+  journey: Pick<StayJourney, "settings" | "syncs">,
+): "pending" | "submitted" | undefined {
+  const targets = journey.settings.registration.targets.filter((target) =>
+    GUEST_REGISTRATION_TARGETS.has(target),
+  );
+  if (targets.length === 0) return undefined;
+  const synced = targets.every((target) =>
+    journey.syncs.some((sync) => sync.provider === target && sync.status === "synced"),
+  );
+  return synced ? "submitted" : "pending";
+}
 
 const FALLBACK_SETTINGS: JourneySettings = {
   registration: {
@@ -110,6 +134,10 @@ export async function loadStayJourney(
   const arrivalDate = localDateOf(new Date(window.checkInAt), window.timeZone);
   const { settings, registration } = await loadSettings(deps, context);
   const progress = progressOf(settings.registration.enabled, registration);
+  const syncs =
+    deps.db && registration?.status === "submitted"
+      ? await listRegistrationSyncs(deps.db, context, registration.id).catch(() => [])
+      : [];
   const assessment = assessRegistration(settings.registration, registration, arrivalDate);
 
   const access = await getAccessForStay({
@@ -155,5 +183,6 @@ export async function loadStayJourney(
     access,
     window,
     arrivalDate,
+    syncs: syncs.map((sync) => ({ provider: sync.provider, status: sync.status })),
   };
 }

@@ -193,3 +193,110 @@ describe("STAY with guest journey", () => {
     expect(model.status).toMatchObject({ kind: "check-out", today: false });
   });
 });
+
+describe("STAY redesign view model (check-in card, summary, preview)", () => {
+  const steps = {
+    trip: "complete",
+    primary: "complete",
+    companions: "skipped",
+    address: "incomplete",
+    review: "incomplete",
+  } as const;
+  const before = new Date("2026-08-20T09:00:00+02:00");
+  const notReleasedAtCheckIn: StayAccess = {
+    status: "pending",
+    reason: "not-yet-released",
+    releasesAt: "2026-08-27T13:00:00.000Z",
+  };
+  function input(
+    registration: RegistrationProgress,
+    access: StayAccess,
+    extra: Partial<StayJourneyInput> = {},
+  ): StayJourneyInput {
+    return {
+      ...journeyAt(before, registration, access, 2),
+      assessment: { stepsRemaining: 2, steps },
+      ...extra,
+    };
+  }
+
+  it("shows the start card with visible steps only (no skipped step, no payment)", () => {
+    const model = buildStayViewModel(source, "de", before, input("not-started", notReleased));
+    expect(model.upcoming).toBe(true);
+    expect(model.checkIn).toEqual({
+      state: "not-started",
+      href: "/check-in",
+      steps: ["trip", "primary", "address", "review"],
+    });
+  });
+
+  it("shows progress per step while in progress", () => {
+    const model = buildStayViewModel(source, "de", before, input("in-progress", notReleased));
+    expect(model.checkIn).toEqual({
+      state: "in-progress",
+      href: "/check-in",
+      stepsRemaining: 2,
+      steps: [
+        { id: "trip", done: true },
+        { id: "primary", done: true },
+        { id: "address", done: false },
+        { id: "review", done: false },
+      ],
+    });
+    // The time tile never duplicates the check-in card.
+    expect(model.timeTile.kind).toBe("check-in");
+  });
+
+  it("claims a submitted guest registration only when it really synced", () => {
+    const done = {
+      trip: "complete",
+      primary: "complete",
+      companions: "skipped",
+      address: "complete",
+      review: "complete",
+    } as const;
+    const completed = (extra: Partial<StayJourneyInput>) =>
+      buildStayViewModel(source, "de", before, {
+        ...input("completed", notReleased),
+        assessment: { stepsRemaining: 0, steps: done },
+        ...extra,
+      }).checkIn;
+    expect(completed({})).toEqual({ state: "completed", steps: ["trip", "primary", "address"] });
+    expect(completed({ guestRegistration: "pending" })).toMatchObject({
+      guestRegistration: "pending",
+    });
+    expect(completed({ guestRegistration: "submitted" })).toMatchObject({
+      guestRegistration: "submitted",
+    });
+  });
+
+  it("previews access release before arrival (date only or with time) and summarises the stay", () => {
+    const dateOnly = buildStayViewModel(source, "de", before, input("completed", notReleased));
+    expect(dateOnly.accessPreview).toMatchObject({ withTime: false, date: "27. August 2026" });
+    const withTime = buildStayViewModel(
+      source,
+      "de",
+      before,
+      input("completed", notReleasedAtCheckIn),
+    );
+    expect(withTime.accessPreview).toMatchObject({ withTime: true, time: "15:00" });
+    expect(dateOnly.summary).toMatchObject({
+      title: "HØV · ROS",
+      dates: "27.–31. August 2026",
+      href: "/guide",
+    });
+    const withGuests = buildStayViewModel(
+      { ...source, reservation: { ...source.reservation, guestCount: { adults: 2, children: 1 } } },
+      "de",
+      before,
+      input("completed", notReleased),
+    );
+    expect(withGuests.summary.travellers).toEqual({ adults: 2, children: 1 });
+    // No preview from the arrival day on (the access card itself takes over).
+    const arrival = new Date("2026-08-27T11:00:00+02:00");
+    expect(
+      buildStayViewModel(source, "de", arrival, journeyAt(arrival, "completed", keybox))
+        .accessPreview,
+    ).toBeUndefined();
+  });
+});

@@ -6,7 +6,9 @@ import {
   CHECK_IN_STEPS,
   type CheckInStep,
   type FieldError,
+  missingFields,
   type RegistrationField,
+  rulesFor,
 } from "@up/core";
 
 import { type GuestStep, stepFields, stepPositions } from "./check-in-service";
@@ -24,7 +26,14 @@ export type FormFieldDef = {
   error?: FieldError["code"];
 };
 
-export type GuestFieldset = { position: number; fields: FormFieldDef[] };
+export type GuestFieldset = {
+  position: number;
+  fields: FormFieldDef[];
+  /** All required fields of this step are saved for this person (accordion collapses). */
+  complete: boolean;
+  /** "Tom Muster" once entered – the collapsed accordion's summary. */
+  displayName?: string;
+};
 
 const KINDS: Partial<Record<RegistrationField, FieldKind>> = {
   birthDate: "date",
@@ -66,9 +75,19 @@ export function buildStepForm(
   return stepPositions(journey, step).map((position) => {
     const stored =
       journey.registration?.guests.find((guest) => guest.position === position)?.data ?? {};
+    const fields = stepFields(journey, step, position);
+    const rules = rulesFor(
+      journey.settings.registration,
+      position === 0 ? "primary" : "companion",
+      stored,
+      journey.arrivalDate,
+    );
+    const displayName = [stored.firstName, stored.lastName].filter(Boolean).join(" ");
     return {
       position,
-      fields: stepFields(journey, step, position).map((field) => {
+      complete: missingFields(rules, stored, fields).length === 0,
+      ...(displayName ? { displayName } : {}),
+      fields: fields.map((field) => {
         const name = fieldName(position, field);
         const error = feedback?.errors?.[position]?.find((item) => item.field === field)?.code;
         return {

@@ -36,7 +36,20 @@ export { InfoTile, type InfoTileProps, type InfoTileTone } from "./components/In
 export { LinkList, type LinkListItem, type LinkListProps } from "./components/LinkList";
 export { type LinkComponent, type LinkComponentProps } from "./components/link";
 export { PropertyName, type PropertyNameProps } from "./components/PropertyName";
-export { TextField, type TextFieldProps } from "./components/TextField";
+export { FieldError, TextField, type TextFieldProps } from "./components/TextField";
+export {
+  type ProgressStep,
+  ProgressSteps,
+  type ProgressStepsProps,
+  type ProgressStepState,
+} from "./components/ProgressSteps";
+export {
+  SummaryCard,
+  type SummaryCardProps,
+  type SummaryGroup,
+  type SummaryItem,
+} from "./components/SummaryCard";
+export { StatusList, type StatusListItem, type StatusListProps } from "./components/StatusList";
 export { SelectField, type SelectFieldProps, type SelectOption } from "./components/SelectField";
 
 // Token documentation

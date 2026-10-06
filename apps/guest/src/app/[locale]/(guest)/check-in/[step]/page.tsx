@@ -1,5 +1,5 @@
 import { localDateOf, MAX_TRAVELLERS } from "@up/core";
-import { DetailList } from "@up/ui";
+import { Icon, SummaryCard } from "@up/ui";
 import type { Metadata } from "next";
 import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -59,11 +59,30 @@ export default async function CheckInStepPage({ params }: Props) {
   const steps = visibleSteps(journey);
   const countries = countryOptions(locale);
   const timeZone = journey.window.timeZone;
-  const dateTime = (iso: string) =>
-    t("trip.dateTime", {
-      date: new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone }).format(new Date(iso)),
-      time: new Intl.DateTimeFormat(locale, { timeStyle: "short", timeZone }).format(new Date(iso)),
-    });
+  const date = (iso: string) =>
+    new Intl.DateTimeFormat(locale, {
+      weekday: "short",
+      day: "numeric",
+      month: "long",
+      timeZone,
+    }).format(new Date(iso));
+  const time = (iso: string) =>
+    new Intl.DateTimeFormat(locale, { timeStyle: "short", timeZone }).format(new Date(iso));
+  const dateAndTime = (iso: string) => (
+    <>
+      <span className="block">{date(iso)}</span>
+      <span className="type-small block text-text-muted">{time(iso)}</span>
+    </>
+  );
+  const index = steps.indexOf(step);
+  const previous = index > 0 ? steps[index - 1] : undefined;
+  const backHref = previous ? `/check-in/${previous}` : "/stay";
+  const hasDocument =
+    step === "address" &&
+    buildStepForm(journey, "address")[0]?.fields.some(
+      (def) => def.field === "documentType" || def.field === "documentNumber",
+    ) === true;
+  const title = hasDocument ? t("addressWithDocumentTitle") : t(`steps.${step}`);
 
   let content;
   if (step === "trip") {
@@ -72,36 +91,42 @@ export default async function CheckInStepPage({ params }: Props) {
     const unitName =
       context.reservation.status === "loaded" ? context.reservation.source.unit.name : undefined;
     content = (
-      <div className="flex flex-col gap-8">
-        <DetailList
-          items={[
+      <div className="flex flex-col gap-4">
+        <SummaryCard
+          title={t("trip.card")}
+          icon="calendar"
+          groups={[
             {
-              id: "arrival",
-              icon: "calendar",
-              label: t("trip.arrival"),
-              value: dateTime(journey.window.checkInAt),
+              id: "stay",
+              items: [
+                {
+                  id: "arrival",
+                  label: t("trip.arrival"),
+                  value: dateAndTime(journey.window.checkInAt),
+                },
+                {
+                  id: "departure",
+                  label: t("trip.departure"),
+                  value: dateAndTime(journey.window.checkOutAt),
+                },
+                ...(unitName ? [{ id: "unit", label: t("trip.apartment"), value: unitName }] : []),
+                ...(fromReservation === undefined
+                  ? []
+                  : [
+                      {
+                        id: "travellers",
+                        label: t("trip.travellers"),
+                        value: t("trip.travellersCount", { count: fromReservation }),
+                      },
+                    ]),
+              ],
             },
-            {
-              id: "departure",
-              icon: "calendar",
-              label: t("trip.departure"),
-              value: dateTime(journey.window.checkOutAt),
-            },
-            ...(unitName
-              ? [{ id: "unit", icon: "home" as const, label: t("trip.apartment"), value: unitName }]
-              : []),
-            ...(fromReservation === undefined
-              ? []
-              : [
-                  {
-                    id: "travellers",
-                    icon: "heart" as const,
-                    label: t("trip.travellers"),
-                    value: `${t("trip.travellersCount", { count: fromReservation })}\n${t("trip.travellersHint")}`,
-                  },
-                ]),
           ]}
         />
+        <p className="type-caption flex items-start gap-2 px-1 text-text-muted">
+          <Icon name="info" size="sm" className="mt-px shrink-0" />
+          <span>{t("trip.editHint")}</span>
+        </p>
         <TripForm
           action={confirmTripAction.bind(null, locale)}
           askGuestCount={fromReservation === undefined}
@@ -113,7 +138,7 @@ export default async function CheckInStepPage({ params }: Props) {
   } else if (step === "review") {
     const names = new Intl.DisplayNames([locale], { type: "region" });
     content = (
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-6">
         <ReviewSummary
           journey={journey}
           steps={steps}
@@ -134,6 +159,7 @@ export default async function CheckInStepPage({ params }: Props) {
     content = (
       <GuestStepForm
         action={saveStepAction.bind(null, locale, step)}
+        step={step}
         fieldsets={buildStepForm(journey, step)}
         version={registration?.version ?? 0}
         countries={countries}
@@ -147,7 +173,13 @@ export default async function CheckInStepPage({ params }: Props) {
   }
 
   return (
-    <CheckInShell steps={steps} current={step}>
+    <CheckInShell
+      steps={steps.map((id) => ({ id, state: assessment.steps[id] }))}
+      current={step}
+      backHref={backHref}
+      title={title}
+      intro={t(`intro.${step}`)}
+    >
       {content}
     </CheckInShell>
   );

@@ -2,7 +2,7 @@ import { type ComponentPropsWithoutRef } from "react";
 
 import { Icon } from "../icons/Icon";
 import { cx } from "../lib/cx";
-import { fieldControlClass, fieldDescription } from "./TextField";
+import { FieldError, fieldControlClass, fieldDescription, fieldLabelClass } from "./TextField";
 
 export type SelectOption = { value: string; label: string };
 
@@ -29,8 +29,8 @@ export function SelectField({
 }: SelectFieldProps) {
   const { hintId, errorId, describedBy } = fieldDescription(id, hint, error);
   return (
-    <div className={cx("flex flex-col gap-2", className)}>
-      <label htmlFor={id} className="type-eyebrow text-text">
+    <div className={cx("flex flex-col gap-1.5", className)}>
+      <label htmlFor={id} className={fieldLabelClass}>
         {label}
       </label>
       <div className="relative">
@@ -40,7 +40,7 @@ export function SelectField({
           aria-invalid={error ? true : undefined}
           className={cx(
             fieldControlClass,
-            "appearance-none pr-11",
+            "appearance-none pr-10",
             error ? "border-text" : "border-text-muted",
           )}
           {...rest}
@@ -55,14 +55,10 @@ export function SelectField({
         <Icon
           name="chevron-down"
           size="sm"
-          className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-text-muted"
+          className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-text-muted"
         />
       </div>
-      {error && (
-        <p id={errorId} className="type-small text-text">
-          {error}
-        </p>
-      )}
+      {error && <FieldError id={errorId}>{error}</FieldError>}
       {hint && (
         <p id={hintId} className="type-small text-text-muted">
           {hint}

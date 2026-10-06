@@ -9,6 +9,8 @@ export const surfaceTones = {
   raised: "bg-surface-raised text-text",
   /** Sage – the characteristic accent area, with AA-compliant on-accent text. */
   accent: "bg-surface-accent text-on-accent",
+  /** Soft sage – guest journey status (check-in in progress, success). */
+  sage: "bg-surface-sage text-text",
   /** Ink – rare, high-emphasis surfaces. */
   inverse: "bg-surface-inverse text-text-inverse",
   /** No fill, hairline border. */

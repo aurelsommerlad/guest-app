@@ -58,6 +58,14 @@
   --up-color-status-draft-mark: var(--up-base-ochre);
   --up-color-status-archived: var(--up-base-linen);
 
+  /*
+   * Guest journey (check-in, progress, success): a soft sage area and the dark sage as the
+   * "done/active" mark. Derived from the base palette only – no new hues.
+   */
+  --up-color-surface-sage: color-mix(in srgb, var(--up-base-sage) 10%, var(--up-base-sand));
+  --up-color-success: var(--up-base-sage-dark); /* check marks, progress, active step */
+  --up-color-on-success: var(--up-base-chalk);
+
   --up-color-border: var(--up-base-mist);
   --up-color-focus: var(--up-base-sage-dark);
 

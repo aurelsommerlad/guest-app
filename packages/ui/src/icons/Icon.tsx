@@ -7,7 +7,7 @@ import { iconPaths, type IconName } from "./paths";
  * Icon box sizes. The glyph fills ~75–85% of the box, so a 16px box shows
  * a ~12–14px glyph as in the reference tiles.
  */
-export const iconSizes = { sm: 16, md: 20, lg: 24 } as const;
+export const iconSizes = { xs: 12, sm: 16, md: 20, lg: 24 } as const;
 export type IconSize = keyof typeof iconSizes;
 
 export type IconProps = {

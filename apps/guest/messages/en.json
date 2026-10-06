@@ -53,8 +53,45 @@
       "registrationRequired": "Your access will appear here once your online check-in is complete.",
       "registrationRequiredLink": "Check in now",
       "notYetReleased": "Your access will be available from {time} on {date}.",
-      "notIssued": "Your access details are still being prepared. We are happy to help with any questions."
-    }
+      "notIssued": "Your access details are still being prepared. We are happy to help with any questions.",
+      "previewWithTime": "Your access will be available here on {date} from {time}.",
+      "previewDate": "You will find your access details here on your arrival day, {date}.",
+      "codeHint": "For your security, the code is only shown when you ask for it."
+    },
+    "greetingUpcoming": "Hello {firstName},<br></br>we look forward to welcoming you.",
+    "greetingUpcomingWithoutName": "Hello,<br></br>we look forward to welcoming you.",
+    "summary": {
+      "label": "Your reservation",
+      "travellers": "{adults, plural, one {# adult} other {# adults}}{children, plural, =0 {} one {, # child} other {, # children}}",
+      "details": "Details of your apartment"
+    },
+    "checkInCard": {
+      "eyebrow": "Online check-in",
+      "notStartedTitle": "Get it done before you arrive",
+      "notStartedBody": "So that we can welcome you personally, please complete your online check-in.",
+      "duration": "Takes only a few minutes.",
+      "start": "Start check-in",
+      "openSteps": "{count, plural, one {# step left} other {# steps left}}",
+      "inProgressTitle": "Finish now",
+      "almostDoneTitle": "Almost done",
+      "inProgressBody": "Please complete your details – then everything will be ready when you arrive.",
+      "continue": "Continue check-in",
+      "progress": "Progress",
+      "completedTitle": "Online check-in complete",
+      "completedBody": "Thank you! We have received your details.",
+      "guestRegistrationSubmitted": "Guest registration submitted",
+      "guestRegistrationPending": "Guest registration being prepared",
+      "done": "done",
+      "open": "open",
+      "steps": {
+        "trip": "Trip",
+        "primary": "Main guest",
+        "companions": "Travellers",
+        "address": "Address",
+        "review": "Confirmation"
+      }
+    },
+    "linksHeading": "For your stay"
   },
   "stayError": {
     "title": "Your stay is not available right now.",
@@ -139,7 +176,7 @@
       "trip": "Your trip",
       "primary": "Main guest",
       "companions": "Fellow travellers",
-      "address": "Registration details",
+      "address": "Your address",
       "review": "Review & submit"
     },
     "intro": {
@@ -157,7 +194,9 @@
       "travellersCount": "{count, plural, one {# person} other {# people}}",
       "travellersHint": "According to your booking. Has anything changed? Please get in touch.",
       "travellersQuestion": "How many people are travelling (including you)?",
-      "dateTime": "{date}, {time}"
+      "dateTime": "{date}, {time}",
+      "card": "Your stay",
+      "editHint": "Something not right? Get in touch – we will adjust your booking."
     },
     "companion": "Fellow traveller {number}",
     "fields": {
@@ -196,13 +235,53 @@
     "submitting": "Submitting …",
     "privacy": "We use your details only for your stay and the statutory guest registration.",
     "done": {
-      "title": "Check-in complete",
-      "body": "Thank you! We have received your details. Everything will be ready when you arrive.",
-      "back": "To your stay"
+      "title": "Check-in complete!",
+      "body": "Thank you, {firstName}. We look forward to your visit.",
+      "back": "To your stay",
+      "bodyWithoutName": "Thank you! We look forward to your visit.",
+      "nextTitle": "What happens next?",
+      "nextCheckIn": "Check-in from {time} on {date}.",
+      "nextAccessTime": "Your access will be available on your home screen on {date} from {time}.",
+      "nextAccessDay": "You will find your access details on your home screen on your arrival day, {date}.",
+      "nextAccessNow": "Your access details are now on your home screen.",
+      "nextGuestRegistrationSubmitted": "Your guest registration has been submitted.",
+      "nextGuestRegistrationPending": "Your guest registration is being prepared."
     },
     "unavailable": {
       "title": "Online check-in not available",
       "body": "Online check-in is not available for your stay right now. We are happy to help with any questions."
+    },
+    "stepsShort": {
+      "trip": "Trip",
+      "primary": "Guest",
+      "companions": "Travellers",
+      "address": "Address",
+      "review": "Review"
+    },
+    "stepState": {
+      "complete": "done",
+      "current": "current step"
+    },
+    "progressLabel": "Online check-in progress",
+    "backTo": "Back",
+    "addressWithDocumentTitle": "Address & ID",
+    "primaryCard": "Personal details",
+    "addressCard": "Home address",
+    "companionComplete": "complete",
+    "companionIncomplete": "details missing",
+    "companionHint": "Tap a person to edit their details.",
+    "document": {
+      "title": "Identity document",
+      "body": "For the guest registration we need the type and number of your ID.",
+      "scanTitle": "Scan ID",
+      "scanSoon": "Coming soon",
+      "scanBody": "In future you will be able to capture your ID here with your camera. Until then, simply enter the details yourself."
+    },
+    "review": {
+      "primary": "Main guest",
+      "companions": "Fellow travellers",
+      "address": "Address",
+      "document": "ID"
     }
   },
   "extras": {

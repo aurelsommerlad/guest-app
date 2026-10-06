@@ -1,4 +1,5 @@
 import {
+  CHECK_IN_STEPS,
   deriveStayPhase,
   type GuestJourney,
   type LocalizedText,
@@ -9,6 +10,7 @@ import {
 
 import { type Locale, routing } from "../../i18n/routing";
 import {
+  type CheckInCardView,
   type LocalTime,
   type StayAccessView,
   type StaySource,
@@ -19,8 +21,11 @@ import {
 /** Journey data STAY needs (from features/journey). */
 export type StayJourneyInput = {
   journey: GuestJourney;
-  assessment: Pick<RegistrationAssessment, "stepsRemaining">;
+  assessment: Pick<RegistrationAssessment, "stepsRemaining"> &
+    Partial<Pick<RegistrationAssessment, "steps">>;
   access: StayAccess;
+  /** Official guest registration (e.g. Feratel) – only if the property reports to one. */
+  guestRegistration?: "pending" | "submitted";
 };
 
 export const CHECK_IN_HREF = "/check-in";
@@ -50,6 +55,17 @@ export function buildStayViewModel(
   };
 
   const access = journey ? selectAccess(journey, localTime, text) : undefined;
+  const status = selectStatus(source, now, localTime, journey);
+  const upcoming = journey?.journey.phase === "before-arrival";
+  const checkIn = journey ? selectCheckIn(journey) : undefined;
+  const preview =
+    upcoming && journey.access.status === "pending" && journey.access.releasesAt
+      ? {
+          ...localTime(journey.access.releasesAt),
+          withTime: Date.parse(journey.access.releasesAt) === Date.parse(reservation.checkInAt),
+        }
+      : undefined;
+  const [firstCard] = source.cards;
   return {
     locale,
     phase,
@@ -57,8 +73,41 @@ export function buildStayViewModel(
     guest: source.guest.firstName ? { firstName: source.guest.firstName } : {},
     property: { name: property.name, spokenName: property.spokenName, location: property.location },
     unit: { name: source.unit.name, href: "/guide" },
-    status: selectStatus(source, now, localTime, journey),
+    status,
     ...(access ? { access } : {}),
+    ...(preview ? { accessPreview: preview } : {}),
+    upcoming,
+    summary: {
+      title: `${property.name} · ${source.unit.name}`,
+      dates: new Intl.DateTimeFormat(locale, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: property.timeZone,
+      }).formatRange(new Date(reservation.checkInAt), new Date(reservation.checkOutAt)),
+      ...(reservation.guestCount ? { travellers: reservation.guestCount } : {}),
+      ...(firstCard
+        ? {
+            image: {
+              src: firstCard.image.src,
+              alt: text(firstCard.image.alt),
+              focus: firstCard.image.focus,
+            },
+          }
+        : {}),
+      href: "/guide",
+    },
+    timeTile:
+      status.kind === "online-check-in"
+        ? phase === "pre-arrival"
+          ? { kind: "check-in", ...localTime(reservation.checkInAt) }
+          : {
+              kind: "check-out",
+              today: journey?.journey.phase === "departure-day",
+              ...localTime(reservation.checkOutAt),
+            }
+        : status,
+    ...(checkIn ? { checkIn } : {}),
     cards: source.cards.map((card) => ({
       id: card.id,
       href: card.href,
@@ -126,4 +175,30 @@ function selectAccess(
       }
       return { kind: "not-issued" };
   }
+}
+
+/** The check-in card: open (not started / in progress) until departure day, completed before arrival. */
+function selectCheckIn(journey: StayJourneyInput): CheckInCardView | undefined {
+  const { phase, primaryAction, registration } = journey.journey;
+  const steps = journey.assessment.steps;
+  const visible = CHECK_IN_STEPS.filter((step) => steps?.[step] !== "skipped");
+  if (primaryAction === "online-check-in") {
+    if (registration === "not-started") {
+      return { state: "not-started", href: CHECK_IN_HREF, steps: visible };
+    }
+    return {
+      state: "in-progress",
+      href: CHECK_IN_HREF,
+      steps: visible.map((id) => ({ id, done: steps?.[id] === "complete" })),
+      stepsRemaining: journey.assessment.stepsRemaining,
+    };
+  }
+  if (registration === "completed" && phase === "before-arrival") {
+    return {
+      state: "completed",
+      steps: visible.filter((step) => step !== "review"),
+      ...(journey.guestRegistration ? { guestRegistration: journey.guestRegistration } : {}),
+    };
+  }
+  return undefined;
 }

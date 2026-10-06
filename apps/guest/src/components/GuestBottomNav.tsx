@@ -17,7 +17,9 @@ export function GuestBottomNav({
 }) {
   const pathname = usePathname(); // without locale prefix, e.g. "/stay"
   const section = pathname.split("/")[1];
-  const activeId = items.find((item) => item.id === section)?.id;
+  // Online check-in and Extras belong to the stay.
+  const owner = section === "check-in" || section === "extras" ? "stay" : section;
+  const activeId = items.find((item) => item.id === owner)?.id;
 
   return (
     <BottomNavigation

@@ -9,7 +9,10 @@ import { FilterBar } from "./FilterBar";
 import { InfoTile } from "./InfoTile";
 import { LinkList } from "./LinkList";
 import { PropertyName } from "./PropertyName";
+import { ProgressSteps } from "./ProgressSteps";
 import { SelectField } from "./SelectField";
+import { StatusList } from "./StatusList";
+import { SummaryCard } from "./SummaryCard";
 import { TextField } from "./TextField";
 import { type LinkComponentProps } from "./link";
 
@@ -277,5 +280,55 @@ describe("form field errors", () => {
     expect(html).toContain('<option value="DE" selected="">Deutschland</option>');
     expect(html).toContain('aria-invalid="true"');
     expect(html).not.toContain('aria-describedby="nationality-hint');
+  });
+});
+
+describe("guest journey components", () => {
+  it("ProgressSteps names every step and marks done and current ones", () => {
+    const html = renderToStaticMarkup(
+      <ProgressSteps
+        label="Fortschritt"
+        stateLabels={{ complete: "erledigt", current: "aktueller Schritt" }}
+        steps={[
+          { id: "a", label: "Reise", state: "complete" },
+          { id: "b", label: "Gast", state: "current" },
+          { id: "c", label: "Adresse", state: "upcoming" },
+        ]}
+      />,
+    );
+    expect(html).toContain('<ol aria-label="Fortschritt"');
+    expect(html.match(/<li/g)).toHaveLength(3);
+    expect(html).toContain('aria-current="step"');
+    expect(html).toContain('Reise<span class="sr-only"> (erledigt)</span>');
+    expect(html).toContain('Gast<span class="sr-only"> (aktueller Schritt)</span>');
+    // Only the current label stays visible on compact phones.
+    expect(html.match(/max-xs:sr-only/g)).toHaveLength(2);
+  });
+
+  it("SummaryCard renders label/value pairs with an action", () => {
+    const html = renderToStaticMarkup(
+      <SummaryCard
+        title="Hauptgast"
+        action={<a href="/x">Ändern</a>}
+        groups={[{ id: "g", items: [{ id: "f", label: "Vorname", value: "Laura" }] }]}
+      />,
+    );
+    expect(html).toContain("Hauptgast");
+    expect(html).toContain('<a href="/x">Ändern</a>');
+    expect(html).toMatch(/<dt[^>]*>Vorname<\/dt><dd[^>]*>Laura<\/dd>/);
+  });
+
+  it("StatusList states are announced", () => {
+    const html = renderToStaticMarkup(
+      <StatusList
+        stateLabels={{ done: "erledigt", open: "offen" }}
+        items={[
+          { id: "a", label: "Gästedaten", state: "done" },
+          { id: "b", label: "Adresse", state: "open" },
+        ]}
+      />,
+    );
+    expect(html).toContain('Gästedaten<span class="sr-only"> (erledigt)</span>');
+    expect(html).toContain('Adresse<span class="sr-only"> (offen)</span>');
   });
 });

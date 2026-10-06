@@ -69,8 +69,46 @@ export type StayViewModel = {
   status: StayStatus;
   /** Access information – only from the arrival day on, never the code itself. */
   access?: StayAccessView;
+  /** Before arrival: when access information becomes available (no code, no provider). */
+  accessPreview?: LocalTime & { withTime: boolean };
+  /** "schön, dass Du bald bei uns bist" before the arrival day. */
+  upcoming: boolean;
+  /** Compact reservation card: property · unit, dates, travellers. */
+  summary: StaySummary;
+  /** Time tile next to the apartment: check-in before arrival, otherwise check-out. */
+  timeTile: Extract<StayStatus, { kind: "check-in" | "check-out" }>;
+  /** Online check-in card (not started / in progress / completed); undefined if not used. */
+  checkIn?: CheckInCardView;
   cards: readonly StayCard[];
 };
+
+export type StaySummary = {
+  /** "HØV · ROS" */
+  title: string;
+  /** "27.–31. August 2026" */
+  dates: string;
+  travellers?: { adults: number; children: number };
+  image?: { src: StaticImageData | string; alt: string; focus?: string };
+  href: string;
+};
+
+export type CheckInStepId = "trip" | "primary" | "companions" | "address" | "review";
+
+export type CheckInCardView =
+  | { state: "not-started"; href: string; steps: readonly CheckInStepId[] }
+  | {
+      state: "in-progress";
+      href: string;
+      steps: readonly { id: CheckInStepId; done: boolean }[];
+      stepsRemaining: number;
+    }
+  | {
+      state: "completed";
+      /** Data steps the guest completed (no review step). */
+      steps: readonly CheckInStepId[];
+      /** Only when the property reports to an official guest registration. */
+      guestRegistration?: "pending" | "submitted";
+    };
 
 export type LocalTime = { time: string; date: string; dateTime: string };
 

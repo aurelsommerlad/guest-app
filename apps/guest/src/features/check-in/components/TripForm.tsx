@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, SelectField } from "@up/ui";
+import { Button, Callout, SelectField } from "@up/ui";
 import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 
@@ -22,7 +22,7 @@ export function TripForm({ action, askGuestCount, guestCount, maxTravellers }: P
     label: t("trip.travellersCount", { count: index + 1 }),
   }));
   return (
-    <form action={formAction} className="flex flex-col gap-8">
+    <form action={formAction} className="flex flex-col gap-4">
       {askGuestCount && (
         <SelectField
           id="guestCount"
@@ -37,17 +37,19 @@ export function TripForm({ action, askGuestCount, guestCount, maxTravellers }: P
       )}
       <div role="status" className="empty:hidden">
         {(state.status === "unavailable" || state.status === "conflict") && (
-          <p className="type-small rounded-card bg-surface p-4 text-text">
-            {t("errors.unavailable")}
-          </p>
+          <Callout icon="info">{t("errors.unavailable")}</Callout>
         )}
         {state.status === "rate-limited" && (
-          <p className="type-small rounded-card bg-surface p-4 text-text">
-            {t("errors.rateLimited")}
-          </p>
+          <Callout icon="info">{t("errors.rateLimited")}</Callout>
         )}
       </div>
-      <Button type="submit" variant="primary" disabled={pending} className="self-start">
+      <Button
+        type="submit"
+        variant="primary"
+        iconEnd="arrow-right"
+        disabled={pending}
+        className="w-full sm:w-auto sm:self-start"
+      >
         {pending ? t("saving") : t("next")}
       </Button>
     </form>

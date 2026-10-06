@@ -18,9 +18,9 @@ export function AccessCodeReveal() {
 
   if (result?.status === "ok") {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-border bg-surface-raised px-4 py-3">
         <p className="flex flex-col gap-1">
-          <span className="type-small text-text-muted">{t("code")}</span>
+          <span className="type-caption text-text-muted">{t("code")}</span>
           <span className="type-figure tracking-widest" aria-live="polite">
             {result.code}
           </span>
@@ -28,6 +28,7 @@ export function AccessCodeReveal() {
         <Button
           type="button"
           variant="secondary"
+          iconStart="x"
           onClick={() => {
             setResult(undefined);
           }}
@@ -43,7 +44,8 @@ export function AccessCodeReveal() {
       <Button
         type="button"
         variant="primary"
-        className="self-start"
+        iconStart="key"
+        className="w-full sm:w-auto sm:self-start"
         disabled={pending}
         onClick={() => {
           startTransition(async () => {
@@ -53,6 +55,7 @@ export function AccessCodeReveal() {
       >
         {pending ? t("revealing") : t("reveal")}
       </Button>
+      <p className="type-caption text-text-muted">{t("codeHint")}</p>
       <div role="status" className="empty:hidden">
         {result?.status === "unavailable" && (
           <p className="type-small text-text-muted">{t("revealUnavailable")}</p>

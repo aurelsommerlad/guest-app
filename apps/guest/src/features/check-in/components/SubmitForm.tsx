@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@up/ui";
+import { Button, Callout, Icon } from "@up/ui";
 import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 
@@ -26,30 +26,39 @@ export function SubmitForm({ action, version }: Props) {
             ? t("errors.unavailable")
             : undefined;
   return (
-    <form action={formAction} className="flex flex-col gap-6" noValidate>
+    <form action={formAction} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="version" value={version} />
-      <label className="flex items-start gap-3">
+      <label className="flex cursor-pointer items-start gap-3 rounded-card border border-border bg-surface-raised p-4">
         <input
           type="checkbox"
           name="confirm"
           value="yes"
           required
-          className="mt-1 size-5 shrink-0 accent-text"
+          className="mt-0.5 size-5 shrink-0 accent-success"
           aria-describedby={message ? "submit-message" : undefined}
         />
-        <span className="type-body text-text">{t("confirm")}</span>
+        <span className="type-small text-text">{t("confirm")}</span>
       </label>
       <div role="status" className="empty:hidden">
         {message && (
-          <p id="submit-message" className="type-small rounded-card bg-surface p-4 text-text">
-            {message}
-          </p>
+          <Callout icon="info">
+            <span id="submit-message">{message}</span>
+          </Callout>
         )}
       </div>
-      <Button type="submit" variant="primary" disabled={pending} className="self-start">
+      <Button
+        type="submit"
+        variant="primary"
+        iconEnd="arrow-right"
+        disabled={pending}
+        className="w-full sm:w-auto sm:self-start"
+      >
         {pending ? t("submitting") : t("submit")}
       </Button>
-      <p className="type-small text-text-muted">{t("privacy")}</p>
+      <p className="type-caption flex items-start gap-2 text-text-muted">
+        <Icon name="lock" size="sm" className="mt-px shrink-0" />
+        <span>{t("privacy")}</span>
+      </p>
     </form>
   );
 }

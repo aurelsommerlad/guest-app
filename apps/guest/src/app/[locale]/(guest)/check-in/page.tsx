@@ -9,6 +9,8 @@ import {
   CheckInDone,
   CheckInUnavailable,
 } from "../../../../features/check-in/components/CheckInStates";
+import { visibleSteps } from "../../../../features/check-in/form-model";
+import { nextStepsAfterCheckIn } from "../../../../features/check-in/next-steps";
 import { checkInDeps } from "../../../../features/check-in/server";
 import { requireGuestContext } from "../../../../features/guest-context/server";
 import { redirect } from "../../../../i18n/navigation";
@@ -39,9 +41,26 @@ export default async function CheckInPage({ params }: Props) {
   }
   const { journey } = availability;
   if (journey.registration?.status === "submitted") {
+    const t = await getTranslations("checkIn.done");
+    const timeZone = journey.window.timeZone;
+    const next = nextStepsAfterCheckIn(journey, {
+      time: (iso) =>
+        new Intl.DateTimeFormat(locale, { timeStyle: "short", timeZone }).format(new Date(iso)),
+      date: (iso) =>
+        new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", timeZone }).format(
+          new Date(iso),
+        ),
+    }).map((step) => ({ id: step.id, icon: step.icon, text: t(step.key, step.values ?? {}) }));
+    const firstName =
+      context.reservation.status === "loaded"
+        ? context.reservation.source.guest.firstName
+        : undefined;
     return (
-      <CheckInShell>
-        <CheckInDone />
+      <CheckInShell
+        steps={visibleSteps(journey).map((id) => ({ id, state: journey.assessment.steps[id] }))}
+        allComplete
+      >
+        <CheckInDone {...(firstName ? { firstName } : {})} next={next} />
       </CheckInShell>
     );
   }

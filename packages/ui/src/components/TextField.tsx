@@ -1,5 +1,6 @@
 import { type ComponentPropsWithoutRef } from "react";
 
+import { Icon } from "../icons/Icon";
 import { cx } from "../lib/cx";
 
 export type TextFieldProps = {
@@ -12,8 +13,11 @@ export type TextFieldProps = {
   id: string;
 } & Omit<ComponentPropsWithoutRef<"input">, "id" | "children">;
 
+/** Shared control look: chalk fill, 44 px touch height, hairline-strong border. */
 export const fieldControlClass =
-  "type-body min-h-12 w-full min-w-0 rounded-control border bg-background px-4 text-text";
+  "type-body min-h-11 w-full min-w-0 rounded-control border bg-surface-raised px-3.5 text-text";
+
+export const fieldLabelClass = "type-small text-text";
 
 /** Describedby ids of a field's hint and error. */
 export function fieldDescription(id: string, hint?: string, error?: string) {
@@ -38,8 +42,8 @@ export function TextField({
 }: TextFieldProps) {
   const { hintId, errorId, describedBy } = fieldDescription(id, hint, error);
   return (
-    <div className={cx("flex flex-col gap-2", className)}>
-      <label htmlFor={id} className="type-eyebrow text-text">
+    <div className={cx("flex flex-col gap-1.5", className)}>
+      <label htmlFor={id} className={fieldLabelClass}>
         {label}
       </label>
       <input
@@ -50,16 +54,22 @@ export function TextField({
         className={cx(fieldControlClass, error ? "border-text" : "border-text-muted")}
         {...rest}
       />
-      {error && (
-        <p id={errorId} className="type-small text-text">
-          {error}
-        </p>
-      )}
+      {error && <FieldError id={errorId}>{error}</FieldError>}
       {hint && (
         <p id={hintId} className="type-small text-text-muted">
           {hint}
         </p>
       )}
     </div>
+  );
+}
+
+/** Inline validation message right below its field. */
+export function FieldError({ id, children }: { id: string | undefined; children: string }) {
+  return (
+    <p id={id} className="type-caption flex items-start gap-1.5 text-text">
+      <Icon name="info" size="sm" className="mt-px shrink-0" />
+      <span>{children}</span>
+    </p>
   );
 }

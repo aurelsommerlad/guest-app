@@ -35,6 +35,9 @@
   --color-status-draft: var(--up-color-status-draft);
   --color-status-draft-mark: var(--up-color-status-draft-mark);
   --color-status-archived: var(--up-color-status-archived);
+  --color-surface-sage: var(--up-color-surface-sage);
+  --color-success: var(--up-color-success);
+  --color-on-success: var(--up-color-on-success);
   --color-border: var(--up-color-border);
   --color-focus: var(--up-color-focus);
   --color-transparent: transparent;

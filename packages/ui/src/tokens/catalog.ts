@@ -64,6 +64,16 @@ export const semanticColorTokens: readonly ColorToken[] = [
   },
   { variable: "--up-color-status-draft", name: "status-draft", role: "Status „Entwurf“" },
   { variable: "--up-color-status-archived", name: "status-archived", role: "Status „Archiviert“" },
+  {
+    variable: "--up-color-surface-sage",
+    name: "surface-sage",
+    role: "Sanfte Salbeifläche (Check-in, Erfolg)",
+  },
+  {
+    variable: "--up-color-success",
+    name: "success",
+    role: "Erledigt-/Aktiv-Markierung, Fortschritt",
+  },
   { variable: "--up-color-border", name: "border", role: "Linien" },
   { variable: "--up-color-focus", name: "focus", role: "Fokusrahmen (Tastatur)" },
 ];
@@ -99,6 +109,14 @@ export const contrastPairs: readonly {
     largeTextOnly: true,
   },
   { fg: "--up-color-text-inverse", bg: "--up-color-surface-inverse", usage: "Weiß auf Ink (STAY)" },
+  { fg: "--up-color-text", bg: "--up-color-surface-sage", usage: "Text auf Salbeifläche" },
+  {
+    fg: "--up-color-text-muted",
+    bg: "--up-color-surface-sage",
+    usage: "Sekundärtext auf Salbeifläche",
+  },
+  { fg: "--up-color-success", bg: "--up-color-surface-sage", usage: "Häkchen auf Salbeifläche" },
+  { fg: "--up-color-on-success", bg: "--up-color-success", usage: "Häkchen im Erledigt-Punkt" },
 ];
 
 export type TypeStyle = {

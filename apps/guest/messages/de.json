@@ -53,8 +53,45 @@
       "registrationRequired": "Dein Zugang erscheint hier, sobald Dein Online-Check-in abgeschlossen ist.",
       "registrationRequiredLink": "Jetzt einchecken",
       "notYetReleased": "Dein Zugang wird ab {time} Uhr am {date} freigeschaltet.",
-      "notIssued": "Deine Zugangsinformationen sind noch in Vorbereitung. Bei Fragen sind wir für Dich da."
-    }
+      "notIssued": "Deine Zugangsinformationen sind noch in Vorbereitung. Bei Fragen sind wir für Dich da.",
+      "previewWithTime": "Dein Zugang ist am {date} ab {time} Uhr hier verfügbar.",
+      "previewDate": "Deine Zugangsinformationen findest Du am Anreisetag, {date}, hier.",
+      "codeHint": "Aus Sicherheitsgründen wird der Code erst auf Deinen Wunsch angezeigt."
+    },
+    "greetingUpcoming": "Hallo {firstName},<br></br>schön, dass Du bald bei uns bist.",
+    "greetingUpcomingWithoutName": "Hallo,<br></br>schön, dass Du bald bei uns bist.",
+    "summary": {
+      "label": "Deine Reservierung",
+      "travellers": "{adults, plural, one {# Erwachsener} other {# Erwachsene}}{children, plural, =0 {} one {, # Kind} other {, # Kinder}}",
+      "details": "Details zu Deinem Apartment"
+    },
+    "checkInCard": {
+      "eyebrow": "Online-Check-in",
+      "notStartedTitle": "Vor Anreise erledigen",
+      "notStartedBody": "Damit wir Dich persönlich willkommen heißen können, schließe bitte Deinen Online-Check-in ab.",
+      "duration": "Dauert nur wenige Minuten.",
+      "start": "Check-in starten",
+      "openSteps": "{count, plural, one {Noch # Schritt offen} other {Noch # Schritte offen}}",
+      "inProgressTitle": "Jetzt erledigen",
+      "almostDoneTitle": "Fast geschafft",
+      "inProgressBody": "Bitte vervollständige Deine Angaben – dann ist bei Ankunft alles vorbereitet.",
+      "continue": "Check-in fortsetzen",
+      "progress": "Fortschritt",
+      "completedTitle": "Online-Check-in abgeschlossen",
+      "completedBody": "Vielen Dank! Deine Angaben sind bei uns eingegangen.",
+      "guestRegistrationSubmitted": "Gästemeldung übermittelt",
+      "guestRegistrationPending": "Gästemeldung wird vorbereitet",
+      "done": "erledigt",
+      "open": "offen",
+      "steps": {
+        "trip": "Reise",
+        "primary": "Hauptgast",
+        "companions": "Mitreisende",
+        "address": "Adresse",
+        "review": "Bestätigung"
+      }
+    },
+    "linksHeading": "Für Deinen Aufenthalt"
   },
   "stayError": {
     "title": "Dein Aufenthalt ist gerade nicht erreichbar.",
@@ -139,7 +176,7 @@
       "trip": "Deine Reise",
       "primary": "Hauptgast",
       "companions": "Mitreisende",
-      "address": "Meldedaten",
+      "address": "Deine Adresse",
       "review": "Prüfen & absenden"
     },
     "intro": {
@@ -157,7 +194,9 @@
       "travellersCount": "{count, plural, one {# Person} other {# Personen}}",
       "travellersHint": "Laut Deiner Buchung. Hat sich etwas geändert? Melde Dich gerne bei uns.",
       "travellersQuestion": "Mit wie vielen Personen reist Du (Dich eingeschlossen)?",
-      "dateTime": "{date}, {time} Uhr"
+      "dateTime": "{date}, {time} Uhr",
+      "card": "Dein Aufenthalt",
+      "editHint": "Stimmt etwas nicht? Melde Dich gerne bei uns – wir passen Deine Buchung an."
     },
     "companion": "Mitreisende Person {number}",
     "fields": {
@@ -196,13 +235,53 @@
     "submitting": "Wird gesendet …",
     "privacy": "Wir verwenden Deine Angaben ausschließlich für Deinen Aufenthalt und die gesetzlich vorgeschriebene Gästemeldung.",
     "done": {
-      "title": "Check-in abgeschlossen",
-      "body": "Danke! Deine Angaben sind bei uns eingegangen. Bei Anreise ist alles vorbereitet.",
-      "back": "Zu Deinem Aufenthalt"
+      "title": "Check-in abgeschlossen!",
+      "body": "Vielen Dank, {firstName}. Wir freuen uns auf Deinen Besuch.",
+      "back": "Zu Deinem Aufenthalt",
+      "bodyWithoutName": "Vielen Dank! Wir freuen uns auf Deinen Besuch.",
+      "nextTitle": "Was passiert als Nächstes?",
+      "nextCheckIn": "Check-in ab {time} Uhr am {date}.",
+      "nextAccessTime": "Dein Zugang ist am {date} ab {time} Uhr auf Deiner Startseite verfügbar.",
+      "nextAccessDay": "Deine Zugangsinformationen findest Du am Anreisetag, {date}, auf Deiner Startseite.",
+      "nextAccessNow": "Deine Zugangsinformationen findest Du jetzt auf Deiner Startseite.",
+      "nextGuestRegistrationSubmitted": "Deine Gästemeldung wurde übermittelt.",
+      "nextGuestRegistrationPending": "Deine Gästemeldung wird vorbereitet."
     },
     "unavailable": {
       "title": "Online-Check-in nicht verfügbar",
       "body": "Für Deinen Aufenthalt ist der Online-Check-in gerade nicht verfügbar. Bei Fragen sind wir gerne für Dich da."
+    },
+    "stepsShort": {
+      "trip": "Reise",
+      "primary": "Gast",
+      "companions": "Mitreisende",
+      "address": "Adresse",
+      "review": "Prüfen"
+    },
+    "stepState": {
+      "complete": "erledigt",
+      "current": "aktueller Schritt"
+    },
+    "progressLabel": "Fortschritt des Online-Check-ins",
+    "backTo": "Zurück",
+    "addressWithDocumentTitle": "Adresse & Ausweis",
+    "primaryCard": "Angaben zur Person",
+    "addressCard": "Wohnadresse",
+    "companionComplete": "vollständig",
+    "companionIncomplete": "Angaben fehlen",
+    "companionHint": "Tippe auf eine Person, um ihre Angaben zu bearbeiten.",
+    "document": {
+      "title": "Ausweisdokument",
+      "body": "Für die Gästemeldung benötigen wir Art und Nummer Deines Ausweises.",
+      "scanTitle": "Ausweis scannen",
+      "scanSoon": "Bald verfügbar",
+      "scanBody": "Künftig kannst Du Deinen Ausweis hier mit der Kamera erfassen. Bis dahin trägst Du die Angaben einfach selbst ein."
+    },
+    "review": {
+      "primary": "Hauptgast",
+      "companions": "Mitreisende",
+      "address": "Adresse",
+      "document": "Ausweis"
     }
   },
   "extras": {

@@ -365,7 +365,26 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
 - **Detail:** Titelbild (falls vorhanden), Kurzbeschreibung als Lead, Beschreibung, „Unser Tipp“ als `Callout`, Infos (Öffnungszeiten, Adresse) und Aktionen nur mit Daten.
 - **Admin:** Liste und Editor folgen der GUIDE-Sprache aus Phase 9.3 (Karten-Zeilen, Abschnitts-Karten, ruhige Status-Badges, Primäraktion `cta`).
 
-## 21. Offene Punkte (C)
+## 21. Guest Journey: STAY und Online-Check-in (Phase 11, Redesign)
+
+Hospitality statt Formular-App: ruhige Cards, strukturierte Informationsgruppen, dezente Salbeiflächen, dunkle primäre Aktionen (`cta`).
+
+**Tokens (nur aus der bestehenden Palette abgeleitet):** `surface-sage` (Salbei 10 % auf Sand – Check-in-/Erfolgsflächen; 10 % statt mehr, damit Sekundärtext AA bleibt), `success` (= sage-dark: Häkchen, Fortschritt, aktiver Schritt), `on-success` (chalk). Kontrastpaare in `tokens/catalog.ts`.
+
+**Komponenten (`@up/ui`):**
+
+- `ProgressSteps` – benannte Schritte mit Zustand (erledigt = gefüllter Punkt mit Häkchen, aktuell = dunkler Salbeipunkt, offen = Kreis). Unter 360 px bleibt nur das aktuelle Label sichtbar; Labels sind ein kurzes Wort und brechen nie um.
+- `SummaryCard` – Eyebrow-Titel mit optionaler Aktion („Ändern“), Label/Wert-Paare zweispaltig ab 360 px, Haarlinien nur zwischen Gruppen (Prüfen & absenden, Reisedaten).
+- `StatusList` – kleine Checkliste erledigt/offen (STAY-Check-in-Card).
+- `Surface tone="sage"`, `Callout tone="sage"` – Status- und Hinweisflächen; `Callout icon="info"` für Formularhinweise.
+- `TextField`/`SelectField` verfeinert: Label in Satzschreibung (`type-small`), 44 px Höhe, chalk-Füllung, Fehler direkt am Feld mit Icon (`FieldError`).
+- Icons ergänzt (Lucide): `user`, `users`, `shopping-bag`, `mountain`, `id-card`, `scan`, `lock`, `file-text`, `pencil`, `circle-check`; Icon-Größe `xs` (12 px) für Häkchen in Punkten.
+
+**Feature-Komponenten (Guest App, nur einmal verwendet):** `StaySummaryCard`, `CheckInCard` (nicht begonnen / begonnen / abgeschlossen), `AccessPanel`, `StayLinks` (kompakte Karten auf Phones, Desktop behält die Fotokarten), `CheckInShell`, Personen-Accordion in `GuestStepForm` (native `<details>`, Eingaben bleiben im Formular), `CheckInDone`.
+
+**Regeln:** keine Zustände vortäuschen (Gästemeldung nur „übermittelt“, wenn der Sync wirklich `synced` ist; keine Zahlung/Gästekarte/Scan als Funktion); Scan-Platz im Ausweis-Card ist als „Bald verfügbar“ gekennzeichnet und nicht klickbar. Primäre Buttons auf Phones volle Breite. `clear-bottom-nav` reserviert Navigationshöhe + Safe Area + 2 rem auf allen Gästeseiten.
+
+## 22. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

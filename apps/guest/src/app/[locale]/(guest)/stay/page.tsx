@@ -6,9 +6,12 @@ import { notFound } from "next/navigation";
 
 import { BrandHeader } from "../../../../components/GuestHeader";
 import { AccessPanel } from "../../../../features/stay/components/AccessPanel";
+import { CheckInCard } from "../../../../features/stay/components/CheckInCard";
 import { Greeting } from "../../../../features/stay/components/Greeting";
 import { StayCards } from "../../../../features/stay/components/StayCards";
 import { StayInfoGrid } from "../../../../features/stay/components/StayInfoGrid";
+import { StayLinks } from "../../../../features/stay/components/StayLinks";
+import { StaySummaryCard } from "../../../../features/stay/components/StaySummaryCard";
 import { getStay } from "../../../../features/stay/get-stay";
 import { routing } from "../../../../i18n/routing";
 
@@ -27,7 +30,12 @@ export default async function StayPage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
 
-  const stay = await getStay(locale);
+  const [stay, t] = await Promise.all([getStay(locale), getTranslations("stay")]);
+  const accessCard = stay.access ? (
+    <AccessPanel access={stay.access} />
+  ) : stay.accessPreview ? (
+    <AccessPanel preview={stay.accessPreview} />
+  ) : undefined;
 
   return (
     <div className="safe-top">
@@ -38,21 +46,32 @@ export default async function StayPage({ params }: Props) {
         <main>
           <div className="mt-6 grid gap-5 lg:mt-16 lg:grid-cols-12 lg:items-end lg:gap-12">
             <div className="lg:col-span-7">
-              <Greeting firstName={stay.guest.firstName} />
+              <Greeting firstName={stay.guest.firstName} upcoming={stay.upcoming} />
             </div>
             <div className="lg:col-span-5">
-              <StayInfoGrid status={stay.status} unit={stay.unit} />
+              {stay.upcoming ? (
+                <StaySummaryCard summary={stay.summary} />
+              ) : (
+                <StayInfoGrid status={stay.timeTile} unit={stay.unit} />
+              )}
             </div>
           </div>
 
-          {stay.access && (
-            <div className="mt-3 lg:mt-6">
-              <AccessPanel access={stay.access} />
+          {(stay.checkIn ?? accessCard) && (
+            <div className="mt-3 grid items-start gap-3 lg:mt-8 lg:grid-cols-2">
+              {stay.checkIn && <CheckInCard card={stay.checkIn} />}
+              {accessCard}
             </div>
           )}
 
-          <div className="mt-3 lg:mt-12">
-            <StayCards cards={stay.cards} />
+          <div className="mt-6 lg:mt-12">
+            {/* Phones: compact cards; desktop: the three photo cards side by side. */}
+            <div className="lg:hidden">
+              <StayLinks cards={stay.cards} heading={t("linksHeading")} />
+            </div>
+            <div className="hidden lg:block">
+              <StayCards cards={stay.cards} />
+            </div>
           </div>
         </main>
       </Container>
