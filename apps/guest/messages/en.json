@@ -8,7 +8,8 @@
     "stay": "Your stay",
     "guide": "Guide",
     "extras": "Extras",
-    "explore": "Explore"
+    "explore": "Explore",
+    "checkIn": "Online check-in"
   },
   "navigation": {
     "label": "Main navigation",
@@ -28,7 +29,32 @@
     "apartment": "Apartment",
     "apartmentDetails": "View details",
     "apartmentDetailsContext": "for apartment {name}",
-    "cardsHeading": "For your stay"
+    "cardsHeading": "For your stay",
+    "checkIn": "Check-in",
+    "checkOutToday": "Check-out today",
+    "checkInContinue": "Continue",
+    "access": {
+      "heading": "Your access",
+      "type": {
+        "pin": "PIN code",
+        "link": "Digital key",
+        "keybox": "Key box",
+        "physical_key": "Key",
+        "other": "Access"
+      },
+      "validFrom": "valid from {time}, {date}",
+      "reveal": "Show code",
+      "revealing": "One moment …",
+      "hide": "Hide",
+      "code": "Your code",
+      "revealUnavailable": "The code is not available right now. Please get in touch with us.",
+      "revealRateLimited": "Please try again in a few minutes.",
+      "manualDefault": "You will receive your access details from us in person.",
+      "registrationRequired": "Your access will appear here once your online check-in is complete.",
+      "registrationRequiredLink": "Check in now",
+      "notYetReleased": "Your access will be available from {time} on {date}.",
+      "notIssued": "Your access details are still being prepared. We are happy to help with any questions."
+    }
   },
   "stayError": {
     "title": "Your stay is not available right now.",
@@ -104,5 +130,85 @@
       "body": "Please use the latest link from your booking message.",
       "login": "Sign in with booking number"
     }
+  },
+  "checkIn": {
+    "title": "Online check-in",
+    "back": "Back to your stay",
+    "progress": "Step {current} of {total}",
+    "steps": {
+      "trip": "Your trip",
+      "primary": "Main guest",
+      "companions": "Fellow travellers",
+      "address": "Registration details",
+      "review": "Review & submit"
+    },
+    "intro": {
+      "trip": "A few details before you arrive – so everything is ready when you get here.",
+      "primary": "Details of the person the booking is made for.",
+      "companions": "Please add the details of everyone travelling with you.",
+      "address": "We need these details for the statutory guest registration.",
+      "review": "Please review your details before submitting your check-in."
+    },
+    "trip": {
+      "arrival": "Arrival",
+      "departure": "Departure",
+      "apartment": "Apartment",
+      "travellers": "Travellers",
+      "travellersCount": "{count, plural, one {# person} other {# people}}",
+      "travellersHint": "According to your booking. Has anything changed? Please get in touch.",
+      "travellersQuestion": "How many people are travelling (including you)?",
+      "dateTime": "{date}, {time}"
+    },
+    "companion": "Fellow traveller {number}",
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "birthDate": "Date of birth",
+      "nationality": "Nationality",
+      "street": "Street and number",
+      "postalCode": "Postcode",
+      "city": "City",
+      "country": "Country",
+      "documentType": "Document type",
+      "documentNumber": "Document number"
+    },
+    "documentTypes": {
+      "passport": "Passport",
+      "id-card": "Identity card",
+      "other": "Other document"
+    },
+    "optional": "optional",
+    "choose": "Please choose",
+    "errors": {
+      "required": "Please fill in.",
+      "invalid": "Please check this entry.",
+      "summary": "Please check the highlighted fields. Your other details have been saved.",
+      "conflict": "Your details were changed elsewhere in the meantime. Please reload the page.",
+      "rateLimited": "Too many attempts in a short time. Please wait a few minutes.",
+      "unavailable": "That did not work just now. Please try again later.",
+      "notConfirmed": "Please confirm that your details are correct."
+    },
+    "next": "Save & continue",
+    "saving": "Saving …",
+    "change": "Change",
+    "confirm": "I confirm that my details are correct and complete.",
+    "submit": "Submit check-in",
+    "submitting": "Submitting …",
+    "privacy": "We use your details only for your stay and the statutory guest registration.",
+    "done": {
+      "title": "Check-in complete",
+      "body": "Thank you! We have received your details. Everything will be ready when you arrive.",
+      "back": "To your stay"
+    },
+    "unavailable": {
+      "title": "Online check-in not available",
+      "body": "Online check-in is not available for your stay right now. We are happy to help with any questions."
+    }
+  },
+  "extras": {
+    "title": "Extras",
+    "body": "Book additional services for your stay conveniently in our Extras app.",
+    "open": "Go to Extras",
+    "external": "opens a separate page"
   }
 }

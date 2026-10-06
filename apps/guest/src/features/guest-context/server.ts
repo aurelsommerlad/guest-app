@@ -27,7 +27,12 @@ export const getGuestContext = cache(async (): Promise<GuestContextResult> => {
       return {
         provider: config.kind,
         reservationId: config.reservationId,
-        now: config.kind === "mock" ? MOCK_NOW : new Date(),
+        now:
+          config.kind === "mock"
+            ? serverEnv.APP_ENV === "local" && serverEnv.PREVIEW_NOW
+              ? new Date(serverEnv.PREVIEW_NOW)
+              : MOCK_NOW
+            : new Date(),
       };
     },
     pmsFor,

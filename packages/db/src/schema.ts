@@ -18,11 +18,21 @@ import {
   EXTERNAL_ENTITY_TYPES,
   EXTERNAL_PROVIDERS,
   GUIDE_ICONS,
+  DOCUMENT_TYPES,
+  GUEST_COUNT_SOURCES,
+  GUEST_ROLES,
   GUIDE_STATUSES,
   type GuideBlock,
   type GuideIcon,
   type LocalizedText,
+  MAX_TRAVELLERS,
+  type PropertyAccessConfig,
+  type PropertyRegistrationConfig,
+  REGISTRATION_STATUSES,
+  REGISTRATION_TARGETS,
   RESERVATION_PROVIDERS,
+  SYNC_ERROR_CODES,
+  SYNC_STATUSES,
   type TranslationState,
   type Visibility,
 } from "@up/core";
@@ -31,6 +41,7 @@ import {
   type AnyPgColumn,
   boolean,
   check,
+  date,
   integer,
   foreignKey,
   index,
@@ -478,6 +489,238 @@ export const explorePlaceProperties = pgTable(
   ],
 ).enableRLS();
 
+/**
+ * Guest journey settings per property (ADR 0016/0017): online check-in configuration and
+ * access settings – two separate documents, validated by @up/core schemas on write and read.
+ * A property without a row has online check-in switched off and manual access.
+ */
+export const propertyJourneySettings = pgTable(
+  "property_journey_settings",
+  {
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    registration: jsonb("registration").$type<PropertyRegistrationConfig>().notNull(),
+    access: jsonb("access").$type<PropertyAccessConfig>().notNull(),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({ name: "property_journey_settings_pkey", columns: [t.tenantId, t.propertyId] }),
+    foreignKey({
+      name: "property_journey_settings_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("cascade"),
+    check(
+      "property_journey_settings_documents_are_objects",
+      sql`jsonb_typeof(${t.registration}) = 'object' AND jsonb_typeof(${t.access}) = 'object'`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Canonical online check-in of one reservation (ADR 0016) – the single source of guest
+ * registration data. Provider-neutral; targets receive copies via guest_registration_syncs.
+ */
+export const guestRegistrations = pgTable(
+  "guest_registrations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    status: text("status", { enum: REGISTRATION_STATUSES }).notNull().default("draft"),
+    guestCount: integer("guest_count").notNull(),
+    guestCountSource: text("guest_count_source", { enum: GUEST_COUNT_SOURCES }).notNull(),
+    /** Stay window as known when the registration was last written (for syncs and retention). */
+    arrivalAt: timestamp("arrival_at", { withTimezone: true }).notNull(),
+    departureAt: timestamp("departure_at", { withTimezone: true }).notNull(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    /** Personal data may be deleted from this instant (null: retention not configured). */
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    /** Set when the personal data (guest rows) was deleted. */
+    purgedAt: timestamp("purged_at", { withTimezone: true }),
+    version: integer("version").notNull().default(1),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "guest_registrations_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    unique("guest_registrations_tenant_id_id_key").on(t.tenantId, t.id),
+    // Exactly one registration per reservation.
+    unique("guest_registrations_reservation_key").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+    ),
+    index("guest_registrations_purge_after_idx").on(t.purgeAfter),
+    check("guest_registrations_status_valid", oneOf(t.status, REGISTRATION_STATUSES)),
+    check(
+      "guest_registrations_reservation_provider_valid",
+      oneOf(t.reservationProvider, RESERVATION_PROVIDERS),
+    ),
+    check(
+      "guest_registrations_guest_count_source_valid",
+      oneOf(t.guestCountSource, GUEST_COUNT_SOURCES),
+    ),
+    check(
+      "guest_registrations_external_reservation_id_not_blank",
+      notBlank(t.externalReservationId, 255),
+    ),
+    check(
+      "guest_registrations_guest_count_range",
+      sql`${t.guestCount} BETWEEN 1 AND ${sql.raw(String(MAX_TRAVELLERS))}`,
+    ),
+    check("guest_registrations_stay_range", sql`${t.departureAt} > ${t.arrivalAt}`),
+    check(
+      "guest_registrations_submitted_consistent",
+      sql`(${t.status} = 'submitted') = (${t.submittedAt} IS NOT NULL)`,
+    ),
+    check("guest_registrations_version_positive", sql`${t.version} > 0`),
+  ],
+).enableRLS();
+
+function maxLength(column: AnyPgColumn, length: number): SQL {
+  return sql`${column} IS NULL OR char_length(${column}) BETWEEN 1 AND ${sql.raw(String(length))}`;
+}
+
+/**
+ * Travellers of a registration: position 0 is the primary guest. Only configured fields
+ * are filled; everything else stays NULL (data minimisation).
+ */
+export const guestRegistrationGuests = pgTable(
+  "guest_registration_guests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    registrationId: uuid("registration_id").notNull(),
+    position: integer("position").notNull(),
+    role: text("role", { enum: GUEST_ROLES }).notNull(),
+    firstName: text("first_name"),
+    lastName: text("last_name"),
+    birthDate: date("birth_date", { mode: "string" }),
+    nationality: text("nationality"),
+    street: text("street"),
+    postalCode: text("postal_code"),
+    city: text("city"),
+    country: text("country"),
+    documentType: text("document_type", { enum: DOCUMENT_TYPES }),
+    documentNumber: text("document_number"),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "guest_registration_guests_registration_fkey",
+      columns: [t.tenantId, t.registrationId],
+      foreignColumns: [guestRegistrations.tenantId, guestRegistrations.id],
+    }).onDelete("cascade"),
+    unique("guest_registration_guests_position_key").on(t.registrationId, t.position),
+    check(
+      "guest_registration_guests_position_range",
+      sql`${t.position} BETWEEN 0 AND ${sql.raw(String(MAX_TRAVELLERS - 1))}`,
+    ),
+    check(
+      "guest_registration_guests_role_matches_position",
+      sql`(${t.position} = 0) = (${t.role} = 'primary')`,
+    ),
+    check("guest_registration_guests_role_valid", oneOf(t.role, GUEST_ROLES)),
+    check(
+      "guest_registration_guests_document_type_valid",
+      sql`${t.documentType} IS NULL OR ${oneOf(t.documentType, DOCUMENT_TYPES)}`,
+    ),
+    check(
+      "guest_registration_guests_country_codes",
+      sql`(${t.nationality} IS NULL OR ${t.nationality} ~ '^[A-Z]{2}$')
+        AND (${t.country} IS NULL OR ${t.country} ~ '^[A-Z]{2}$')`,
+    ),
+    check(
+      "guest_registration_guests_text_lengths",
+      sql`(${maxLength(t.firstName, 100)}) AND (${maxLength(t.lastName, 100)})
+        AND (${maxLength(t.street, 200)}) AND (${maxLength(t.postalCode, 12)})
+        AND (${maxLength(t.city, 100)}) AND (${maxLength(t.documentNumber, 40)})`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * One row per registration and target (Apaleo, Feratel …): persistent, idempotent sync
+ * state. Stores codes and references only – never provider responses or guest data.
+ */
+export const guestRegistrationSyncs = pgTable(
+  "guest_registration_syncs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    registrationId: uuid("registration_id").notNull(),
+    provider: text("provider", { enum: REGISTRATION_TARGETS }).notNull(),
+    status: text("status", { enum: SYNC_STATUSES }).notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+    lastErrorCode: text("last_error_code", { enum: SYNC_ERROR_CODES }),
+    externalReference: text("external_reference"),
+    /** SHA-256 of what was last written – detects "already written" without storing data. */
+    fingerprint: text("fingerprint"),
+    syncedAt: timestamp("synced_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "guest_registration_syncs_registration_fkey",
+      columns: [t.tenantId, t.registrationId],
+      foreignColumns: [guestRegistrations.tenantId, guestRegistrations.id],
+    }).onDelete("cascade"),
+    // Idempotency: one sync per registration and target, however often "submit" arrives.
+    unique("guest_registration_syncs_target_key").on(t.registrationId, t.provider),
+    index("guest_registration_syncs_due_idx").on(t.status, t.nextAttemptAt),
+    check("guest_registration_syncs_provider_valid", oneOf(t.provider, REGISTRATION_TARGETS)),
+    check("guest_registration_syncs_status_valid", oneOf(t.status, SYNC_STATUSES)),
+    check(
+      "guest_registration_syncs_error_code_valid",
+      sql`${t.lastErrorCode} IS NULL OR ${oneOf(t.lastErrorCode, SYNC_ERROR_CODES)}`,
+    ),
+    check("guest_registration_syncs_attempts_range", sql`${t.attempts} >= 0`),
+    check(
+      "guest_registration_syncs_fingerprint_format",
+      sql`${t.fingerprint} IS NULL OR ${isSha256Hex(t.fingerprint)}`,
+    ),
+    check(
+      "guest_registration_syncs_external_reference_length",
+      maxLength(t.externalReference, 255),
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Key box code per unit (ADR 0017): one encrypted value per unit – never per reservation,
+ * never in clear text. AES-256-GCM, bound to tenant/property/unit (@up/core).
+ */
+export const unitAccessCodes = pgTable(
+  "unit_access_codes",
+  {
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    unitId: text("unit_id").notNull(),
+    codeCiphertext: text("code_ciphertext").notNull(),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({ name: "unit_access_codes_pkey", columns: [t.tenantId, t.propertyId, t.unitId] }),
+    foreignKey({
+      name: "unit_access_codes_unit_fkey",
+      columns: [t.tenantId, t.propertyId, t.unitId],
+      foreignColumns: [units.tenantId, units.propertyId, units.id],
+    }).onDelete("cascade"),
+    check(
+      "unit_access_codes_ciphertext_format",
+      sql`${t.codeCiphertext} ~ '^v1\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$'`,
+    ),
+  ],
+).enableRLS();
+
 export const ADMIN_USER_STATUSES = ["active", "disabled"] as const;
 
 /**
@@ -548,4 +791,9 @@ export const schema = {
   adminSessions,
   explorePlaces,
   explorePlaceProperties,
+  propertyJourneySettings,
+  guestRegistrations,
+  guestRegistrationGuests,
+  guestRegistrationSyncs,
+  unitAccessCodes,
 };

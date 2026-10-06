@@ -25,6 +25,9 @@ export type ApaleoClientOptions = {
 
 const PROVIDER = "apaleo";
 
+/** One JSON Patch operation (RFC 6902) – values are sent, never logged. */
+export type JsonPatchOperation = { op: "add" | "replace"; path: string; value: unknown };
+
 /**
  * Minimal Apaleo HTTP client: client-credentials token (cached, single-flight),
  * timeouts, one retry for idempotent requests on network/5xx/429, a fresh token
@@ -85,14 +88,40 @@ export class ApaleoClient {
     return parsed.data;
   }
 
+  /**
+   * JSON Patch (RFC 6902) against a resource. Only "replace"/"add" operations are sent,
+   * which are idempotent – so the single retry on network/5xx/429 is safe.
+   */
+  async patch(
+    path: string,
+    operations: readonly JsonPatchOperation[],
+    operation: string,
+  ): Promise<void> {
+    await this.#authorizedRequest("PATCH", path, operation, JSON.stringify(operations));
+  }
+
   async #authorizedGet(path: string, operation: string): Promise<Response> {
+    return this.#authorizedRequest("GET", path, operation);
+  }
+
+  async #authorizedRequest(
+    method: "GET" | "PATCH",
+    path: string,
+    operation: string,
+    body?: string,
+  ): Promise<Response> {
     let refreshedToken = false;
     for (let attempt = 1; ; attempt++) {
       const token = await this.#getToken();
       const response = await this.#request(operation, attempt, () =>
         this.#fetch(`${this.#apiUrl}${path}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+          method,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+            ...(body === undefined ? {} : { "Content-Type": "application/json-patch+json" }),
+          },
+          ...(body === undefined ? {} : { body }),
           signal: AbortSignal.timeout(this.#timeoutMs),
         }),
       );

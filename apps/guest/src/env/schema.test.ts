@@ -13,7 +13,37 @@ describe("validateServerEnv", () => {
       LOG_LEVEL: "info",
       STAY_DATA_SOURCE: "mock",
       GUEST_ACCESS_MODE: "preview",
+      APALEO_REGISTRATION_WRITEBACK: "disabled",
     });
+  });
+
+  it("validates the Phase 11 variables (key, write-back, cron, extras)", () => {
+    const base = { APP_ENV: "staging", NEXT_PUBLIC_APP_URL: "https://stay.unique-places.com" };
+    const key = Buffer.alloc(32, 9).toString("base64");
+    expect(validateServerEnv({ ...base, ACCESS_CODE_KEY: key }).ACCESS_CODE_KEY).toBe(key);
+    expect(() => validateServerEnv({ ...base, ACCESS_CODE_KEY: "too-short" })).toThrow(
+      /ACCESS_CODE_KEY/,
+    );
+    expect(() =>
+      validateServerEnv({ ...base, ACCESS_CODE_KEY: Buffer.alloc(16).toString("base64") }),
+    ).toThrow(/ACCESS_CODE_KEY/);
+    // Write-back needs Apaleo credentials and the database.
+    expect(() => validateServerEnv({ ...base, APALEO_REGISTRATION_WRITEBACK: "enabled" })).toThrow(
+      /APALEO_CLIENT_ID/,
+    );
+    expect(() => validateServerEnv({ ...base, CRON_SECRET: "short" })).toThrow(/CRON_SECRET/);
+    expect(() =>
+      validateServerEnv({ ...base, EXTRAS_APP_URL: "http://extras.unique-places.com" }),
+    ).toThrow(/EXTRAS_APP_URL/);
+    expect(() => validateServerEnv({ ...base, PREVIEW_NOW: "2026-08-27T10:00:00+02:00" })).toThrow(
+      /PREVIEW_NOW/,
+    );
+    // Secrets never become NEXT_PUBLIC_ variables.
+    expect(
+      Object.keys(validateServerEnv(base)).some(
+        (name) => name.startsWith("NEXT_PUBLIC_") && name !== "NEXT_PUBLIC_APP_URL",
+      ),
+    ).toBe(false);
   });
 
   it("accepts https for staging and production", () => {

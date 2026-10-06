@@ -32,24 +32,30 @@ export async function StayInfoGrid({ status, unit }: Pick<StayViewModel, "status
   const t = await getTranslations("stay");
 
   const statusTile =
-    status.kind === "check-out" ? (
-      <InfoTile
-        icon="calendar"
-        label={t("checkOut")}
-        value={<time dateTime={status.dateTime}>{status.time}</time>}
-        meta={<time dateTime={status.dateTime}>{status.date}</time>}
-      />
-    ) : (
+    status.kind === "online-check-in" ? (
       <InfoTile
         icon="check"
         label={t("onlineCheckIn")}
-        value={t("checkInCta")}
+        value={status.started ? t("checkInContinue") : t("checkInCta")}
         valueStyle="text"
         meta={
           <Link href={status.href} className={tileLink}>
             <WithArrow text={t("stepsRemaining", { count: status.stepsRemaining })} />
           </Link>
         }
+      />
+    ) : (
+      <InfoTile
+        icon="calendar"
+        label={
+          status.kind === "check-in"
+            ? t("checkIn")
+            : status.today
+              ? t("checkOutToday")
+              : t("checkOut")
+        }
+        value={<time dateTime={status.dateTime}>{status.time}</time>}
+        meta={<time dateTime={status.dateTime}>{status.date}</time>}
       />
     );
 

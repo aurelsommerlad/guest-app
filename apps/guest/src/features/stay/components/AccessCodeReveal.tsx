@@ -1,0 +1,66 @@
+"use client";
+
+import { Button } from "@up/ui";
+import { useTranslations } from "next-intl";
+import { useState, useTransition } from "react";
+
+import type { RevealResult } from "../../journey/access-actions";
+import { revealAccessCode } from "../../journey/access-actions";
+
+/**
+ * Shows the access code only after an explicit tap. The code lives in component state
+ * only (no storage, no URL) and is hidden again on demand.
+ */
+export function AccessCodeReveal() {
+  const t = useTranslations("stay.access");
+  const [result, setResult] = useState<RevealResult | undefined>();
+  const [pending, startTransition] = useTransition();
+
+  if (result?.status === "ok") {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="flex flex-col gap-1">
+          <span className="type-small text-text-muted">{t("code")}</span>
+          <span className="type-figure tracking-widest" aria-live="polite">
+            {result.code}
+          </span>
+        </p>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            setResult(undefined);
+          }}
+        >
+          {t("hide")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Button
+        type="button"
+        variant="primary"
+        className="self-start"
+        disabled={pending}
+        onClick={() => {
+          startTransition(async () => {
+            setResult(await revealAccessCode());
+          });
+        }}
+      >
+        {pending ? t("revealing") : t("reveal")}
+      </Button>
+      <div role="status" className="empty:hidden">
+        {result?.status === "unavailable" && (
+          <p className="type-small text-text-muted">{t("revealUnavailable")}</p>
+        )}
+        {result?.status === "rate-limited" && (
+          <p className="type-small text-text-muted">{t("revealRateLimited")}</p>
+        )}
+      </div>
+    </div>
+  );
+}

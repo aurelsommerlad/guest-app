@@ -72,7 +72,7 @@ export function toStaySource(reservation: PmsReservation, options: StaySourceOpt
       status: reservation.status,
       checkInAt: reservation.arrivalAt,
       checkOutAt: reservation.departureAt,
-      // Online check-in does not exist yet; the status tile shows the check-out.
+      ...(reservation.guestCount ? { guestCount: reservation.guestCount } : {}),
     },
     cards: options.cardsFor(property.id),
   };

@@ -8,7 +8,8 @@
     "stay": "Dein Aufenthalt",
     "guide": "Guide",
     "extras": "Extras",
-    "explore": "Entdecken"
+    "explore": "Entdecken",
+    "checkIn": "Online-Check-in"
   },
   "navigation": {
     "label": "Hauptnavigation",
@@ -28,7 +29,32 @@
     "apartment": "Apartment",
     "apartmentDetails": "Details ansehen",
     "apartmentDetailsContext": "zum Apartment {name}",
-    "cardsHeading": "Für Deinen Aufenthalt"
+    "cardsHeading": "Für Deinen Aufenthalt",
+    "checkIn": "Check-in",
+    "checkOutToday": "Check-out heute",
+    "checkInContinue": "Weiter ausfüllen",
+    "access": {
+      "heading": "Dein Zugang",
+      "type": {
+        "pin": "PIN-Code",
+        "link": "Digitaler Schlüssel",
+        "keybox": "Schlüsselbox",
+        "physical_key": "Schlüssel",
+        "other": "Zugang"
+      },
+      "validFrom": "gültig ab {time} Uhr, {date}",
+      "reveal": "Code anzeigen",
+      "revealing": "Einen Moment …",
+      "hide": "Ausblenden",
+      "code": "Dein Code",
+      "revealUnavailable": "Der Code ist gerade nicht verfügbar. Bitte melde Dich bei uns.",
+      "revealRateLimited": "Bitte versuche es in ein paar Minuten noch einmal.",
+      "manualDefault": "Deine Zugangsinformationen erhältst Du persönlich von uns.",
+      "registrationRequired": "Dein Zugang erscheint hier, sobald Dein Online-Check-in abgeschlossen ist.",
+      "registrationRequiredLink": "Jetzt einchecken",
+      "notYetReleased": "Dein Zugang wird ab {time} Uhr am {date} freigeschaltet.",
+      "notIssued": "Deine Zugangsinformationen sind noch in Vorbereitung. Bei Fragen sind wir für Dich da."
+    }
   },
   "stayError": {
     "title": "Dein Aufenthalt ist gerade nicht erreichbar.",
@@ -104,5 +130,85 @@
       "body": "Bitte verwende den aktuellen Link aus Deiner Buchungsnachricht.",
       "login": "Mit Buchungsnummer anmelden"
     }
+  },
+  "checkIn": {
+    "title": "Online-Check-in",
+    "back": "Zurück zu Deinem Aufenthalt",
+    "progress": "Schritt {current} von {total}",
+    "steps": {
+      "trip": "Deine Reise",
+      "primary": "Hauptgast",
+      "companions": "Mitreisende",
+      "address": "Meldedaten",
+      "review": "Prüfen & absenden"
+    },
+    "intro": {
+      "trip": "Ein paar Angaben vor Deiner Anreise – dann ist bei Ankunft alles erledigt.",
+      "primary": "Die Angaben zur Person, auf die die Buchung läuft.",
+      "companions": "Bitte ergänze die Angaben für alle Mitreisenden.",
+      "address": "Diese Angaben benötigen wir für die gesetzliche Gästemeldung.",
+      "review": "Bitte prüfe Deine Angaben, bevor Du den Check-in abschickst."
+    },
+    "trip": {
+      "arrival": "Anreise",
+      "departure": "Abreise",
+      "apartment": "Apartment",
+      "travellers": "Reisende",
+      "travellersCount": "{count, plural, one {# Person} other {# Personen}}",
+      "travellersHint": "Laut Deiner Buchung. Hat sich etwas geändert? Melde Dich gerne bei uns.",
+      "travellersQuestion": "Mit wie vielen Personen reist Du (Dich eingeschlossen)?",
+      "dateTime": "{date}, {time} Uhr"
+    },
+    "companion": "Mitreisende Person {number}",
+    "fields": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "birthDate": "Geburtsdatum",
+      "nationality": "Staatsangehörigkeit",
+      "street": "Straße und Hausnummer",
+      "postalCode": "Postleitzahl",
+      "city": "Ort",
+      "country": "Land",
+      "documentType": "Ausweisart",
+      "documentNumber": "Ausweisnummer"
+    },
+    "documentTypes": {
+      "passport": "Reisepass",
+      "id-card": "Personalausweis",
+      "other": "Anderes Dokument"
+    },
+    "optional": "optional",
+    "choose": "Bitte wählen",
+    "errors": {
+      "required": "Bitte ausfüllen.",
+      "invalid": "Bitte prüfe diese Angabe.",
+      "summary": "Bitte prüfe die markierten Felder. Deine übrigen Angaben sind gespeichert.",
+      "conflict": "Deine Angaben wurden inzwischen an anderer Stelle geändert. Bitte lade die Seite neu.",
+      "rateLimited": "Zu viele Versuche in kurzer Zeit. Bitte warte ein paar Minuten.",
+      "unavailable": "Das hat gerade nicht geklappt. Bitte versuche es später noch einmal.",
+      "notConfirmed": "Bitte bestätige, dass Deine Angaben richtig sind."
+    },
+    "next": "Speichern & weiter",
+    "saving": "Wird gespeichert …",
+    "change": "Ändern",
+    "confirm": "Ich bestätige, dass meine Angaben richtig und vollständig sind.",
+    "submit": "Check-in absenden",
+    "submitting": "Wird gesendet …",
+    "privacy": "Wir verwenden Deine Angaben ausschließlich für Deinen Aufenthalt und die gesetzlich vorgeschriebene Gästemeldung.",
+    "done": {
+      "title": "Check-in abgeschlossen",
+      "body": "Danke! Deine Angaben sind bei uns eingegangen. Bei Anreise ist alles vorbereitet.",
+      "back": "Zu Deinem Aufenthalt"
+    },
+    "unavailable": {
+      "title": "Online-Check-in nicht verfügbar",
+      "body": "Für Deinen Aufenthalt ist der Online-Check-in gerade nicht verfügbar. Bei Fragen sind wir gerne für Dich da."
+    }
+  },
+  "extras": {
+    "title": "Extras",
+    "body": "Zusätzliche Leistungen für Deinen Aufenthalt buchst Du bequem in unserer Extras-App.",
+    "open": "Zu den Extras",
+    "external": "öffnet eine eigene Seite"
   }
 }

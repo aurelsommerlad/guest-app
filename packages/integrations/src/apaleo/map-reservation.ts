@@ -22,5 +22,13 @@ export function mapApaleoReservation(reservation: ApaleoReservation): PmsReserva
     externalPropertyId: reservation.property.id,
     ...(reservation.unit ? { externalUnitId: reservation.unit.id } : {}),
     primaryGuest: firstName ? { firstName } : {},
+    ...(reservation.adults === undefined
+      ? {}
+      : {
+          guestCount: {
+            adults: reservation.adults,
+            children: reservation.childrenAges?.length ?? 0,
+          },
+        }),
   };
 }

@@ -16,11 +16,16 @@ export {
   GUIDE_ENTRY_KINDS,
   guestAccess,
   guideSections,
+  guestRegistrationGuests,
+  guestRegistrations,
+  guestRegistrationSyncs,
   guestSessions,
   properties,
+  propertyJourneySettings,
   rateLimitBuckets,
   schema,
   tenants,
+  unitAccessCodes,
   units,
 } from "./schema";
 export {
@@ -86,6 +91,12 @@ export { SeedConflictError, type SeedResult, seedTenant } from "./seed/seed-tena
 export { guideFixtures, seedGuideFixtures } from "./seed/guide-fixtures";
 export { exploreFixtures, seedExploreFixtures } from "./seed/explore-fixtures";
 export {
+  SAMPLE_KEYBOX_CODE,
+  sampleAccessConfig,
+  sampleRegistrationConfig,
+  seedJourneyFixtures,
+} from "./seed/journey-fixtures";
+export {
   createExplorePlace,
   deleteUnpublishedExplorePlace,
   ExploreAssignmentError,
@@ -100,3 +111,30 @@ export {
 } from "./repositories/explore-repository";
 export { previewFixturesSeed } from "./seed/preview-fixtures";
 export { uniquePlacesSeed } from "./seed/unique-places";
+export {
+  deleteUnitAccessCode,
+  getJourneySettings,
+  getUnitAccessCode,
+  type JourneySettings,
+  JourneySettingsError,
+  saveJourneySettings,
+  setUnitAccessCode,
+  type UnitKey,
+} from "./repositories/journey-repository";
+export {
+  claimDueSyncs,
+  completeSyncAttempt,
+  getRegistrationById,
+  getRegistrationForReservation,
+  type GuestRegistrationRecord,
+  listRegistrationSyncs,
+  purgeExpiredRegistrationData,
+  type RegistrationSyncRecord,
+  type ReservationKey,
+  saveRegistrationGuests,
+  startRegistration,
+  type StartRegistrationInput,
+  submitRegistration,
+  type SubmitResult,
+  type WriteResult,
+} from "./repositories/registration-repository";

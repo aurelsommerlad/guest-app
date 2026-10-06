@@ -21,6 +21,17 @@ describe("mapApaleoReservation", () => {
     });
   });
 
+  it("maps adults and children (count only, no ages) for the online check-in", () => {
+    const mapped = mapApaleoReservation(parse({ adults: 2, childrenAges: [4, 9] }));
+    expect(mapped.guestCount).toEqual({ adults: 2, children: 2 });
+    expect(JSON.stringify(mapped)).not.toContain("childrenAges");
+    expect(mapApaleoReservation(parse({ adults: 1 })).guestCount).toEqual({
+      adults: 1,
+      children: 0,
+    });
+    expect(mapApaleoReservation(parse()).guestCount).toBeUndefined();
+  });
+
   it("keeps no data we do not need (last name, contact, address, prices)", () => {
     const serialized = JSON.stringify(mapApaleoReservation(parse()));
     for (const value of [

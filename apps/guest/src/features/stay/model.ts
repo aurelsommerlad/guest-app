@@ -1,4 +1,10 @@
-import { type LocalizedText, type PmsReservationStatus, type StayPhase } from "@up/core";
+import {
+  type AccessCredentialType,
+  type JourneyPhase,
+  type LocalizedText,
+  type PmsReservationStatus,
+  type StayPhase,
+} from "@up/core";
 import { type StaticImageData } from "next/image";
 
 import { type Locale } from "../../i18n/routing";
@@ -26,8 +32,8 @@ export type StaySource = {
     /** ISO 8601 instants with offset. */
     checkInAt: string;
     checkOutAt: string;
-    /** Missing while the online check-in feature is not available for this stay. */
-    onlineCheckIn?: { status: "open" | "completed"; stepsRemaining: number };
+    /** Travellers on the reservation, if the PMS delivers them (sizes the online check-in). */
+    guestCount?: { adults: number; children: number };
   };
   cards: readonly StayCardSource[];
 };
@@ -57,14 +63,34 @@ export type StayViewModel = {
   guest: { firstName?: string };
   property: { name: string; spokenName: string; location: string };
   unit: { name: string; href: string };
-  /** The primary tile changes with the stay phase. */
+  /** Guest journey phase (property-local days); undefined without journey data. */
+  journeyPhase?: JourneyPhase;
+  /** The primary tile changes with the journey. */
   status: StayStatus;
+  /** Access information – only from the arrival day on, never the code itself. */
+  access?: StayAccessView;
   cards: readonly StayCard[];
 };
 
+export type LocalTime = { time: string; date: string; dateTime: string };
+
 export type StayStatus =
-  | { kind: "check-out"; time: string; date: string; dateTime: string }
-  | { kind: "online-check-in"; stepsRemaining: number; href: string };
+  | ({ kind: "check-out"; today: boolean } & LocalTime)
+  | ({ kind: "check-in" } & LocalTime)
+  | { kind: "online-check-in"; stepsRemaining: number; href: string; started: boolean };
+
+/** What the STAY access panel shows. The code is revealed on demand only. */
+export type StayAccessView =
+  | {
+      kind: "available";
+      credentialType: AccessCredentialType;
+      validFrom: LocalTime;
+      instructions?: string;
+    }
+  | { kind: "manual"; instructions?: string }
+  | { kind: "registration-required"; href: string }
+  | ({ kind: "not-yet-released" } & LocalTime)
+  | { kind: "not-issued" };
 
 export type StayCard = {
   id: StayCardSource["id"];

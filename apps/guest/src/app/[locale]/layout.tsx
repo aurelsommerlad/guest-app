@@ -30,7 +30,13 @@ export default async function LocaleLayout({ children }: Readonly<{ children: Re
   return (
     <RootDocument lang={locale}>
       <NextIntlClientProvider
-        messages={{ stayError: messages.stayError, access: { login: messages.access.login } }}
+        messages={{
+          stayError: messages.stayError,
+          access: { login: messages.access.login },
+          // Client forms of the online check-in and the access code reveal.
+          checkIn: messages.checkIn,
+          stay: { access: messages.stay.access },
+        }}
       >
         {children}
       </NextIntlClientProvider>

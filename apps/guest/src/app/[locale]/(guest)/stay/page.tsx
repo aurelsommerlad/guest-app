@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { BrandHeader } from "../../../../components/GuestHeader";
+import { AccessPanel } from "../../../../features/stay/components/AccessPanel";
 import { Greeting } from "../../../../features/stay/components/Greeting";
 import { StayCards } from "../../../../features/stay/components/StayCards";
 import { StayInfoGrid } from "../../../../features/stay/components/StayInfoGrid";
@@ -43,6 +44,12 @@ export default async function StayPage({ params }: Props) {
               <StayInfoGrid status={stay.status} unit={stay.unit} />
             </div>
           </div>
+
+          {stay.access && (
+            <div className="mt-3 lg:mt-6">
+              <AccessPanel access={stay.access} />
+            </div>
+          )}
 
           <div className="mt-3 lg:mt-12">
             <StayCards cards={stay.cards} />

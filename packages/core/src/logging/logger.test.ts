@@ -43,8 +43,36 @@ describe("createLogger", () => {
     });
     expect(lines[0]?.entry).toMatchObject({
       guestToken: "[REDACTED]",
-      guest: { email: "[REDACTED]", firstName: "Laura" },
+      guest: { email: "[REDACTED]", firstName: "[REDACTED]" },
       headers: { Authorization: "[REDACTED]" },
+    });
+  });
+
+  it("redacts registration data and access codes (Phase 11)", () => {
+    const { logger, lines } = setup();
+    logger.info("x", {
+      birthDate: "1990-01-01",
+      nationality: "DE",
+      street: "Weg 1",
+      postalCode: "87452",
+      documentNumber: "X1",
+      pin: "1234",
+      accessCode: "1234",
+      displayValue: "1234",
+      mapping: "kept",
+      registrationId: "kept",
+    });
+    expect(lines[0]?.entry).toMatchObject({
+      birthDate: "[REDACTED]",
+      nationality: "[REDACTED]",
+      street: "[REDACTED]",
+      postalCode: "[REDACTED]",
+      documentNumber: "[REDACTED]",
+      pin: "[REDACTED]",
+      accessCode: "[REDACTED]",
+      displayValue: "[REDACTED]",
+      mapping: "kept",
+      registrationId: "kept",
     });
   });
 

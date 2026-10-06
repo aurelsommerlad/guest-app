@@ -57,6 +57,20 @@
       "when": 1791284300380,
       "tag": "0007_lock_data_api_explore",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791302182603,
+      "tag": "0008_guest_journey",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791302186545,
+      "tag": "0009_lock_data_api_guest_journey",
+      "breakpoints": true
     }
   ]
 }

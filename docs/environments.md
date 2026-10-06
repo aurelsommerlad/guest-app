@@ -123,6 +123,20 @@ Die Admin App (`apps/admin`, [ADR 0014](adr/0014-admin-app-and-auth.md)) ist ein
 
 **Erstes Admin-Konto:** `ADMIN_SETUP_TOKEN` setzen, deployen, `/setup` öffnen, Token, Tenant-Slug, E-Mail und Passwort eingeben. Danach ist `/setup` gesperrt (404); das Token aus Vercel entfernen. Lokal oder mit direkter DB-Verbindung alternativ `pnpm admin-user:create` (siehe `apps/admin/README.md`).
 
+## Guest Journey: Online-Check-in und Zugang (Phase 11)
+
+| Variable                        | App   | Pflicht | Zweck                                                                                                                                                      |
+| ------------------------------- | ----- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ACCESS_CODE_KEY`               | guest | nein    | 32 Byte base64 (`openssl rand -base64 32`), verschlüsselt Schlüsselbox-Codes. Je Environment eigener Wert, nur Server. Ohne: manuelle Hinweise statt Code. |
+| `APALEO_REGISTRATION_WRITEBACK` | guest | nein    | `disabled` (Standard) / `enabled`. Erfordert Apaleo-Client mit `reservations.manage`, `DATABASE_URL`.                                                      |
+| `CRON_SECRET`                   | guest | nein    | ≥ 32 Zeichen. Aktiviert `GET /api/registration-sync` (Vercel Cron sendet `Authorization: Bearer …`). Ohne: Endpunkt 404.                                   |
+| `EXTRAS_APP_URL`                | guest | nein    | Separate Extras-App (https). Ohne: Platzhalter auf `/extras`.                                                                                              |
+| `PREVIEW_NOW`                   | guest | nein    | Nur `APP_ENV=local`: Referenzzeit der Mock-Vorschau, um Journey-Zustände anzusehen.                                                                        |
+
+- Online-Check-in und Zugangsmodus werden **pro Objekt** in `property_journey_settings` gepflegt (keine Env-Variable). Ohne Datensatz: Check-in aus, Zugang manuell.
+- Lokale Beispielkonfiguration: `ACCESS_CODE_KEY=… pnpm db:seed --target local --with-journey-fixtures` (nur lokal; Beispielfelder sind keine Rechtsaussage).
+- Feratel hat keine Variablen: nicht implementiert, keine Aufrufe ([Doku](integrations/feratel-guest-registration.md)).
+
 ## Vercel-Setup (einmalig, manuell)
 
 1. Projekt `guest` anlegen und das GitHub-Repo verbinden (für die Admin App analog Projekt `admin`, siehe oben).

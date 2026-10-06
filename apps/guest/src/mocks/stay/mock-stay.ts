@@ -22,6 +22,7 @@ export const mockReservation: PmsReservation = {
   externalPropertyId: "ALTUS",
   externalUnitId: "ALTUS-SWA",
   primaryGuest: { firstName: "Laura" },
+  guestCount: { adults: 2, children: 1 },
 };
 
 /** Primary guest's last name of the mock reservations (for the booking number login). */

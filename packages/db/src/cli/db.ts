@@ -6,6 +6,8 @@
  *                                  [--with-preview-fixtures]   (never in production)
  *                                  [--with-guide-fixtures]     (local only)
  *                                  [--with-explore-fixtures]   (local only)
+ *                                  [--with-journey-fixtures]   (local only; sample key box
+ *                                                               code only if ACCESS_CODE_KEY is set)
  *
  * DATABASE_URL is read from the process environment only (no .env files are loaded),
  * so the operator always decides which database is used.
@@ -17,6 +19,7 @@ import { createDatabase, describeDatabaseUrl } from "../client";
 import { MIGRATIONS_FOLDER } from "../migrations-folder";
 import { seedExploreFixtures } from "../seed/explore-fixtures";
 import { seedGuideFixtures } from "../seed/guide-fixtures";
+import { seedJourneyFixtures } from "../seed/journey-fixtures";
 import { previewFixturesSeed } from "../seed/preview-fixtures";
 import { seedTenant } from "../seed/seed-tenant";
 import { uniquePlacesSeed } from "../seed/unique-places";
@@ -43,6 +46,11 @@ async function main(): Promise<void> {
   const withExploreFixtures = args.includes("--with-explore-fixtures");
   if (withExploreFixtures && options.target !== "local") {
     throw new CliUsageError("--with-explore-fixtures is only allowed with --target local");
+  }
+  // Sample online check-in settings and key box code: local databases only.
+  const withJourneyFixtures = args.includes("--with-journey-fixtures");
+  if (withJourneyFixtures && options.target !== "local") {
+    throw new CliUsageError("--with-journey-fixtures is only allowed with --target local");
   }
   const url = process.env["DATABASE_URL"];
   if (!url) throw new CliUsageError("DATABASE_URL is not set");
@@ -74,6 +82,20 @@ async function main(): Promise<void> {
         console.log(
           "✓ EXPLORE development fixtures (local only) – places written:",
           explore.written,
+        );
+      }
+      if (withJourneyFixtures) {
+        const accessCodeKey = process.env["ACCESS_CODE_KEY"];
+        const journey = await seedJourneyFixtures(
+          db,
+          { tenantId: uniquePlacesSeed.tenant.id },
+          accessCodeKey ? { accessCodeKey } : {},
+        );
+        console.log(
+          "✓ guest journey fixtures (local only) – properties:",
+          journey.properties,
+          "key box codes:",
+          journey.codes,
         );
       }
     }

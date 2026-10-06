@@ -37,6 +37,7 @@ export { LinkList, type LinkListItem, type LinkListProps } from "./components/Li
 export { type LinkComponent, type LinkComponentProps } from "./components/link";
 export { PropertyName, type PropertyNameProps } from "./components/PropertyName";
 export { TextField, type TextFieldProps } from "./components/TextField";
+export { SelectField, type SelectFieldProps, type SelectOption } from "./components/SelectField";
 
 // Token documentation
 export * from "./tokens/catalog";

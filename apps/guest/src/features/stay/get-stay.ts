@@ -2,6 +2,7 @@ import "server-only";
 
 import { type Locale } from "../../i18n/routing";
 import { requireGuestContext } from "../guest-context/server";
+import { getStayJourney } from "../journey/server";
 import { buildStayViewModel } from "./build-stay-view-model";
 import { type StayViewModel } from "./model";
 
@@ -20,5 +21,6 @@ export class StayUnavailableError extends Error {
 export async function getStay(locale: Locale): Promise<StayViewModel> {
   const context = await requireGuestContext(locale);
   if (context.reservation.status !== "loaded") throw new StayUnavailableError();
-  return buildStayViewModel(context.reservation.source, locale, context.now);
+  const journey = await getStayJourney(context);
+  return buildStayViewModel(context.reservation.source, locale, context.now, journey);
 }

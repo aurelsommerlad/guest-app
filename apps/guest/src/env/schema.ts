@@ -19,6 +19,14 @@ export const STAY_DATA_SOURCES = ["mock", "apaleo"] as const;
  */
 export const GUEST_ACCESS_MODES = ["preview", "secured"] as const;
 
+/** Apaleo write-back of the online check-in (ADR 0016) – off unless explicitly enabled. */
+export const REGISTRATION_WRITEBACK_MODES = ["disabled", "enabled"] as const;
+
+function isAccessCodeKey(value: string): boolean {
+  // 43 base64 characters + one padding character = exactly 32 bytes.
+  return /^[A-Za-z0-9+/]{43}=$/.test(value);
+}
+
 const LOCAL_DATABASE_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
 function databaseHost(url: string): string | undefined {
@@ -69,6 +77,22 @@ export const serverEnvSchema = clientEnvSchema
       .string()
       .refine((url) => databaseHost(url) !== undefined, "must be a postgres:// URL")
       .optional(),
+    /**
+     * 32-byte key (base64) for key box codes at rest (AES-256-GCM, ADR 0017). Without it,
+     * key box properties show their manual instructions instead of a code.
+     */
+    ACCESS_CODE_KEY: z.string().refine(isAccessCodeKey, "must be 32 bytes, base64").optional(),
+    /** Write submitted online check-ins back to Apaleo (needs scope reservations.manage). */
+    APALEO_REGISTRATION_WRITEBACK: z.enum(REGISTRATION_WRITEBACK_MODES).default("disabled"),
+    /** Bearer secret for the registration sync endpoint (Vercel Cron sends it). */
+    CRON_SECRET: z.string().min(32).optional(),
+    /**
+     * Local development only: reference time of the mock preview stay (ISO 8601), to look at
+     * the journey states (before arrival, arrival day, departure day). Rejected elsewhere.
+     */
+    PREVIEW_NOW: z.iso.datetime({ offset: true }).optional(),
+    /** Separate Extras app (linked without any reservation data in the URL). */
+    EXTRAS_APP_URL: z.url().optional(),
   })
   .superRefine((env, ctx) => {
     if (env.APP_ENV !== "local" && !env.NEXT_PUBLIC_APP_URL.startsWith("https://")) {
@@ -127,6 +151,45 @@ export const serverEnvSchema = clientEnvSchema
           }
         }
       }
+    }
+    if (env.PREVIEW_NOW && env.APP_ENV !== "local") {
+      ctx.addIssue({ code: "custom", path: ["PREVIEW_NOW"], message: "only allowed locally" });
+    }
+    if (env.APALEO_REGISTRATION_WRITEBACK === "enabled") {
+      for (const key of ["APALEO_CLIENT_ID", "APALEO_CLIENT_SECRET", "DATABASE_URL"] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "required when APALEO_REGISTRATION_WRITEBACK=enabled",
+          });
+        }
+      }
+    }
+    if (
+      env.EXTRAS_APP_URL &&
+      !env.EXTRAS_APP_URL.startsWith("https://") &&
+      env.APP_ENV !== "local"
+    ) {
+      ctx.addIssue({ code: "custom", path: ["EXTRAS_APP_URL"], message: "must use https" });
+    }
+    if (env.APALEO_REGISTRATION_WRITEBACK === "enabled") {
+      for (const key of ["APALEO_CLIENT_ID", "APALEO_CLIENT_SECRET", "DATABASE_URL"] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "required when APALEO_REGISTRATION_WRITEBACK=enabled",
+          });
+        }
+      }
+    }
+    if (
+      env.EXTRAS_APP_URL &&
+      !env.EXTRAS_APP_URL.startsWith("https://") &&
+      env.APP_ENV !== "local"
+    ) {
+      ctx.addIssue({ code: "custom", path: ["EXTRAS_APP_URL"], message: "must use https" });
     }
     if (env.STAY_DATA_SOURCE === "apaleo") {
       for (const key of [

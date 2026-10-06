@@ -9,6 +9,7 @@ import { FilterBar } from "./FilterBar";
 import { InfoTile } from "./InfoTile";
 import { LinkList } from "./LinkList";
 import { PropertyName } from "./PropertyName";
+import { SelectField } from "./SelectField";
 import { TextField } from "./TextField";
 import { type LinkComponentProps } from "./link";
 
@@ -243,5 +244,38 @@ describe("TextField", () => {
   it("omits aria-describedby without a hint", () => {
     const html = renderToStaticMarkup(<TextField id="name" label="Nachname" />);
     expect(html).not.toContain("aria-describedby");
+  });
+});
+
+describe("form field errors", () => {
+  it("marks a text field invalid and announces the message first", () => {
+    const html = renderToStaticMarkup(
+      <TextField id="birth" label="Geburtsdatum" hint="TT.MM.JJJJ" error="Bitte prüfen" />,
+    );
+    expect(html).toContain('aria-invalid="true"');
+    expect(html).toContain('aria-describedby="birth-error birth-hint"');
+    expect(html).toContain('<p id="birth-error"');
+  });
+
+  it("renders a native select with label, placeholder and error", () => {
+    const html = renderToStaticMarkup(
+      <SelectField
+        id="nationality"
+        name="nationality"
+        label="Staatsangehörigkeit"
+        placeholder="Bitte wählen"
+        options={[
+          { value: "AT", label: "Österreich" },
+          { value: "DE", label: "Deutschland" },
+        ]}
+        defaultValue="DE"
+        error="Bitte auswählen"
+      />,
+    );
+    expect(html).toContain('<label for="nationality"');
+    expect(html).toContain('<option value="">Bitte wählen</option>');
+    expect(html).toContain('<option value="DE" selected="">Deutschland</option>');
+    expect(html).toContain('aria-invalid="true"');
+    expect(html).not.toContain('aria-describedby="nationality-hint');
   });
 });

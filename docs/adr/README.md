@@ -2,22 +2,24 @@
 
 Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue Entscheidungen bekommen eine fortlaufende Nummer. Überholte ADRs werden als „Ersetzt durch …“ markiert, nicht gelöscht.
 
-| Nr.  | Titel                                                            | Status     |
-| ---- | ---------------------------------------------------------------- | ---------- |
-| 0001 | [Monorepo und Tech Stack](0001-monorepo-and-stack.md)            | Akzeptiert |
-| 0002 | [Tenant-Isolation](0002-tenant-isolation.md)                     | Akzeptiert |
-| 0003 | [Provider-basierte Integrationen](0003-provider-integrations.md) | Akzeptiert |
-| 0004 | [Gastzugang per Token-Link](0004-guest-access.md)                | Akzeptiert |
-| 0005 | [Zeitabhängige Sichtbarkeit](0005-time-based-visibility.md)      | Akzeptiert |
-| 0006 | [Environments und Env-Validierung](0006-environments.md)         | Akzeptiert |
-| 0007 | [GUIDE-Content-Modell](0007-guide-content-model.md)              | Akzeptiert |
-| 0008 | [PMS-Provider und Apaleo-Anbindung](0008-pms-provider-apaleo.md) | Akzeptiert |
-| 0009 | [EXPLORE-Content-Modell](0009-explore-content-model.md)          | Akzeptiert |
-| 0010 | [Datenbank-Fundament](0010-database-foundation.md)               | Akzeptiert |
-| 0011 | [Sicherer Gastzugang](0011-guest-access.md)                      | Akzeptiert |
-| 0012 | [Zentraler Guest/Stay Context](0012-guest-context.md)            | Akzeptiert |
-| 0013 | [GUIDE-Content-Management](0013-guide-content-management.md)     | Akzeptiert |
-| 0014 | [Admin App und Admin-Auth](0014-admin-app-and-auth.md)           | Akzeptiert |
-| 0015 | [EXPLORE-Content-Management](0015-explore-content-management.md) | Akzeptiert |
+| Nr.  | Titel                                                                                               | Status     |
+| ---- | --------------------------------------------------------------------------------------------------- | ---------- |
+| 0001 | [Monorepo und Tech Stack](0001-monorepo-and-stack.md)                                               | Akzeptiert |
+| 0002 | [Tenant-Isolation](0002-tenant-isolation.md)                                                        | Akzeptiert |
+| 0003 | [Provider-basierte Integrationen](0003-provider-integrations.md)                                    | Akzeptiert |
+| 0004 | [Gastzugang per Token-Link](0004-guest-access.md)                                                   | Akzeptiert |
+| 0005 | [Zeitabhängige Sichtbarkeit](0005-time-based-visibility.md)                                         | Akzeptiert |
+| 0006 | [Environments und Env-Validierung](0006-environments.md)                                            | Akzeptiert |
+| 0007 | [GUIDE-Content-Modell](0007-guide-content-model.md)                                                 | Akzeptiert |
+| 0008 | [PMS-Provider und Apaleo-Anbindung](0008-pms-provider-apaleo.md)                                    | Akzeptiert |
+| 0009 | [EXPLORE-Content-Modell](0009-explore-content-model.md)                                             | Akzeptiert |
+| 0010 | [Datenbank-Fundament](0010-database-foundation.md)                                                  | Akzeptiert |
+| 0011 | [Sicherer Gastzugang](0011-guest-access.md)                                                         | Akzeptiert |
+| 0012 | [Zentraler Guest/Stay Context](0012-guest-context.md)                                               | Akzeptiert |
+| 0013 | [GUIDE-Content-Management](0013-guide-content-management.md)                                        | Akzeptiert |
+| 0014 | [Admin App und Admin-Auth](0014-admin-app-and-auth.md)                                              | Akzeptiert |
+| 0015 | [EXPLORE-Content-Management](0015-explore-content-management.md)                                    | Akzeptiert |
+| 0016 | [Guest Journey, Online-Check-in und Registrierungs-Sync](0016-guest-journey-and-online-check-in.md) | Akzeptiert |
+| 0017 | [Provider-neutraler Zugang (Access)](0017-provider-neutral-access.md)                               | Akzeptiert |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.

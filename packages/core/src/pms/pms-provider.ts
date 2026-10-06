@@ -26,6 +26,8 @@ export type PmsReservation = {
     /** First name for the personal greeting; may be missing in the PMS. */
     firstName?: string;
   };
+  /** Travellers on the reservation (adults + children) – sizes the online check-in. */
+  guestCount?: { adults: number; children: number };
 };
 
 /**
