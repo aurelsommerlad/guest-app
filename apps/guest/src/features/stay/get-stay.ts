@@ -24,10 +24,22 @@ export async function getStay(locale: Locale): Promise<StayViewModel> {
   if (context.reservation.status !== "loaded") throw new StayUnavailableError();
   const journey = await getStayJourney(context);
   const guestRegistration = journey ? guestRegistrationStatus(journey) : undefined;
+  // A submitted check-in is immutable for the guest; a later occupancy change is shown.
+  const booked = context.reservation.source.reservation.guestCount;
+  const occupancyChanged =
+    journey?.registration?.status === "submitted" &&
+    booked !== undefined &&
+    booked.adults + booked.children !== journey.registration.guestCount;
   return buildStayViewModel(
     context.reservation.source,
     locale,
     context.now,
-    journey ? { ...journey, ...(guestRegistration ? { guestRegistration } : {}) } : undefined,
+    journey
+      ? {
+          ...journey,
+          ...(guestRegistration ? { guestRegistration } : {}),
+          ...(occupancyChanged ? { occupancyChanged } : {}),
+        }
+      : undefined,
   );
 }

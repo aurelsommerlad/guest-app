@@ -29,8 +29,10 @@ import {
   listRegistrationSyncs,
   purgeExpiredRegistrationData,
   saveRegistrationGuests,
+  seedRegistrationGuests,
   startRegistration,
   submitRegistration,
+  syncRegistrationOccupancy,
 } from "./registration-repository";
 
 let db: Database;
@@ -293,6 +295,108 @@ describe("guest registrations", () => {
       }),
       "guest_registration_syncs_provider_valid",
     );
+  });
+});
+
+describe("prefill, contact data and occupancy", () => {
+  it("seeds PMS data only into empty slots and keeps provenance until the guest changes it", async () => {
+    const registration = await start(3);
+    const seeded = await seedRegistrationGuests(db, up, registration.id, [
+      {
+        position: 0,
+        role: "primary",
+        data: { firstName: "Laura", lastName: "Muster", phone: "+491701234567" },
+        prefilledFields: ["firstName", "lastName", "phone"],
+      },
+      {
+        position: 1,
+        role: "companion",
+        data: { firstName: "Tom", lastName: "Muster" },
+        prefilledFields: ["firstName", "lastName"],
+      },
+      // Beyond the guest count: ignored.
+      {
+        position: 5,
+        role: "companion",
+        data: { firstName: "X", lastName: "Y" },
+        prefilledFields: ["firstName"],
+      },
+    ]);
+    expect(seeded).toBe(2);
+    let current = await getRegistrationById(db, up, registration.id);
+    expect(current?.guests.map((guest) => guest.position)).toEqual([0, 1]);
+    expect(current?.guests[0]?.prefilledFields).toEqual(["firstName", "lastName", "phone"]);
+    // Seeding again never overwrites existing slots.
+    expect(
+      await seedRegistrationGuests(db, up, registration.id, [
+        {
+          position: 0,
+          role: "primary",
+          data: { firstName: "Other", lastName: "Name" },
+          prefilledFields: ["firstName"],
+        },
+      ]),
+    ).toBe(0);
+    // The guest corrects the phone and adds an e-mail: only unchanged fields stay "from PMS".
+    await saveRegistrationGuests(db, up, registration.id, current?.version ?? 0, [
+      {
+        position: 0,
+        role: "primary",
+        data: {
+          firstName: "Laura",
+          lastName: "Muster",
+          phone: "+491709999999",
+          email: "laura@example.com",
+        },
+      },
+    ]);
+    current = await getRegistrationById(db, up, registration.id);
+    expect(current?.guests[0]?.prefilledFields).toEqual(["firstName", "lastName"]);
+    expect(current?.guests[0]?.data.email).toBe("laura@example.com");
+  });
+
+  it("refuses relay e-mails and non-E.164 phone numbers in the database", async () => {
+    const registration = await start(1);
+    const row = {
+      tenantId: "unique-places",
+      registrationId: registration.id,
+      position: 0,
+      role: "primary" as const,
+    };
+    await expectConstraintViolation(
+      db.insert(guestRegistrationGuests).values({ ...row, email: "abc@guest.booking.com" }),
+      "guest_registration_guests_email_valid",
+    );
+    await expectConstraintViolation(
+      db.insert(guestRegistrationGuests).values({ ...row, email: "abc@eu.guest.booking.com" }),
+      "guest_registration_guests_email_valid",
+    );
+    await expectConstraintViolation(
+      db.insert(guestRegistrationGuests).values({ ...row, phone: "0170 1234567" }),
+      "guest_registration_guests_phone_e164",
+    );
+    await expectConstraintViolation(
+      db.insert(guestRegistrationGuests).values({ ...row, prefilledFields: ["passport"] }),
+      "guest_registration_guests_prefilled_fields_known",
+    );
+  });
+
+  it("follows occupancy changes of a draft visibly, never after submission", async () => {
+    const registration = await start(2);
+    const changedAt = new Date("2026-08-21T09:00:00Z");
+    expect(await syncRegistrationOccupancy(db, up, registration.id, 2, changedAt)).toBe(false);
+    expect(await syncRegistrationOccupancy(db, up, registration.id, 3, changedAt)).toBe(true);
+    let current = await getRegistrationById(db, up, registration.id);
+    expect(current).toMatchObject({ guestCount: 3, guestCountChangedAt: changedAt, version: 2 });
+    expect(await syncRegistrationOccupancy(db, other, registration.id, 1, changedAt)).toBe(false);
+    // Saving clears the notice.
+    await saveRegistrationGuests(db, up, registration.id, 2, [
+      { position: 0, role: "primary", data: laura },
+    ]);
+    current = await getRegistrationById(db, up, registration.id);
+    expect(current?.guestCountChangedAt).toBeUndefined();
+    await submitRegistration(db, up, registration.id, { expectedVersion: 3, targets: [], now });
+    expect(await syncRegistrationOccupancy(db, up, registration.id, 1, changedAt)).toBe(false);
   });
 });
 

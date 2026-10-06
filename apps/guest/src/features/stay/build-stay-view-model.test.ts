@@ -197,8 +197,7 @@ describe("STAY with guest journey", () => {
 describe("STAY redesign view model (check-in card, summary, preview)", () => {
   const steps = {
     trip: "complete",
-    primary: "complete",
-    companions: "skipped",
+    guests: "complete",
     address: "incomplete",
     review: "incomplete",
   } as const;
@@ -226,7 +225,7 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
     expect(model.checkIn).toEqual({
       state: "not-started",
       href: "/check-in",
-      steps: ["trip", "primary", "address", "review"],
+      steps: ["trip", "guests", "address", "review"],
     });
   });
 
@@ -238,7 +237,7 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
       stepsRemaining: 2,
       steps: [
         { id: "trip", done: true },
-        { id: "primary", done: true },
+        { id: "guests", done: true },
         { id: "address", done: false },
         { id: "review", done: false },
       ],
@@ -247,11 +246,25 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
     expect(model.timeTile.kind).toBe("check-in");
   });
 
+  it("flags a person count that changed after submission", () => {
+    const done = {
+      trip: "complete",
+      guests: "complete",
+      address: "complete",
+      review: "complete",
+    } as const;
+    const card = buildStayViewModel(source, "de", before, {
+      ...input("completed", notReleased),
+      assessment: { stepsRemaining: 0, steps: done },
+      occupancyChanged: true,
+    }).checkIn;
+    expect(card).toMatchObject({ state: "completed", occupancyChanged: true });
+  });
+
   it("claims a submitted guest registration only when it really synced", () => {
     const done = {
       trip: "complete",
-      primary: "complete",
-      companions: "skipped",
+      guests: "complete",
       address: "complete",
       review: "complete",
     } as const;
@@ -261,7 +274,7 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
         assessment: { stepsRemaining: 0, steps: done },
         ...extra,
       }).checkIn;
-    expect(completed({})).toEqual({ state: "completed", steps: ["trip", "primary", "address"] });
+    expect(completed({})).toEqual({ state: "completed", steps: ["trip", "guests", "address"] });
     expect(completed({ guestRegistration: "pending" })).toMatchObject({
       guestRegistration: "pending",
     });
@@ -291,7 +304,7 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
       before,
       input("completed", notReleased),
     );
-    expect(withGuests.summary.travellers).toEqual({ adults: 2, children: 1 });
+    expect(withGuests.summary.travellers).toEqual({ adults: 2, children: 1, total: 3 });
     // No preview from the arrival day on (the access card itself takes over).
     const arrival = new Date("2026-08-27T11:00:00+02:00");
     expect(

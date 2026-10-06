@@ -6,6 +6,7 @@ import {
   MOCK_LIVE_RESERVATION_ID,
   MOCK_RESERVATION_ID,
   mockReservation,
+  mockReservationGuests,
 } from "./mock-stay";
 
 /** In-memory PMS with the preview reservation and the live-dated guest access reservation. */
@@ -14,6 +15,10 @@ export function createMockPms(now: Date): MockPmsProvider {
     guestLastNames: {
       [MOCK_RESERVATION_ID]: MOCK_GUEST_LAST_NAME,
       [MOCK_LIVE_RESERVATION_ID]: MOCK_GUEST_LAST_NAME,
+    },
+    guests: {
+      [MOCK_RESERVATION_ID]: mockReservationGuests,
+      [MOCK_LIVE_RESERVATION_ID]: mockReservationGuests,
     },
   });
 }

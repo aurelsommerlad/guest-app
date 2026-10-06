@@ -3,6 +3,7 @@ import {
   type PmsProvider,
   type PmsReservation,
   type PmsReservationCandidate,
+  type PmsReservationGuests,
 } from "@up/core";
 
 /** In-memory PMS for development and tests – same interface as real providers. */
@@ -10,16 +11,40 @@ export class MockPmsProvider implements PmsProvider {
   readonly name = "mock";
   readonly #reservations: ReadonlyMap<string, PmsReservation>;
   readonly #lastNames: Readonly<Record<string, string>>;
+  readonly #guests: Readonly<Record<string, PmsReservationGuests>>;
 
-  /** `guestLastNames`: reservation id → primary guest last name (for the login check). */
+  /**
+   * `guestLastNames`: reservation id → primary guest last name (for the login check).
+   * `guests`: reservation id → guest data for prefilling the online check-in.
+   */
   constructor(
     reservations: readonly PmsReservation[],
-    options: { guestLastNames?: Readonly<Record<string, string>> } = {},
+    options: {
+      guestLastNames?: Readonly<Record<string, string>>;
+      guests?: Readonly<Record<string, PmsReservationGuests>>;
+    } = {},
   ) {
     this.#reservations = new Map(
       reservations.map((reservation) => [reservation.externalId, reservation]),
     );
     this.#lastNames = options.guestLastNames ?? {};
+    this.#guests = options.guests ?? {};
+  }
+
+  getReservationGuests(reservationId: string): Promise<PmsReservationGuests> {
+    const reservation = this.#reservations.get(reservationId);
+    if (!reservation) {
+      return Promise.reject(
+        new PmsError("not-found", "getReservationGuests: unknown mock reservation", {
+          provider: this.name,
+        }),
+      );
+    }
+    const known = this.#guests[reservationId];
+    return Promise.resolve({
+      ...(reservation.guestCount ? { occupancy: reservation.guestCount } : {}),
+      guests: known?.guests ?? [],
+    });
   }
 
   findReservationsByBookingReference(reference: string): Promise<PmsReservationCandidate[]> {

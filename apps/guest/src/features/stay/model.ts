@@ -1,5 +1,6 @@
 import {
   type AccessCredentialType,
+  type CheckInStep,
   type JourneyPhase,
   type LocalizedText,
   type PmsReservationStatus,
@@ -87,12 +88,12 @@ export type StaySummary = {
   title: string;
   /** "27.–31. August 2026" */
   dates: string;
-  travellers?: { adults: number; children: number };
+  travellers?: { adults: number; children: number; total: number };
   image?: { src: StaticImageData | string; alt: string; focus?: string };
   href: string;
 };
 
-export type CheckInStepId = "trip" | "primary" | "companions" | "address" | "review";
+export type CheckInStepId = CheckInStep;
 
 export type CheckInCardView =
   | { state: "not-started"; href: string; steps: readonly CheckInStepId[] }
@@ -108,6 +109,8 @@ export type CheckInCardView =
       steps: readonly CheckInStepId[];
       /** Only when the property reports to an official guest registration. */
       guestRegistration?: "pending" | "submitted";
+      /** The reservation's occupancy changed after submission – the guest should get in touch. */
+      occupancyChanged?: boolean;
     };
 
 export type LocalTime = { time: string; date: string; dateTime: string };

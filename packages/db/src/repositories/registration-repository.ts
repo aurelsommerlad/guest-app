@@ -26,7 +26,7 @@ import {
   type SyncStatus,
   type TenantContext,
 } from "@up/core";
-import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 
 import { type Database } from "../client";
 import { guestRegistrationGuests, guestRegistrations, guestRegistrationSyncs } from "../schema";
@@ -53,6 +53,8 @@ type GuestColumns = Pick<
   GuestRow,
   | "firstName"
   | "lastName"
+  | "email"
+  | "phone"
   | "birthDate"
   | "nationality"
   | "street"
@@ -68,6 +70,8 @@ function toColumns(data: RegistrationGuestData): GuestColumns {
   return {
     firstName: data.firstName ?? null,
     lastName: data.lastName ?? null,
+    email: data.email ?? null,
+    phone: data.phone ?? null,
     birthDate: data.birthDate ?? null,
     nationality: data.nationality ?? null,
     street: data.street ?? null,
@@ -85,7 +89,20 @@ function toGuest(row: GuestRow): RegistrationGuest {
     const value = row[field satisfies RegistrationField];
     if (value !== null) data[field] = value;
   }
-  return { position: row.position, role: row.role, data };
+  const prefilled = REGISTRATION_FIELDS.filter((field) => row.prefilledFields.includes(field));
+  return {
+    position: row.position,
+    role: row.role,
+    data,
+    ...(prefilled.length > 0 ? { prefilledFields: prefilled } : {}),
+  };
+}
+
+/** Provenance after a save: a prefilled field stays "from the PMS" only while unchanged. */
+function keptPrefilled(previous: GuestRow | undefined, data: RegistrationGuestData): string[] {
+  if (!previous) return [];
+  const before = toGuest(previous);
+  return (before.prefilledFields ?? []).filter((field) => before.data[field] === data[field]);
 }
 
 type RegistrationRow = typeof guestRegistrations.$inferSelect;
@@ -113,6 +130,7 @@ function toRecord(row: RegistrationRow, guests: readonly GuestRow[]): GuestRegis
     arrivalAt: row.arrivalAt,
     departureAt: row.departureAt,
     ...(row.submittedAt ? { submittedAt: row.submittedAt } : {}),
+    ...(row.guestCountChangedAt ? { guestCountChangedAt: row.guestCountChangedAt } : {}),
     ...(row.purgeAfter ? { purgeAfter: row.purgeAfter } : {}),
     ...(row.purgedAt ? { purgedAt: row.purgedAt } : {}),
     version: row.version,
@@ -222,6 +240,8 @@ export async function startRegistration(
         arrivalAt: input.arrivalAt,
         departureAt: input.departureAt,
         guestCount: sql`CASE WHEN ${guestRegistrations.guestCountSource} = 'reservation' AND ${input.guestCountSource} = 'reservation' THEN ${input.guestCount} ELSE ${guestRegistrations.guestCount} END`,
+        // A changed occupancy is never silent: the guest sees a notice until the next save.
+        guestCountChangedAt: sql`CASE WHEN ${guestRegistrations.guestCountSource} = 'reservation' AND ${input.guestCountSource} = 'reservation' AND ${guestRegistrations.guestCount} <> ${input.guestCount} THEN now() ELSE ${guestRegistrations.guestCountChangedAt} END`,
         updatedAt: new Date(),
       },
       setWhere: and(
@@ -283,6 +303,8 @@ export async function saveRegistrationGuests(
       .set({
         version: sql`${guestRegistrations.version} + 1`,
         updatedAt: new Date(),
+        // The guest has seen the current set of travellers.
+        guestCountChangedAt: null,
         ...(options.guestCount === undefined
           ? {}
           : {
@@ -299,8 +321,24 @@ export async function saveRegistrationGuests(
       )
       .returning({ version: guestRegistrations.version });
     if (!updated) return failureReason(tx, context, id);
+    const existing =
+      guests.length === 0
+        ? []
+        : await tx
+            .select()
+            .from(guestRegistrationGuests)
+            .where(
+              and(
+                eq(guestRegistrationGuests.tenantId, context.tenantId),
+                eq(guestRegistrationGuests.registrationId, id),
+              ),
+            );
     for (const guest of guests) {
       const columns = toColumns(guest.data);
+      const prefilledFields = keptPrefilled(
+        existing.find((row) => row.position === guest.position),
+        guest.data,
+      );
       await tx
         .insert(guestRegistrationGuests)
         .values({
@@ -309,14 +347,95 @@ export async function saveRegistrationGuests(
           position: guest.position,
           role: guest.position === 0 ? "primary" : "companion",
           ...columns,
+          prefilledFields,
         })
         .onConflictDoUpdate({
           target: [guestRegistrationGuests.registrationId, guestRegistrationGuests.position],
-          set: { ...columns, updatedAt: new Date() },
+          set: { ...columns, prefilledFields, updatedAt: new Date() },
         });
     }
     return { ok: true, version: updated.version };
   });
+}
+
+/**
+ * Inserts prefilled travellers (from the PMS) into empty slots of a draft – never touches a
+ * slot that already holds data. Returns the number of slots filled.
+ */
+export async function seedRegistrationGuests(
+  db: Database,
+  context: TenantContext,
+  id: string,
+  guests: readonly RegistrationGuest[],
+): Promise<number> {
+  assertTenantContext(context);
+  if (!UUID.test(id) || guests.length === 0) return 0;
+  return db.transaction(async (tx) => {
+    const [draft] = await tx
+      .select({ guestCount: guestRegistrations.guestCount })
+      .from(guestRegistrations)
+      .where(
+        and(
+          eq(guestRegistrations.tenantId, context.tenantId),
+          eq(guestRegistrations.id, id),
+          eq(guestRegistrations.status, "draft"),
+        ),
+      );
+    if (!draft) return 0;
+    const rows = guests
+      .filter((guest) => guest.position >= 0 && guest.position < draft.guestCount)
+      .map((guest) => ({
+        tenantId: context.tenantId,
+        registrationId: id,
+        position: guest.position,
+        role: guest.position === 0 ? ("primary" as const) : ("companion" as const),
+        ...toColumns(guest.data),
+        prefilledFields: [...(guest.prefilledFields ?? [])],
+      }));
+    if (rows.length === 0) return 0;
+    const inserted = await tx
+      .insert(guestRegistrationGuests)
+      .values(rows)
+      .onConflictDoNothing()
+      .returning({ position: guestRegistrationGuests.position });
+    return inserted.length;
+  });
+}
+
+/**
+ * The reservation is the source of truth for how many people travel. When its occupancy
+ * changes while the check-in is a draft, the slots follow and the change is flagged (no
+ * data is deleted; slots beyond the new count are ignored and dropped on submit).
+ */
+export async function syncRegistrationOccupancy(
+  db: Database,
+  context: TenantContext,
+  id: string,
+  guestCount: number,
+  now: Date,
+): Promise<boolean> {
+  assertTenantContext(context);
+  if (!UUID.test(id)) return false;
+  assertGuestCount(guestCount);
+  const updated = await db
+    .update(guestRegistrations)
+    .set({
+      guestCount,
+      guestCountChangedAt: now,
+      version: sql`${guestRegistrations.version} + 1`,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(guestRegistrations.tenantId, context.tenantId),
+        eq(guestRegistrations.id, id),
+        eq(guestRegistrations.status, "draft"),
+        eq(guestRegistrations.guestCountSource, "reservation"),
+        ne(guestRegistrations.guestCount, guestCount),
+      ),
+    )
+    .returning({ id: guestRegistrations.id });
+  return updated.length > 0;
 }
 
 export type SubmitResult =

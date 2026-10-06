@@ -1,3 +1,5 @@
+import { type PmsReservationGuests } from "../registration/prefill";
+
 /**
  * PMS port – the only view of a property management system the app depends on.
  * Provider adapters (ApaleoProvider, …) map their API models onto these types,
@@ -39,6 +41,9 @@ export type PmsReservationCandidate = {
   primaryGuestLastName?: string;
 };
 
+/** Guest data of a reservation for prefilling the online check-in (never logged or rendered as-is). */
+export type { PmsGuestData, PmsOccupancy, PmsReservationGuests } from "../registration/prefill";
+
 export interface PmsProvider {
   readonly name: string;
   /** Loads one reservation by its PMS id. Rejects with a `PmsError`. */
@@ -50,6 +55,11 @@ export interface PmsProvider {
    * Unknown references resolve to `[]`; technical failures reject with a `PmsError`.
    */
   findReservationsByBookingReference(reference: string): Promise<PmsReservationCandidate[]>;
+  /**
+   * Occupancy and the personal data the PMS holds for the reservation's guests – only for
+   * prefilling the online check-in (server-side, never logged). Optional per provider.
+   */
+  getReservationGuests?(reservationId: string): Promise<PmsReservationGuests>;
 }
 
 export type PmsErrorKind =

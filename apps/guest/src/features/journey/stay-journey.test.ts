@@ -68,28 +68,35 @@ describe("stay journey", () => {
 
     // Complete the check-in.
     const checkInDeps = { db, logger, now: () => ARRIVAL_DAY };
-    await confirmTrip(checkInDeps, context, {});
+    await confirmTrip(checkInDeps, context);
     await saveGuestStep(checkInDeps, context, {
-      step: "primary",
+      step: "guests",
       version: 1,
       values: {
-        0: { firstName: "Laura", lastName: "Muster", birthDate: "1990-05-17", nationality: "DE" },
-      },
-    });
-    await saveGuestStep(checkInDeps, context, {
-      step: "companions",
-      version: 2,
-      values: {
-        1: { firstName: "Tom", lastName: "Muster", birthDate: "1988-01-01", nationality: "AT" },
+        0: {
+          firstName: "Laura",
+          lastName: "Muster",
+          email: "laura@example.com",
+          phone: "+491701234567",
+          birthDate: "1990-05-17",
+          nationality: "DE",
+        },
+        1: {
+          firstName: "Tom",
+          lastName: "Muster",
+          phone: "+436641234567",
+          birthDate: "1988-01-01",
+          nationality: "AT",
+        },
       },
     });
     await saveGuestStep(checkInDeps, context, {
       step: "address",
-      version: 3,
+      version: 2,
       values: { 0: { street: "Seeweg 3", postalCode: "88131", city: "Lindau", country: "DE" } },
     });
     expect(
-      await submitCheckIn(checkInDeps, context, { version: 4, confirmed: true }),
+      await submitCheckIn(checkInDeps, context, { version: 3, confirmed: true }),
     ).toMatchObject({ ok: true });
 
     const shown = await loadStayJourney(deps, context);

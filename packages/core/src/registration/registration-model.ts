@@ -5,14 +5,18 @@
  * (Apaleo) and official guest registration (Feratel, …) are *targets* that receive a
  * mapped copy through the sync layer – their field names never become ours.
  *
- * Data minimisation: only fields a property's configuration asks for are collected. No
- * e-mail, phone or free text. Identity documents only where a property requires them.
+ * Data minimisation: only fields a property's configuration asks for are collected – plus
+ * the contact data every stay needs (ROLE_MANDATORY_FIELDS): the main guest's e-mail and a
+ * mobile number for every traveller. No free text. Identity documents only where a
+ * property requires them.
  */
 
 /** Every field a guest can be asked for. Which ones are used is property configuration. */
 export const REGISTRATION_FIELDS = [
   "firstName",
   "lastName",
+  "email",
+  "phone",
   "birthDate",
   "nationality",
   "street",
@@ -24,8 +28,20 @@ export const REGISTRATION_FIELDS = [
 ] as const;
 export type RegistrationField = (typeof REGISTRATION_FIELDS)[number];
 
-/** Always required for every guest – the minimum to identify a traveller. */
+/** Every property configuration must require these (identify a traveller). */
 export const MANDATORY_FIELDS: readonly RegistrationField[] = ["firstName", "lastName"];
+
+/**
+ * Required by UNIQUE PLACES for every stay, independent of the property configuration:
+ * a real e-mail for the main guest (reachable, not a channel relay) and a mobile number
+ * for every traveller. Fellow travellers are not asked for an e-mail.
+ */
+export const ROLE_MANDATORY_FIELDS: Readonly<
+  Record<"primary" | "companion", readonly RegistrationField[]>
+> = {
+  primary: ["firstName", "lastName", "email", "phone"],
+  companion: ["firstName", "lastName", "phone"],
+};
 
 /** Fields of the "Meldedaten" step (address and document) – the rest is personal data. */
 export const ADDRESS_FIELDS: readonly RegistrationField[] = [
@@ -51,6 +67,11 @@ export type RegistrationGuest = {
   position: number;
   role: GuestRole;
   data: RegistrationGuestData;
+  /**
+   * Fields whose value came from the PMS and was not changed by the guest (provenance:
+   * PMS data vs. guest input). Missing = nothing prefilled.
+   */
+  prefilledFields?: readonly RegistrationField[];
 };
 
 export const REGISTRATION_STATUSES = ["draft", "submitted"] as const;
@@ -73,6 +94,8 @@ export type GuestRegistration = {
   guestCountSource: GuestCountSource;
   guests: readonly RegistrationGuest[];
   submittedAt?: Date;
+  /** Set when the reservation's occupancy changed the guest count of a draft (cleared on save). */
+  guestCountChangedAt?: Date;
   /** Personal data may be removed after this instant (retention, ADR 0016). */
   purgeAfter?: Date;
   /** Optimistic concurrency: incremented on every write. */
@@ -113,5 +136,6 @@ export type PropertyRegistrationConfig = {
   retentionDaysAfterDeparture?: number;
 };
 
-export const CHECK_IN_STEPS = ["trip", "primary", "companions", "address", "review"] as const;
+/** trip → guests (main guest + fellow travellers) → address (main guest's registration data) → review */
+export const CHECK_IN_STEPS = ["trip", "guests", "address", "review"] as const;
 export type CheckInStep = (typeof CHECK_IN_STEPS)[number];

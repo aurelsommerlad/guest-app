@@ -384,6 +384,11 @@ Hospitality statt Formular-App: ruhige Cards, strukturierte Informationsgruppen,
 
 **Regeln:** keine Zustände vortäuschen (Gästemeldung nur „übermittelt“, wenn der Sync wirklich `synced` ist; keine Zahlung/Gästekarte/Scan als Funktion); Scan-Platz im Ausweis-Card ist als „Bald verfügbar“ gekennzeichnet und nicht klickbar. Primäre Buttons auf Phones volle Breite. `clear-bottom-nav` reserviert Navigationshöhe + Safe Area + 2 rem auf allen Gästeseiten.
 
+### Ergänzung Phase 11.2 (Vorbefüllung, Kontaktdaten)
+
+- `PhoneField` (`@up/ui`) – Ländervorwahl kompakt („+49“, natives `<select>` unsichtbar darüber, durchsuchbar per Tastatur) plus Nummernfeld, das den Rest der Zeile füllt. Die Vorwahl ist unkontrolliert (`defaultValue`), damit Reacts automatisches Formular-Reset nach einer Server Action sie nicht auf die erste Option setzt. Optionen kommen lokalisiert vom Server (`callingCodeOptions`).
+- Gäste-Schritt: ein Accordion für alle Reisenden (Hauptgast zuerst). Die Statuszeile sagt, was fehlt („Tom Muster · fehlt: Mobilnummer“), vollständige Personen sind eingeklappt mit Häkchen, leere zeigen „Noch keine Angaben“. Ein einziger Hinweis „Aus Deiner Buchung übernommen – bitte prüfen und ergänzen“ pro Person mit vorbefüllten Feldern; keine Markierung je Feld (keine Warnflut).
+
 ## 22. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |

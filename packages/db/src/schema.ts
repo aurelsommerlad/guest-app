@@ -28,6 +28,7 @@ import {
   MAX_TRAVELLERS,
   type PropertyAccessConfig,
   type PropertyRegistrationConfig,
+  REGISTRATION_FIELDS,
   REGISTRATION_STATUSES,
   REGISTRATION_TARGETS,
   RESERVATION_PROVIDERS,
@@ -540,6 +541,11 @@ export const guestRegistrations = pgTable(
     purgeAfter: timestamp("purge_after", { withTimezone: true }),
     /** Set when the personal data (guest rows) was deleted. */
     purgedAt: timestamp("purged_at", { withTimezone: true }),
+    /**
+     * Set when the reservation's occupancy changed the guest count of a draft; the guest
+     * sees a notice until the next save. Occupancy (PMS) and person slots stay separate.
+     */
+    guestCountChangedAt: timestamp("guest_count_changed_at", { withTimezone: true }),
     version: integer("version").notNull().default(1),
     ...timestamps,
   },
@@ -601,6 +607,10 @@ export const guestRegistrationGuests = pgTable(
     role: text("role", { enum: GUEST_ROLES }).notNull(),
     firstName: text("first_name"),
     lastName: text("last_name"),
+    /** Main guest only: a directly reachable address (channel relays are refused). */
+    email: text("email"),
+    /** Mobile number of every traveller, E.164. */
+    phone: text("phone"),
     birthDate: date("birth_date", { mode: "string" }),
     nationality: text("nationality"),
     street: text("street"),
@@ -609,6 +619,11 @@ export const guestRegistrationGuests = pgTable(
     country: text("country"),
     documentType: text("document_type", { enum: DOCUMENT_TYPES }),
     documentNumber: text("document_number"),
+    /** Fields whose value came from the PMS and was not changed by the guest (provenance). */
+    prefilledFields: text("prefilled_fields")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     ...timestamps,
   },
   (t) => [
@@ -635,6 +650,20 @@ export const guestRegistrationGuests = pgTable(
       "guest_registration_guests_country_codes",
       sql`(${t.nationality} IS NULL OR ${t.nationality} ~ '^[A-Z]{2}$')
         AND (${t.country} IS NULL OR ${t.country} ~ '^[A-Z]{2}$')`,
+    ),
+    check(
+      "guest_registration_guests_email_valid",
+      sql`${t.email} IS NULL OR (${t.email} = lower(${t.email})
+        AND char_length(${t.email}) BETWEEN 3 AND 254 AND position('@' in ${t.email}) > 1
+        AND ${t.email} !~ '@([a-z0-9-]+\\.)*guest\\.booking\\.com$')`,
+    ),
+    check(
+      "guest_registration_guests_phone_e164",
+      sql`${t.phone} IS NULL OR ${t.phone} ~ '^\\+[1-9][0-9]{6,14}$'`,
+    ),
+    check(
+      "guest_registration_guests_prefilled_fields_known",
+      sql`${t.prefilledFields} <@ ARRAY[${sql.raw(REGISTRATION_FIELDS.map((field) => `'${field}'`).join(", "))}]::text[]`,
     ),
     check(
       "guest_registration_guests_text_lengths",

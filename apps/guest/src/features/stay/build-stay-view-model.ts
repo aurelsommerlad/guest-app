@@ -26,6 +26,8 @@ export type StayJourneyInput = {
   access: StayAccess;
   /** Official guest registration (e.g. Feratel) – only if the property reports to one. */
   guestRegistration?: "pending" | "submitted";
+  /** Submitted check-in whose person count no longer matches the reservation. */
+  occupancyChanged?: boolean;
 };
 
 export const CHECK_IN_HREF = "/check-in";
@@ -85,7 +87,15 @@ export function buildStayViewModel(
         year: "numeric",
         timeZone: property.timeZone,
       }).formatRange(new Date(reservation.checkInAt), new Date(reservation.checkOutAt)),
-      ...(reservation.guestCount ? { travellers: reservation.guestCount } : {}),
+      ...(reservation.guestCount
+        ? {
+            travellers: {
+              adults: reservation.guestCount.adults,
+              children: reservation.guestCount.children,
+              total: reservation.guestCount.adults + reservation.guestCount.children,
+            },
+          }
+        : {}),
       ...(firstCard
         ? {
             image: {
@@ -198,6 +208,7 @@ function selectCheckIn(journey: StayJourneyInput): CheckInCardView | undefined {
       state: "completed",
       steps: visible.filter((step) => step !== "review"),
       ...(journey.guestRegistration ? { guestRegistration: journey.guestRegistration } : {}),
+      ...(journey.occupancyChanged ? { occupancyChanged: true } : {}),
     };
   }
   return undefined;

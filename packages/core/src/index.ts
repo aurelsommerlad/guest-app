@@ -69,6 +69,19 @@ export {
   type PmsReservationStatus,
 } from "./pms/pms-provider";
 export {
+  occupancyTotal,
+  type PmsGuestData,
+  type PmsOccupancy,
+  type PmsReservationGuests,
+  prefillGuests,
+} from "./registration/prefill";
+export {
+  isRelayEmail,
+  normalizeEmail,
+  RELAY_EMAIL_DOMAINS,
+  usableContactEmail,
+} from "./contact/email";
+export {
   EXPLORE_CATEGORIES,
   EXPLORE_FILTERS,
   type ExploreCategory,
@@ -159,6 +172,7 @@ export {
   type GuestRole,
   MANDATORY_FIELDS,
   MAX_TRAVELLERS,
+  ROLE_MANDATORY_FIELDS,
   type PropertyRegistrationConfig,
   REGISTRATION_FIELDS,
   REGISTRATION_STATUSES,
@@ -174,10 +188,13 @@ export {
   assessRegistration,
   type FieldError,
   fieldsForRole,
+  guestMissingFields,
+  guestStepFields,
   hasAddressStep,
   isValidIsoDate,
   missingFields,
   normalizeGuestInput,
+  PERSONAL_FIELDS,
   propertyRegistrationConfigSchema,
   REGISTRATION_DISABLED,
   type RegistrationAssessment,

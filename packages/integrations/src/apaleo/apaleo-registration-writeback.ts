@@ -5,13 +5,14 @@
  * API spec; see docs/integrations/apaleo-registration-writeback.md):
  *  - PATCH /booking/v1/reservations/{id} (JSON Patch), scope `reservations.manage`
  *  - allowed: "Replace PrimaryGuest", "Add, replace and remove AdditionalGuests"
- *  - GuestModel: firstName, lastName (required), birthDate, nationalityCountryCode,
+ *  - GuestModel: firstName, lastName (required), email, phone, birthDate, nationalityCountryCode,
  *    address { addressLine1, postalCode, city, countryCode }, identificationNumber,
  *    identificationType (PassportNumber | IdNumber | … | Other)
  *
  * Never overwrites data we do not manage:
  *  - primaryGuest is read first and replaced by the *merged* object: unmanaged fields
- *    (e-mail, phone, company, preferences …) are written back unchanged.
+ *    (company, preferences, a value we did not collect …) are written back unchanged.
+ *    E-mail and phone are replaced by the guest's checked values (real e-mail, E.164).
  *  - additionalGuests are only written when the reservation has none, or when they are
  *    exactly what we wrote last time (fingerprint). Anything else → "conflict", nothing
  *    is written, a human decides.
@@ -51,6 +52,9 @@ export function mergeApaleoGuest(
   const guest: ApaleoGuest = { ...(existing ?? {}) };
   if (data.firstName) guest.firstName = data.firstName;
   if (data.lastName) guest.lastName = data.lastName;
+  // The guest's own contact data replaces e.g. a channel relay address.
+  if (data.email) guest.email = data.email;
+  if (data.phone) guest.phone = data.phone;
   if (data.birthDate) guest.birthDate = data.birthDate;
   if (data.nationality) guest.nationalityCountryCode = data.nationality;
   if (data.street || data.postalCode || data.city || data.country) {

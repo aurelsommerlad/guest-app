@@ -36,7 +36,7 @@ Die primäre Aktion auf STAY (`online-check-in | check-in-info | show-access | c
 
 ### 2. Kanonisches Registrierungsmodell
 
-Eigenes, provider-neutrales Modell (`@up/core/registration`). Felder: `firstName`, `lastName`, `birthDate`, `nationality` (ISO 3166-1 alpha-2), `street`, `postalCode`, `city`, `country`, `documentType`, `documentNumber`. Keine E-Mail, kein Telefon, kein Freitext. Ausweisdaten nur, wenn ein Objekt sie konfiguriert. Feratel- oder Apaleo-Feldnamen kommen im Modell nicht vor; Mapping nur im Adapter.
+Eigenes, provider-neutrales Modell (`@up/core/registration`). Felder: `firstName`, `lastName`, `email`, `phone`, `birthDate`, `nationality` (ISO 3166-1 alpha-2), `street`, `postalCode`, `city`, `country`, `documentType`, `documentNumber`. Kein Freitext. Kontaktdaten (Migration `0010`): siehe Abschnitt 4a. Ausweisdaten nur, wenn ein Objekt sie konfiguriert. Feratel- oder Apaleo-Feldnamen kommen im Modell nicht vor; Mapping nur im Adapter.
 
 Tabellen (Migration `0008`, Lock `0009`):
 
@@ -55,7 +55,7 @@ Bewusst **keine** Standardkonfiguration für HØV/LÆKE (DE) oder HŪSLE/ΛLPIL�
 
 ### 4. Ablauf in der Guest App
 
-`/check-in` → Schritte `trip` (Deine Reise) · `primary` (Hauptgast) · `companions` (Mitreisende) · `address` (Meldedaten) · `review` (Prüfen & absenden). Leere Schritte werden übersprungen (eine Person → keine Mitreisenden; keine Adressfelder → keine Meldedaten). Personenzahl aus der Reservierung (Apaleo `adults` + Anzahl `childrenAges`), nur ohne diese Angabe fragt der Gast.
+`/check-in` → Schritte `trip` (Deine Reise) · `guests` (Hauptgast + Mitreisende in einem Schritt) · `address` (Meldedaten des Hauptgasts) · `review` (Prüfen & absenden). Keine Adressfelder → kein Meldedaten-Schritt. Die alten URLs `/check-in/primary` und `/check-in/companions` leiten auf `/check-in/guests` um. Die Personenzahl kommt **immer** aus der Reservierung (Abschnitt 4a); der Gast wird nie danach gefragt.
 
 - Server Actions (Next.js prüft Origin → CSRF-Schutz), Formulare funktionieren ohne JavaScript.
 - Jeder Schritt speichert: gültige Werte werden behalten, fehlende Pflichtangaben gemeldet; ungültige Werte speichern nichts. Fortsetzen über STAY („Weiter ausfüllen · Noch n Schritte“).
@@ -63,6 +63,22 @@ Bewusst **keine** Standardkonfiguration für HØV/LÆKE (DE) oder HŪSLE/ΛLPIL�
 - Absenden ist idempotent (Statuswechsel einmal, Sync-Zeilen einmal pro Ziel). Danach unveränderlich für den Gast.
 - Der Gast sieht **nie** einen Provider-Status. Ein Ausfall von Apaleo/Feratel erzeugt keine Meldung „Check-in fehlgeschlagen“ – der Check-in ist mit dem kanonischen Datensatz abgeschlossen.
 - Rate-Limit: 60 Schreibvorgänge je Reservierung und 15 Minuten.
+
+### 4a. Vorbefüllung, Kontaktdaten und Belegung (Phase 11.2)
+
+**Belegung = Quelle der Wahrheit.** `PmsProvider.getReservationGuests()` liefert `occupancy {adults, children, childrenAges?}` (Apaleo: `adults`, `childrenAges`) und die bekannten Gäste. Der Check-in legt genau `adults + children` Personen an (Position 0 = Hauptgast). Ohne bekannte Belegung ist der Check-in nicht verfügbar (`occupancy-unknown`) – keine Rückfrage beim Gast.
+
+**Vorbefüllung** (`prefillGuests`, `@up/core`): Index 0 = `primaryGuest`, danach `additionalGuests` in PMS-Reihenfolge. Übernommen werden nur Felder, die das Objekt erhebt, und nur plausible Werte (dieselbe Normalisierung wie bei Gasteingaben; Unplausibles wird verworfen und erfragt). Unbekannte Personen bleiben leer. `booker` wird bewusst **nicht** verwendet (kann eine Agentur sein). Ein PMS-Ausfall bedeutet nur „keine Vorbefüllung“. Geschrieben wird einmalig per `seedRegistrationGuests` (`ON CONFLICT DO NOTHING`, nur Entwurf) – Gasteingaben werden nie überschrieben.
+
+**Pflichtfelder unabhängig von der Objektkonfiguration** (`ROLE_MANDATORY_FIELDS`): Hauptgast Vor-/Nachname, **echte E-Mail**, **Mobilnummer**; Mitreisende Vor-/Nachname, **Mobilnummer** – keine E-Mail.
+
+**Relay-E-Mails:** `isRelayEmail`/`usableContactEmail` (`@up/core`, `contact/email.ts`) erkennen positiv bekannte Weiterleitungsadressen (heute `guest.booking.com` inkl. Subdomains; Liste `RELAY_EMAIL_DOMAINS` erweiterbar). Sie werden nicht vorbefüllt, bei Eingabe abgelehnt (`relay-email`) und per DB-Check `guest_registration_guests_email_valid` ausgeschlossen. Andere OTA-Adressen werden nicht pauschal verworfen.
+
+**Telefon:** `libphonenumber-js` (MIT, offline, keine externe API). Eingabe = Ländervorwahl + Nummer; „+“/„00“ in der Nummer gewinnt. Gespeichert wird E.164 (DB-Check `^\+[1-9][0-9]{6,14}$`). Festnetz/Sondernummern werden als `not-mobile` abgelehnt; Typen, die die Metadaten nicht unterscheiden können (`FIXED_LINE_OR_MOBILE`), werden angenommen. Ländervorschlag beim Vorbefüllen: Land bzw. Staatsangehörigkeit der Person. Die Metadaten liegen nur serverseitig bzw. im Unterpfad `@up/core/phone`; `@up/core` ist `sideEffects: false`, damit Client-Bundles sie nicht mitladen.
+
+**Herkunft (A/B/C):** A = PMS-Daten (`guest_registration_guests.prefilled_fields`, ein Feld bleibt „aus PMS“ nur solange sein Wert unverändert ist), B = vom Gast ergänzt/geändert (alle übrigen Felder), C = zu übertragen: die kanonische Registrierung nach dem Absenden, nur über die Sync-Schicht – Apaleo nur bei `APALEO_REGISTRATION_WRITEBACK=enabled`, Feratel ist ein Skelett und sendet nichts.
+
+**Belegungsänderung:** Ändert sich die Belegung eines Entwurfs, setzt `syncRegistrationOccupancy` die neue Personenzahl, `guest_count_changed_at` und erhöht die Version (offene Formulare bekommen einen Konflikt statt still falscher Daten). Der Gast sieht einen Hinweis im Gäste-Schritt; neue Personen werden ggf. vorbefüllt. Überzählige Personen bleiben bis zum Absenden erhalten (keine Datenverluste bei Rückänderung) und werden erst dann entfernt. Abgesendete Registrierungen bleiben unverändert; eine spätere Abweichung zeigt STAY im Abschluss-Hinweis. Keine Merge-Engine.
 
 ### 5. Sync-Schicht
 
@@ -74,7 +90,7 @@ Bewusst **keine** Standardkonfiguration für HØV/LÆKE (DE) oder HŪSLE/ΛLPIL�
 
 ### 6. Datenschutz
 
-Datenminimierung über die Konfiguration; keine Pass-/Ausweisdaten ohne Konfiguration; keine personenbezogenen Daten in Logs (Logger-Redaction um Geburtsdatum, Staatsangehörigkeit, Adresse, Dokument, PIN/Code erweitert; geloggt werden nur IDs, Schritte, Codes). Aufbewahrung vorbereitet: `purge_after` = Abreise + `retentionDaysAfterDeparture`; `purgeExpiredRegistrationData` löscht die Gästezeilen und behält Status/Sync-Metadaten. Die Frist muss je Land bestätigt werden – ohne Konfiguration wird nichts automatisch gelöscht.
+Datenminimierung über die Konfiguration (plus die Kontaktdaten aus 4a); keine Pass-/Ausweisdaten ohne Konfiguration; keine personenbezogenen Daten in Logs (Logger-Redaction um Geburtsdatum, Staatsangehörigkeit, Adresse, Dokument, PIN/Code erweitert; geloggt werden nur IDs, Schritte, Codes). Aufbewahrung vorbereitet: `purge_after` = Abreise + `retentionDaysAfterDeparture`; `purgeExpiredRegistrationData` löscht die Gästezeilen und behält Status/Sync-Metadaten. Die Frist muss je Land bestätigt werden – ohne Konfiguration wird nichts automatisch gelöscht.
 
 ### 7. Extras
 

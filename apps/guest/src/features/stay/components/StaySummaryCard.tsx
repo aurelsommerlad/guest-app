@@ -32,10 +32,7 @@ export async function StaySummaryCard({ summary }: { summary: StaySummary }) {
             <span className="type-small text-text-muted">{summary.dates}</span>
             {summary.travellers && (
               <span className="type-small text-text-muted">
-                {t("travellers", {
-                  adults: summary.travellers.adults,
-                  children: summary.travellers.children,
-                })}
+                {t("travellersTotal", { count: summary.travellers.total })}
               </span>
             )}
           </span>

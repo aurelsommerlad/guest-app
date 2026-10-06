@@ -1,6 +1,6 @@
 # Apaleo-Write-back des Online-Check-ins
 
-Stand: Phase 11. Architektur: [ADR 0016](../adr/0016-guest-journey-and-online-check-in.md).
+Stand: Phase 11.2. Lesen für die Vorbefüllung: [Apaleo-Vorbefüllung](apaleo-guest-prefill.md). Architektur: [ADR 0016](../adr/0016-guest-journey-and-online-check-in.md).
 
 ## Verifizierte Grundlage
 
@@ -14,7 +14,7 @@ Quelle: offizieller, von apaleo gepflegter Client `@apaleo/angular-api-proxy-boo
 
 1. `GET` der Reservierung (Gast-Objekte nur im Speicher).
 2. Storniert/No-Show → `failed: rejected`, nichts geschrieben.
-3. `replace /primaryGuest` mit dem **zusammengeführten** Objekt: unsere Felder überschreiben, alle anderen (E-Mail, Telefon, Firma, Präferenzen …) werden unverändert zurückgeschrieben.
+3. `replace /primaryGuest` mit dem **zusammengeführten** Objekt: unsere Felder überschreiben (seit Phase 11.2 auch `email` – nie eine Relay-Adresse – und `phone` in E.164), alle anderen (Firma, Präferenzen …) werden unverändert zurückgeschrieben.
 4. `additionalGuests` nur, wenn keine vorhanden sind oder genau die zuletzt von uns geschriebenen (SHA-256-Fingerprint in `guest_registration_syncs.fingerprint`). Sonst `failed: conflict` – **nichts** wird geschrieben, ein Mensch entscheidet.
 5. Idempotent: gleiche Daten → gleicher Patch; Wiederholung schadet nicht. Ein Retry bei Netzwerk/5xx/429 im Client.
 6. Fehler → Codes: 401/403 `auth` (failed), 404 `not_found` (failed), 400/422 `rejected` (failed), 409 `conflict` (retry), 429 `rate_limited` (retry), 5xx/Timeout (retry).

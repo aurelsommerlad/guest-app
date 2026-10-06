@@ -1,5 +1,6 @@
 import { type CheckInStep, type RegistrationField } from "@up/core";
 import { Icon, SummaryCard, type SummaryGroup } from "@up/ui";
+import { formatPhone } from "@up/core/phone";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "../../../i18n/navigation";
@@ -21,6 +22,7 @@ export async function ReviewSummary({ journey, steps, countryName, formatDate }:
   const display = (field: RegistrationField, value: string) => {
     if (field === "nationality" || field === "country") return countryName(value);
     if (field === "birthDate") return formatDate(value);
+    if (field === "phone") return formatPhone(value);
     if (field === "documentType") {
       return t(`documentTypes.${value as "passport" | "id-card" | "other"}`);
     }
@@ -58,6 +60,7 @@ export async function ReviewSummary({ journey, steps, countryName, formatDate }:
     </Link>
   );
 
+  const companions = stepPositions(journey, "guests").filter((position) => position > 0);
   const addressGroup = group("address", 0, (field) => !DOCUMENT_FIELDS.has(field));
   const documentGroup = group("address", 0, (field) => DOCUMENT_FIELDS.has(field));
 
@@ -66,16 +69,16 @@ export async function ReviewSummary({ journey, steps, countryName, formatDate }:
       <SummaryCard
         title={t("review.primary")}
         icon="user"
-        action={change("primary", t("review.primary"))}
-        groups={[group("primary", 0)]}
+        action={change("guests", t("review.primary"))}
+        groups={[group("guests", 0)]}
       />
-      {steps.includes("companions") && (
+      {companions.length > 0 && (
         <SummaryCard
           title={t("review.companions")}
           icon="users"
-          action={change("companions", t("review.companions"))}
-          groups={stepPositions(journey, "companions").map((position) =>
-            group("companions", position, undefined, t("companion", { number: position + 1 })),
+          action={change("guests", t("review.companions"))}
+          groups={companions.map((position) =>
+            group("guests", position, undefined, t("companion", { number: position + 1 })),
           )}
         />
       )}

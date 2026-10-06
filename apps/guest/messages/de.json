@@ -63,7 +63,8 @@
     "summary": {
       "label": "Deine Reservierung",
       "travellers": "{adults, plural, one {# Erwachsener} other {# Erwachsene}}{children, plural, =0 {} one {, # Kind} other {, # Kinder}}",
-      "details": "Details zu Deinem Apartment"
+      "details": "Details zu Deinem Apartment",
+      "travellersTotal": "{count, plural, one {# Reisender} other {# Reisende}}"
     },
     "checkInCard": {
       "eyebrow": "Online-Check-in",
@@ -85,11 +86,11 @@
       "open": "offen",
       "steps": {
         "trip": "Reise",
-        "primary": "Hauptgast",
-        "companions": "Mitreisende",
         "address": "Adresse",
-        "review": "Bestätigung"
-      }
+        "review": "Bestätigung",
+        "guests": "Gäste"
+      },
+      "occupancyChanged": "Die Personenzahl Deiner Buchung hat sich nach dem Check-in geändert. Bitte melde Dich kurz bei uns."
     },
     "linksHeading": "Für Deinen Aufenthalt"
   },
@@ -174,17 +175,15 @@
     "progress": "Schritt {current} von {total}",
     "steps": {
       "trip": "Deine Reise",
-      "primary": "Hauptgast",
-      "companions": "Mitreisende",
       "address": "Deine Adresse",
-      "review": "Prüfen & absenden"
+      "review": "Prüfen & absenden",
+      "guests": "Gäste"
     },
     "intro": {
       "trip": "Ein paar Angaben vor Deiner Anreise – dann ist bei Ankunft alles erledigt.",
-      "primary": "Die Angaben zur Person, auf die die Buchung läuft.",
-      "companions": "Bitte ergänze die Angaben für alle Mitreisenden.",
       "address": "Diese Angaben benötigen wir für die gesetzliche Gästemeldung.",
-      "review": "Bitte prüfe Deine Angaben, bevor Du den Check-in abschickst."
+      "review": "Bitte prüfe Deine Angaben, bevor Du den Check-in abschickst.",
+      "guests": "Alle Reisenden Deiner Buchung. Was wir schon kennen, haben wir für Dich eingetragen."
     },
     "trip": {
       "arrival": "Anreise",
@@ -192,11 +191,10 @@
       "apartment": "Apartment",
       "travellers": "Reisende",
       "travellersCount": "{count, plural, one {# Person} other {# Personen}}",
-      "travellersHint": "Laut Deiner Buchung. Hat sich etwas geändert? Melde Dich gerne bei uns.",
-      "travellersQuestion": "Mit wie vielen Personen reist Du (Dich eingeschlossen)?",
       "dateTime": "{date}, {time} Uhr",
       "card": "Dein Aufenthalt",
-      "editHint": "Stimmt etwas nicht? Melde Dich gerne bei uns – wir passen Deine Buchung an."
+      "editHint": "Stimmt etwas nicht? Melde Dich gerne bei uns – wir passen Deine Buchung an.",
+      "travellersBreakdown": "{adults, plural, one {# Erwachsener} other {# Erwachsene}}{children, plural, =0 {} one {, # Kind} other {, # Kinder}}"
     },
     "companion": "Mitreisende Person {number}",
     "fields": {
@@ -209,7 +207,10 @@
       "city": "Ort",
       "country": "Land",
       "documentType": "Ausweisart",
-      "documentNumber": "Ausweisnummer"
+      "documentNumber": "Ausweisnummer",
+      "email": "E-Mail-Adresse",
+      "phone": "Mobilnummer",
+      "phoneCountry": "Ländervorwahl"
     },
     "documentTypes": {
       "passport": "Reisepass",
@@ -225,7 +226,9 @@
       "conflict": "Deine Angaben wurden inzwischen an anderer Stelle geändert. Bitte lade die Seite neu.",
       "rateLimited": "Zu viele Versuche in kurzer Zeit. Bitte warte ein paar Minuten.",
       "unavailable": "Das hat gerade nicht geklappt. Bitte versuche es später noch einmal.",
-      "notConfirmed": "Bitte bestätige, dass Deine Angaben richtig sind."
+      "notConfirmed": "Bitte bestätige, dass Deine Angaben richtig sind.",
+      "relay-email": "Bitte gib Deine persönliche E-Mail-Adresse an – Weiterleitungsadressen von Buchungsportalen können wir nicht nutzen.",
+      "not-mobile": "Bitte gib eine Mobilnummer an."
     },
     "next": "Speichern & weiter",
     "saving": "Wird gespeichert …",
@@ -253,10 +256,9 @@
     },
     "stepsShort": {
       "trip": "Reise",
-      "primary": "Gast",
-      "companions": "Mitreisende",
       "address": "Adresse",
-      "review": "Prüfen"
+      "review": "Prüfen",
+      "guests": "Gäste"
     },
     "stepState": {
       "complete": "erledigt",
@@ -265,11 +267,9 @@
     "progressLabel": "Fortschritt des Online-Check-ins",
     "backTo": "Zurück",
     "addressWithDocumentTitle": "Adresse & Ausweis",
-    "primaryCard": "Angaben zur Person",
     "addressCard": "Wohnadresse",
     "companionComplete": "vollständig",
     "companionIncomplete": "Angaben fehlen",
-    "companionHint": "Tippe auf eine Person, um ihre Angaben zu bearbeiten.",
     "document": {
       "title": "Ausweisdokument",
       "body": "Für die Gästemeldung benötigen wir Art und Nummer Deines Ausweises.",
@@ -281,7 +281,17 @@
       "primary": "Hauptgast",
       "companions": "Mitreisende",
       "address": "Adresse",
-      "document": "Ausweis"
+      "document": "Ausweis",
+      "contact": "Kontakt"
+    },
+    "primaryGuest": "Hauptgast",
+    "personEmpty": "Noch keine Angaben",
+    "personMissing": "fehlt: {fields}",
+    "prefilledHint": "Aus Deiner Buchung übernommen – bitte prüfen und ergänzen.",
+    "occupancyChanged": "Die Anzahl der Reisenden in Deiner Buchung hat sich geändert: jetzt {count, plural, one {# Person} other {# Personen}}. Bitte prüfe die Angaben.",
+    "hints": {
+      "email": "Für Deine Buchungsinformationen – bitte Deine persönliche Adresse.",
+      "phone": "Für Rückfragen während des Aufenthalts."
     }
   },
   "extras": {

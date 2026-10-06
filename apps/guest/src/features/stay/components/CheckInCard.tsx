@@ -56,6 +56,12 @@ export async function CheckInCard({ card }: { card: CheckInCardView }) {
               : []),
           ]}
         />
+        {card.occupancyChanged && (
+          <p className="type-small flex items-start gap-2 border-t border-border pt-4 text-text">
+            <Icon name="info" size="sm" className="mt-0.5 shrink-0" />
+            <span>{t("occupancyChanged")}</span>
+          </p>
+        )}
       </section>
     );
   }

@@ -8,29 +8,41 @@
  * - Writes are rate limited per reservation and use optimistic concurrency (version).
  * - Submitting is idempotent; provider syncs run afterwards and never block the guest.
  * - Nothing personal is logged – ids, steps and outcome codes only.
+ *
+ * Source of truth: the reservation decides how many people travel (occupancy); the guest
+ * never chooses the number. PMS guest data prefills empty slots; nothing is written to
+ * the PMS here (that is the separate, flag-guarded write-back).
  */
 import {
   ADDRESS_FIELDS,
   type CheckInStep,
   type FieldError,
   fieldsForRole,
+  guestStepFields,
   hashSecret,
   localDateOf,
   type Logger,
   MAX_TRAVELLERS,
   missingFields,
   normalizeGuestInput,
+  type PmsProvider,
+  prefillGuests,
+  type ReservationProvider,
   type RegistrationField,
   type RegistrationGuest,
   type RegistrationGuestData,
+  ROLE_MANDATORY_FIELDS,
   rulesFor,
 } from "@up/core";
 import {
   type Database,
   hitRateLimit,
+  type GuestRegistrationRecord,
   saveRegistrationGuests,
+  seedRegistrationGuests,
   startRegistration,
   submitRegistration,
+  syncRegistrationOccupancy,
 } from "@up/db";
 
 import { type GuestContext } from "../guest-context/guest-context";
@@ -40,6 +52,8 @@ export type CheckInDeps = {
   db: Database | undefined;
   logger: Logger;
   now: () => Date;
+  /** PMS of the reservation – for prefilling guest data (optional). */
+  pmsFor?: (provider: ReservationProvider) => PmsProvider | undefined;
 };
 
 export const CHECK_IN_RATE_LIMIT = { windowMs: 15 * 60 * 1000, max: 60 } as const;
@@ -48,7 +62,13 @@ export type CheckInAvailability =
   | { available: true; journey: StayJourney }
   | {
       available: false;
-      reason: "no-database" | "reservation-unavailable" | "not-enabled" | "stay-over";
+      reason:
+        | "no-database"
+        | "reservation-unavailable"
+        | "not-enabled"
+        | "stay-over"
+        /** The reservation does not say how many people travel – never guessed or asked. */
+        | "occupancy-unknown";
     };
 
 /** Whether this guest may use the online check-in right now. */
@@ -63,13 +83,64 @@ export async function checkInAvailability(
   const status = context.reservation.source.reservation.status;
   if (status !== "confirmed" && status !== "in-house")
     return { available: false, reason: "stay-over" };
-  const journey = await loadStayJourney(
-    { db: deps.db, logger: deps.logger, accessProvider: undefined },
-    context,
-  );
+  const journeyDeps = { db: deps.db, logger: deps.logger, accessProvider: undefined };
+  let journey = await loadStayJourney(journeyDeps, context);
   if (!journey?.settings.registration.enabled) return { available: false, reason: "not-enabled" };
   if (journey.journey.phase === "after-departure") return { available: false, reason: "stay-over" };
+  const occupancy = reservationGuestCount(context);
+  if (occupancy === undefined) return { available: false, reason: "occupancy-unknown" };
+  // The reservation changed the number of travellers while the check-in is a draft.
+  const registration = journey.registration;
+  if (
+    registration?.status === "draft" &&
+    registration.guestCountSource === "reservation" &&
+    registration.guestCount !== occupancy &&
+    (await syncRegistrationOccupancy(deps.db, context, registration.id, occupancy, deps.now()))
+  ) {
+    deps.logger.info("check-in occupancy changed", { registrationId: registration.id });
+    journey = (await loadStayJourney(journeyDeps, context)) ?? journey;
+    if (journey.registration) {
+      await seedFromPms(deps, deps.db, context, journey, journey.registration);
+      journey = (await loadStayJourney(journeyDeps, context)) ?? journey;
+    }
+  }
   return { available: true, journey };
+}
+
+/**
+ * Prefills empty person slots from the PMS (never overwrites guest input). PMS failures
+ * only mean "no prefill" – the guest then enters the data.
+ */
+async function seedFromPms(
+  deps: CheckInDeps,
+  db: Database,
+  context: GuestContext,
+  journey: StayJourney,
+  registration: GuestRegistrationRecord,
+): Promise<void> {
+  const pms = deps.pmsFor?.(context.reservationProvider);
+  if (!pms?.getReservationGuests) return;
+  const filled = new Set(registration.guests.map((guest) => guest.position));
+  if (filled.size >= registration.guestCount) return;
+  try {
+    const pmsGuests = await pms.getReservationGuests(context.externalReservationId);
+    const slots = prefillGuests(
+      journey.settings.registration,
+      pmsGuests,
+      registration.guestCount,
+      localDateOf(deps.now(), journey.window.timeZone),
+    ).filter((slot) => !filled.has(slot.position));
+    const seeded = await seedRegistrationGuests(db, context, registration.id, slots);
+    deps.logger.info("check-in prefilled from reservation", {
+      registrationId: registration.id,
+      slots: seeded,
+    });
+  } catch (error) {
+    deps.logger.warn("check-in prefill unavailable", {
+      registrationId: registration.id,
+      error: error instanceof Error ? { name: error.name } : "unknown",
+    });
+  }
 }
 
 export type StepResult =
@@ -123,56 +194,33 @@ function isPrepared(value: Prepared | StepResult): value is Prepared {
 }
 
 /**
- * Step 1 "Deine Reise": creates (or refreshes) the registration. The guest count comes
- * from the reservation; only when the PMS does not know it, the guest states it.
+ * Step 1 "Deine Reise": creates the registration with exactly the reservation's number of
+ * travellers and prefills the slots the PMS already knows.
  */
-export async function confirmTrip(
-  deps: CheckInDeps,
-  context: GuestContext,
-  input: { guestCount?: number },
-): Promise<StepResult> {
+export async function confirmTrip(deps: CheckInDeps, context: GuestContext): Promise<StepResult> {
   const prepared = await prepare(deps, context);
   if (!isPrepared(prepared)) return prepared;
   const { db, journey } = prepared;
   if (journey.registration?.status === "submitted") return { ok: false, reason: "submitted" };
-  if (context.reservation.status !== "loaded") return { ok: false, reason: "unavailable" };
-  const fromReservation = reservationGuestCount(context);
-  const stated = input.guestCount;
-  if (
-    fromReservation === undefined &&
-    (stated === undefined || !Number.isInteger(stated) || stated < 1 || stated > MAX_TRAVELLERS)
-  ) {
-    return { ok: false, reason: "invalid", errors: {} };
+  const occupancy = reservationGuestCount(context);
+  if (context.reservation.status !== "loaded" || occupancy === undefined) {
+    return { ok: false, reason: "unavailable" };
   }
   const { reservation } = context.reservation.source;
   const registration = await startRegistration(db, context, {
     ...reservationKeyOf(context),
     propertyId: context.propertyId,
-    guestCount: fromReservation ?? stated ?? 1,
-    guestCountSource: fromReservation === undefined ? "guest" : "reservation",
+    guestCount: occupancy,
+    guestCountSource: "reservation",
     arrivalAt: new Date(reservation.checkInAt),
     departureAt: new Date(reservation.checkOutAt),
   });
-  // A guest-stated count can be corrected while the registration is a draft.
-  if (fromReservation === undefined && stated !== undefined && registration.guestCount !== stated) {
-    const saved = await saveRegistrationGuests(
-      db,
-      context,
-      registration.id,
-      registration.version,
-      [],
-      {
-        guestCount: stated,
-      },
-    );
-    if (!saved.ok)
-      return { ok: false, reason: saved.reason === "submitted" ? "submitted" : "conflict" };
-  }
+  await seedFromPms(deps, db, context, journey, registration);
   deps.logger.info("check-in step saved", { step: "trip", registrationId: registration.id });
   return { ok: true };
 }
 
-export type GuestStep = Extract<CheckInStep, "primary" | "companions" | "address">;
+export type GuestStep = Extract<CheckInStep, "guests" | "address">;
 
 /** Fields of one step for one traveller. */
 export function stepFields(
@@ -184,17 +232,14 @@ export function stepFields(
   if (step === "address") {
     return fieldsForRole(config, "primary").filter((field) => ADDRESS_FIELDS.includes(field));
   }
-  const role = position === 0 ? "primary" : "companion";
-  const fields = fieldsForRole(config, role);
-  // Fellow travellers enter their (optional) address data on their own step.
-  return position === 0 ? fields.filter((field) => !ADDRESS_FIELDS.includes(field)) : fields;
+  return guestStepFields(config, position);
 }
 
-/** Positions edited on a step. */
+/** Positions edited on a step: all booked travellers on "guests", the main guest on "address". */
 export function stepPositions(journey: StayJourney, step: GuestStep): number[] {
-  if (step !== "companions") return [0];
+  if (step === "address") return [0];
   const count = journey.registration?.guestCount ?? 1;
-  return Array.from({ length: Math.max(0, count - 1) }, (_, index) => index + 1);
+  return Array.from({ length: count }, (_, index) => index);
 }
 
 /**
@@ -238,7 +283,18 @@ export async function saveGuestStep(
       data: { ...kept, ...data },
     });
   }
-  if (Object.keys(errors).length > 0) return { ok: false, reason: "invalid", errors };
+  if (Object.keys(errors).length > 0) {
+    // Nothing is saved; still name every missing required field so the guest sees all at once.
+    for (const [position, absent] of Object.entries(
+      missingByPosition(journey, input.step, guests),
+    )) {
+      const known = new Set((errors[Number(position)] ?? []).map((error) => error.field));
+      const extra = absent.filter((error) => !known.has(error.field));
+      if (extra.length > 0)
+        errors[Number(position)] = [...(errors[Number(position)] ?? []), ...extra];
+    }
+    return { ok: false, reason: "invalid", errors };
+  }
 
   const saved = await saveRegistrationGuests(db, context, registration.id, input.version, guests);
   if (!saved.ok) {
@@ -254,19 +310,39 @@ export async function saveGuestStep(
   }
   deps.logger.info("check-in step saved", { step: input.step, registrationId: registration.id });
 
-  const missing: Record<number, FieldError[]> = {};
-  for (const guest of guests) {
-    const role = guest.position === 0 ? "primary" : "companion";
-    const fields = stepFields(journey, input.step, guest.position);
-    const rules = rulesFor(journey.settings.registration, role, guest.data, journey.arrivalDate);
-    const absent = missingFields(rules, guest.data, fields);
-    if (absent.length > 0)
-      missing[guest.position] = absent.map((field) => ({ field, code: "required" }));
-  }
+  const missing = missingByPosition(journey, input.step, guests);
   if (Object.keys(missing).length > 0) {
     return { ok: false, reason: "invalid", errors: missing, version: saved.version };
   }
   return { ok: true };
+}
+
+/** Required fields of the step each traveller still lacks. */
+function missingByPosition(
+  journey: StayJourney,
+  step: GuestStep,
+  guests: readonly RegistrationGuest[],
+): Record<number, FieldError[]> {
+  const missing: Record<number, FieldError[]> = {};
+  for (const guest of guests) {
+    const role = guest.position === 0 ? "primary" : "companion";
+    const fields = stepFields(journey, step, guest.position);
+    const rules = rulesFor(journey.settings.registration, role, guest.data, journey.arrivalDate);
+    // Age unknown: only flag what every traveller needs – whether e.g. the nationality is
+    // required depends on the birth date (child rules), which is flagged itself.
+    const children = journey.settings.registration.children;
+    const absent = missingFields(rules, guest.data, fields).filter(
+      (field) =>
+        role === "primary" ||
+        guest.data.birthDate !== undefined ||
+        !children ||
+        children.required.includes(field) ||
+        ROLE_MANDATORY_FIELDS.companion.includes(field),
+    );
+    if (absent.length > 0)
+      missing[guest.position] = absent.map((field) => ({ field, code: "required" }));
+  }
+  return missing;
 }
 
 export type SubmitOutcome =

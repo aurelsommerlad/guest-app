@@ -35,12 +35,19 @@ beforeEach(async () => {
   });
   const context = guestContext({ guestCount: { adults: 1, children: 0 } });
   const deps = { db, logger, now };
-  await confirmTrip(deps, context, {});
+  await confirmTrip(deps, context);
   await saveGuestStep(deps, context, {
-    step: "primary",
+    step: "guests",
     version: 1,
     values: {
-      0: { firstName: "Laura", lastName: "Muster", birthDate: "1990-05-17", nationality: "DE" },
+      0: {
+        firstName: "Laura",
+        lastName: "Muster",
+        email: "laura@example.com",
+        phone: "+491701234567",
+        birthDate: "1990-05-17",
+        nationality: "DE",
+      },
     },
   });
   await saveGuestStep(deps, context, {

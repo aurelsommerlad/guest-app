@@ -132,9 +132,11 @@ export {
   type RegistrationSyncRecord,
   type ReservationKey,
   saveRegistrationGuests,
+  seedRegistrationGuests,
   startRegistration,
   type StartRegistrationInput,
   submitRegistration,
   type SubmitResult,
+  syncRegistrationOccupancy,
   type WriteResult,
 } from "./repositories/registration-repository";

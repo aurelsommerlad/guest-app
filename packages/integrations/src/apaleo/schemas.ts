@@ -2,8 +2,9 @@ import { z } from "zod";
 
 /**
  * Validation of Apaleo responses. Only the fields we use are declared – everything
- * else (e-mail, phone, address, payment data …) is stripped on parse and never
- * leaves this module (data minimisation).
+ * else (payment data, company, preferences …) is stripped on parse and never leaves
+ * this module (data minimisation). Guest contact data is read only for the check-in
+ * prefill and the write-back merge.
  */
 
 export const tokenResponseSchema = z.object({
@@ -78,6 +79,8 @@ const apaleoAddressSchema = z.looseObject({
 export const apaleoGuestSchema = z.looseObject({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
   birthDate: z.string().optional(),
   nationalityCountryCode: z.string().optional(),
   identificationNumber: z.string().optional(),
@@ -93,4 +96,38 @@ export const apaleoReservationGuestsSchema = z.object({
   status: apaleoReservationStatusSchema,
   primaryGuest: apaleoGuestSchema.optional(),
   additionalGuests: z.array(apaleoGuestSchema).optional(),
+});
+
+/**
+ * Prefill read for the online check-in: occupancy plus the guest fields we may prefill
+ * (verified GuestModel fields). Plain objects – everything else (company, preferences,
+ * vehicle, booker, payment …) is stripped on parse. Used in memory only, never logged.
+ */
+const apaleoPrefillGuestSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  birthDate: z.string().optional(),
+  nationalityCountryCode: z.string().optional(),
+  identificationNumber: z.string().optional(),
+  identificationType: z.string().optional(),
+  address: z
+    .object({
+      addressLine1: z.string().optional(),
+      postalCode: z.string().optional(),
+      city: z.string().optional(),
+      countryCode: z.string().optional(),
+    })
+    .optional(),
+});
+
+export type ApaleoPrefillGuest = z.infer<typeof apaleoPrefillGuestSchema>;
+
+export const apaleoReservationPrefillSchema = z.object({
+  id: z.string().min(1),
+  adults: z.number().int().min(0).max(99),
+  childrenAges: z.array(z.number().int().min(0).max(30)).max(99).optional(),
+  primaryGuest: apaleoPrefillGuestSchema.optional(),
+  additionalGuests: z.array(apaleoPrefillGuestSchema).max(99).optional(),
 });

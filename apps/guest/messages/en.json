@@ -63,7 +63,8 @@
     "summary": {
       "label": "Your reservation",
       "travellers": "{adults, plural, one {# adult} other {# adults}}{children, plural, =0 {} one {, # child} other {, # children}}",
-      "details": "Details of your apartment"
+      "details": "Details of your apartment",
+      "travellersTotal": "{count, plural, one {# traveller} other {# travellers}}"
     },
     "checkInCard": {
       "eyebrow": "Online check-in",
@@ -85,11 +86,11 @@
       "open": "open",
       "steps": {
         "trip": "Trip",
-        "primary": "Main guest",
-        "companions": "Travellers",
         "address": "Address",
-        "review": "Confirmation"
-      }
+        "review": "Confirmation",
+        "guests": "Guests"
+      },
+      "occupancyChanged": "The number of people in your booking changed after your check-in. Please get in touch with us."
     },
     "linksHeading": "For your stay"
   },
@@ -174,17 +175,15 @@
     "progress": "Step {current} of {total}",
     "steps": {
       "trip": "Your trip",
-      "primary": "Main guest",
-      "companions": "Fellow travellers",
       "address": "Your address",
-      "review": "Review & submit"
+      "review": "Review & submit",
+      "guests": "Guests"
     },
     "intro": {
       "trip": "A few details before you arrive – so everything is ready when you get here.",
-      "primary": "Details of the person the booking is made for.",
-      "companions": "Please add the details of everyone travelling with you.",
       "address": "We need these details for the statutory guest registration.",
-      "review": "Please review your details before submitting your check-in."
+      "review": "Please review your details before submitting your check-in.",
+      "guests": "Everyone in your booking. We have filled in what we already know."
     },
     "trip": {
       "arrival": "Arrival",
@@ -192,11 +191,10 @@
       "apartment": "Apartment",
       "travellers": "Travellers",
       "travellersCount": "{count, plural, one {# person} other {# people}}",
-      "travellersHint": "According to your booking. Has anything changed? Please get in touch.",
-      "travellersQuestion": "How many people are travelling (including you)?",
       "dateTime": "{date}, {time}",
       "card": "Your stay",
-      "editHint": "Something not right? Get in touch – we will adjust your booking."
+      "editHint": "Something not right? Get in touch – we will adjust your booking.",
+      "travellersBreakdown": "{adults, plural, one {# adult} other {# adults}}{children, plural, =0 {} one {, # child} other {, # children}}"
     },
     "companion": "Fellow traveller {number}",
     "fields": {
@@ -209,7 +207,10 @@
       "city": "City",
       "country": "Country",
       "documentType": "Document type",
-      "documentNumber": "Document number"
+      "documentNumber": "Document number",
+      "email": "Email address",
+      "phone": "Mobile number",
+      "phoneCountry": "Country code"
     },
     "documentTypes": {
       "passport": "Passport",
@@ -225,7 +226,9 @@
       "conflict": "Your details were changed elsewhere in the meantime. Please reload the page.",
       "rateLimited": "Too many attempts in a short time. Please wait a few minutes.",
       "unavailable": "That did not work just now. Please try again later.",
-      "notConfirmed": "Please confirm that your details are correct."
+      "notConfirmed": "Please confirm that your details are correct.",
+      "relay-email": "Please enter your personal email address – we cannot use forwarding addresses from booking platforms.",
+      "not-mobile": "Please enter a mobile number."
     },
     "next": "Save & continue",
     "saving": "Saving …",
@@ -253,10 +256,9 @@
     },
     "stepsShort": {
       "trip": "Trip",
-      "primary": "Guest",
-      "companions": "Travellers",
       "address": "Address",
-      "review": "Review"
+      "review": "Review",
+      "guests": "Guests"
     },
     "stepState": {
       "complete": "done",
@@ -265,11 +267,9 @@
     "progressLabel": "Online check-in progress",
     "backTo": "Back",
     "addressWithDocumentTitle": "Address & ID",
-    "primaryCard": "Personal details",
     "addressCard": "Home address",
     "companionComplete": "complete",
     "companionIncomplete": "details missing",
-    "companionHint": "Tap a person to edit their details.",
     "document": {
       "title": "Identity document",
       "body": "For the guest registration we need the type and number of your ID.",
@@ -281,7 +281,17 @@
       "primary": "Main guest",
       "companions": "Fellow travellers",
       "address": "Address",
-      "document": "ID"
+      "document": "ID",
+      "contact": "Contact"
+    },
+    "primaryGuest": "Main guest",
+    "personEmpty": "No details yet",
+    "personMissing": "missing: {fields}",
+    "prefilledHint": "Taken from your booking – please check and complete.",
+    "occupancyChanged": "The number of travellers in your booking has changed: now {count, plural, one {# person} other {# people}}. Please check the details.",
+    "hints": {
+      "email": "For your booking information – please use your personal address.",
+      "phone": "For questions during your stay."
     }
   },
   "extras": {

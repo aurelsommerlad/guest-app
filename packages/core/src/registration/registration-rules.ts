@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { normalizeEmail, usableContactEmail } from "../contact/email";
+import { normalizePhone } from "../contact/phone";
 import { isCountryCode } from "./countries";
 import {
   ADDRESS_FIELDS,
@@ -13,6 +15,7 @@ import {
   type PropertyRegistrationConfig,
   REGISTRATION_FIELDS,
   REGISTRATION_TARGETS,
+  ROLE_MANDATORY_FIELDS,
   type RegistrationField,
   type RegistrationGuestData,
 } from "./registration-model";
@@ -111,6 +114,12 @@ const country = z
 const fieldSchemas: Record<RegistrationField, z.ZodType<string, string>> = {
   firstName: plainText(100),
   lastName: plainText(100),
+  // Stored values are already normalised; relay addresses never pass.
+  email: z.string().refine((value) => usableContactEmail(value) === value),
+  phone: z.string().refine((value) => {
+    const check = normalizePhone(value);
+    return check.ok && check.e164 === value;
+  }),
   birthDate: z
     .string()
     .trim()
@@ -131,7 +140,15 @@ const fieldSchemas: Record<RegistrationField, z.ZodType<string, string>> = {
     .pipe(z.string().regex(/^[A-Z0-9<-]{3,40}$/)),
 };
 
-export type FieldError = { field: RegistrationField; code: "required" | "invalid" };
+export type FieldError = {
+  field: RegistrationField;
+  /** relay-email: a channel relay such as …@guest.booking.com; not-mobile: e.g. a landline. */
+  code: "required" | "invalid" | "relay-email" | "not-mobile";
+};
+
+function unique(fields: readonly RegistrationField[]): RegistrationField[] {
+  return REGISTRATION_FIELDS.filter((field) => fields.includes(field));
+}
 
 /** Every field shown for a guest of this role (union of all rule sets that may apply). */
 export function fieldsForRole(
@@ -142,8 +159,10 @@ export function fieldsForRole(
     role === "primary"
       ? [config.primaryGuest]
       : [config.companions, ...(config.children ? [config.children] : [])];
-  const wanted = new Set(sets.flatMap((rules) => [...rules.required, ...rules.optional]));
-  return REGISTRATION_FIELDS.filter((field) => wanted.has(field));
+  return unique([
+    ...ROLE_MANDATORY_FIELDS[role],
+    ...sets.flatMap((rules) => [...rules.required, ...rules.optional]),
+  ]);
 }
 
 /** Full years between a birth date and a local date (both YYYY-MM-DD). */
@@ -160,6 +179,24 @@ export function rulesFor(
   data: RegistrationGuestData,
   arrivalDate: string,
 ): GuestFieldRules {
+  return withMandatory(baseRulesFor(config, role, data, arrivalDate), role);
+}
+
+/** Contact data UNIQUE PLACES needs for every stay is always required (ROLE_MANDATORY_FIELDS). */
+function withMandatory(rules: GuestFieldRules, role: GuestRole): GuestFieldRules {
+  const mandatory = ROLE_MANDATORY_FIELDS[role];
+  return {
+    required: unique([...mandatory, ...rules.required]),
+    optional: rules.optional.filter((field) => !mandatory.includes(field)),
+  };
+}
+
+function baseRulesFor(
+  config: PropertyRegistrationConfig,
+  role: GuestRole,
+  data: RegistrationGuestData,
+  arrivalDate: string,
+): GuestFieldRules {
   if (role === "primary") return config.primaryGuest;
   const { children } = config;
   if (children && data.birthDate && isValidIsoDate(data.birthDate)) {
@@ -171,7 +208,8 @@ export function rulesFor(
 /**
  * Raw form values → normalised guest data. Only fields the property asks for are kept
  * (anything else is dropped, never stored); empty values are removed. Invalid values are
- * reported and not kept.
+ * reported and not kept. The phone number is read together with `phoneCountry` (calling
+ * code selection) and stored as E.164.
  */
 export function normalizeGuestInput(
   raw: Readonly<Record<string, unknown>>,
@@ -183,6 +221,23 @@ export function normalizeGuestInput(
   for (const field of allowed) {
     const value = raw[field];
     if (typeof value !== "string" || value.trim() === "") continue;
+    if (field === "email") {
+      const email = normalizeEmail(value.slice(0, 400));
+      if (!email) errors.push({ field, code: "invalid" });
+      else if (!usableContactEmail(email)) errors.push({ field, code: "relay-email" });
+      else data.email = email;
+      continue;
+    }
+    if (field === "phone") {
+      const countryHint = raw["phoneCountry"];
+      const check = normalizePhone(
+        value.slice(0, 40),
+        typeof countryHint === "string" ? countryHint.trim().toUpperCase() : undefined,
+      );
+      if (check.ok) data.phone = check.e164;
+      else errors.push({ field, code: check.reason === "not-mobile" ? "not-mobile" : "invalid" });
+      continue;
+    }
     const parsed = fieldSchemas[field].safeParse(value.slice(0, 400));
     if (!parsed.success || (field === "birthDate" && parsed.data > today)) {
       errors.push({ field, code: "invalid" });
@@ -222,7 +277,36 @@ export type RegistrationAssessment = {
   nextStep: CheckInStep;
 };
 
-const PERSONAL_FIELDS = REGISTRATION_FIELDS.filter((field) => !ADDRESS_FIELDS.includes(field));
+export const PERSONAL_FIELDS = REGISTRATION_FIELDS.filter(
+  (field) => !ADDRESS_FIELDS.includes(field),
+);
+
+/**
+ * Fields of the "guests" step: the main guest's personal data (their address and ID come in
+ * the address step); fellow travellers enter everything configured for them here.
+ */
+export function guestStepFields(
+  config: PropertyRegistrationConfig,
+  position: number,
+): RegistrationField[] {
+  const fields = fieldsForRole(config, position === 0 ? "primary" : "companion");
+  return position === 0 ? fields.filter((field) => PERSONAL_FIELDS.includes(field)) : fields;
+}
+
+/** Required fields of the guests step this person still lacks. */
+export function guestMissingFields(
+  config: PropertyRegistrationConfig,
+  position: number,
+  data: RegistrationGuestData,
+  arrivalDate: string,
+): RegistrationField[] {
+  const role = position === 0 ? "primary" : "companion";
+  return missingFields(
+    rulesFor(config, role, data, arrivalDate),
+    data,
+    guestStepFields(config, position),
+  );
+}
 
 export function hasAddressStep(config: PropertyRegistrationConfig): boolean {
   return fieldsForRole(config, "primary").some((field) => ADDRESS_FIELDS.includes(field));
@@ -234,11 +318,12 @@ export function assessRegistration(
   arrivalDate: string,
 ): RegistrationAssessment {
   const guests = registration?.guests ?? [];
-  const primary = guests.find((guest) => guest.position === 0)?.data ?? {};
-  const companionsComplete = () => {
-    for (let position = 1; position < (registration?.guestCount ?? 1); position++) {
-      const data = guests.find((guest) => guest.position === position)?.data ?? {};
-      if (missingFields(rulesFor(config, "companion", data, arrivalDate), data).length > 0) {
+  const dataAt = (position: number) =>
+    guests.find((guest) => guest.position === position)?.data ?? {};
+  const primary = dataAt(0);
+  const guestsComplete = () => {
+    for (let position = 0; position < (registration?.guestCount ?? 1); position++) {
+      if (guestMissingFields(config, position, dataAt(position), arrivalDate).length > 0) {
         return false;
       }
     }
@@ -247,19 +332,16 @@ export function assessRegistration(
   const state = (done: boolean): StepState => (done ? "complete" : "incomplete");
   const steps: Record<CheckInStep, StepState> = {
     trip: state(registration !== undefined),
-    primary: state(
-      registration !== undefined &&
-        missingFields(config.primaryGuest, primary, PERSONAL_FIELDS).length === 0,
-    ),
-    companions:
-      registration !== undefined && registration.guestCount <= 1
-        ? "skipped"
-        : state(registration !== undefined && companionsComplete()),
+    guests: state(registration !== undefined && guestsComplete()),
     address: !hasAddressStep(config)
       ? "skipped"
       : state(
           registration !== undefined &&
-            missingFields(config.primaryGuest, primary, ADDRESS_FIELDS).length === 0,
+            missingFields(
+              rulesFor(config, "primary", primary, arrivalDate),
+              primary,
+              ADDRESS_FIELDS,
+            ).length === 0,
         ),
     review: state(registration?.status === "submitted"),
   };

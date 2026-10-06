@@ -1,4 +1,5 @@
-import { localDateOf, MAX_TRAVELLERS } from "@up/core";
+import { localDateOf } from "@up/core";
+import { callingCodeOptions } from "@up/core/phone";
 import { Icon, SummaryCard } from "@up/ui";
 import type { Metadata } from "next";
 import { hasLocale } from "next-intl";
@@ -10,10 +11,7 @@ import {
   submitCheckInAction,
   confirmTripAction,
 } from "../../../../../features/check-in/actions";
-import {
-  checkInAvailability,
-  reservationGuestCount,
-} from "../../../../../features/check-in/check-in-service";
+import { checkInAvailability } from "../../../../../features/check-in/check-in-service";
 import { CheckInShell } from "../../../../../features/check-in/components/CheckInShell";
 import { GuestStepForm } from "../../../../../features/check-in/components/GuestStepForm";
 import { ReviewSummary } from "../../../../../features/check-in/components/ReviewSummary";
@@ -23,6 +21,7 @@ import { countryOptions } from "../../../../../features/check-in/countries";
 import {
   buildStepForm,
   isCheckInStep,
+  LEGACY_STEPS,
   visibleSteps,
 } from "../../../../../features/check-in/form-model";
 import { checkInDeps } from "../../../../../features/check-in/server";
@@ -43,7 +42,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /** One step of the online check-in. Progress is saved per step; the guest can resume. */
 export default async function CheckInStepPage({ params }: Props) {
   const { locale, step } = await params;
-  if (!hasLocale(routing.locales, locale) || !isCheckInStep(step)) notFound();
+  if (!hasLocale(routing.locales, locale)) notFound();
+  const legacy = LEGACY_STEPS[step];
+  if (legacy) return redirect({ href: `/check-in/${legacy}`, locale });
+  if (!isCheckInStep(step)) notFound();
   const context = await requireGuestContext(locale);
   const availability = await checkInAvailability(checkInDeps(), context);
   if (!availability.available) return redirect({ href: "/check-in", locale });
@@ -86,8 +88,10 @@ export default async function CheckInStepPage({ params }: Props) {
 
   let content;
   if (step === "trip") {
-    const fromReservation = reservationGuestCount(context);
-    const count = fromReservation ?? registration?.guestCount;
+    const travellers =
+      context.reservation.status === "loaded"
+        ? context.reservation.source.reservation.guestCount
+        : undefined;
     const unitName =
       context.reservation.status === "loaded" ? context.reservation.source.unit.name : undefined;
     content = (
@@ -110,15 +114,29 @@ export default async function CheckInStepPage({ params }: Props) {
                   value: dateAndTime(journey.window.checkOutAt),
                 },
                 ...(unitName ? [{ id: "unit", label: t("trip.apartment"), value: unitName }] : []),
-                ...(fromReservation === undefined
-                  ? []
-                  : [
+                ...(travellers
+                  ? [
                       {
                         id: "travellers",
                         label: t("trip.travellers"),
-                        value: t("trip.travellersCount", { count: fromReservation }),
+                        value: (
+                          <>
+                            <span className="block">
+                              {t("trip.travellersCount", {
+                                count: travellers.adults + travellers.children,
+                              })}
+                            </span>
+                            <span className="type-small block text-text-muted">
+                              {t("trip.travellersBreakdown", {
+                                adults: travellers.adults,
+                                children: travellers.children,
+                              })}
+                            </span>
+                          </>
+                        ),
                       },
-                    ]),
+                    ]
+                  : []),
               ],
             },
           ]}
@@ -127,12 +145,7 @@ export default async function CheckInStepPage({ params }: Props) {
           <Icon name="info" size="sm" className="mt-px shrink-0" />
           <span>{t("trip.editHint")}</span>
         </p>
-        <TripForm
-          action={confirmTripAction.bind(null, locale)}
-          askGuestCount={fromReservation === undefined}
-          {...(count === undefined ? {} : { guestCount: count })}
-          maxTravellers={MAX_TRAVELLERS}
-        />
+        <TripForm action={confirmTripAction.bind(null, locale)} />
       </div>
     );
   } else if (step === "review") {
@@ -163,6 +176,10 @@ export default async function CheckInStepPage({ params }: Props) {
         fieldsets={buildStepForm(journey, step)}
         version={registration?.version ?? 0}
         countries={countries}
+        callingCodes={callingCodeOptions(locale)}
+        {...(registration?.guestCountChangedAt
+          ? { occupancyChangedTo: registration.guestCount }
+          : {})}
         documentTypes={(["passport", "id-card", "other"] as const).map((value) => ({
           value,
           label: t(`documentTypes.${value}`),

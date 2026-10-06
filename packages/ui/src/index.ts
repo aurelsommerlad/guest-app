@@ -51,6 +51,7 @@ export {
 } from "./components/SummaryCard";
 export { StatusList, type StatusListItem, type StatusListProps } from "./components/StatusList";
 export { SelectField, type SelectFieldProps, type SelectOption } from "./components/SelectField";
+export { type CallingCodeOption, PhoneField, type PhoneFieldProps } from "./components/PhoneField";
 
 // Token documentation
 export * from "./tokens/catalog";

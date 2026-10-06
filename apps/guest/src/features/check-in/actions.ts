@@ -46,17 +46,12 @@ async function currentContext() {
 export async function confirmTripAction(
   locale: Locale,
   _previous: CheckInFormState,
-  formData: FormData,
+  // The number of travellers comes from the reservation – nothing is read from the form.
+  _formData: FormData,
 ): Promise<CheckInFormState> {
   const context = await currentContext();
   if (!context) return redirect({ href: "/login", locale });
-  const raw = formData.get("guestCount");
-  const guestCount = typeof raw === "string" && raw !== "" ? Number(raw) : undefined;
-  const result = await confirmTrip(
-    checkInDeps(),
-    context,
-    guestCount === undefined ? {} : { guestCount },
-  );
+  const result = await confirmTrip(checkInDeps(), context);
   if (result.ok || result.reason === "submitted") return redirect({ href: "/check-in", locale });
   return { status: result.reason === "invalid" ? "invalid" : result.reason };
 }

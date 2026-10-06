@@ -9,6 +9,7 @@ import { FilterBar } from "./FilterBar";
 import { InfoTile } from "./InfoTile";
 import { LinkList } from "./LinkList";
 import { PropertyName } from "./PropertyName";
+import { PhoneField } from "./PhoneField";
 import { ProgressSteps } from "./ProgressSteps";
 import { SelectField } from "./SelectField";
 import { StatusList } from "./StatusList";
@@ -330,5 +331,33 @@ describe("guest journey components", () => {
     );
     expect(html).toContain('Gästedaten<span class="sr-only"> (erledigt)</span>');
     expect(html).toContain('Adresse<span class="sr-only"> (offen)</span>');
+  });
+});
+
+describe("PhoneField", () => {
+  it("renders a labelled calling-code select and a tel input with the stored number", () => {
+    const html = renderToStaticMarkup(
+      <PhoneField
+        id="g0.phone"
+        name="g0.phone"
+        countryName="g0.phoneCountry"
+        label="Mobilnummer"
+        countryLabel="Ländervorwahl"
+        options={[
+          { value: "AT", code: "+43", name: "Österreich" },
+          { value: "DE", code: "+49", name: "Deutschland" },
+        ]}
+        defaultCountry="DE"
+        defaultValue="0170 1234567"
+        required
+      />,
+    );
+    expect(html).toContain('<label for="g0.phone"');
+    expect(html).toContain('aria-label="Ländervorwahl"');
+    expect(html).toContain('name="g0.phoneCountry"');
+    expect(html).toContain('<option value="DE" selected="">Deutschland (+49)</option>');
+    expect(html).toContain('type="tel"');
+    expect(html).toContain('value="0170 1234567"');
+    expect(html).toContain(">+49</span>");
   });
 });

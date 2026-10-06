@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Domain types, use cases, provider ports, shared server utilities. Framework-free.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./phone": "./src/contact/phone.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -13,9 +14,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "libphonenumber-js": "^1.13.14",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@up/config": "workspace:*"
-  }
+  },
+  "sideEffects": false
 }

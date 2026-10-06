@@ -4,11 +4,16 @@ import {
   type PmsProvider,
   type PmsReservation,
   type PmsReservationCandidate,
+  type PmsReservationGuests,
 } from "@up/core";
 
 import { ApaleoClient, type ApaleoClientOptions } from "./apaleo-client";
-import { mapApaleoReservation } from "./map-reservation";
-import { apaleoReservationForLoginSchema, apaleoReservationSchema } from "./schemas";
+import { mapApaleoReservation, mapApaleoReservationGuests } from "./map-reservation";
+import {
+  apaleoReservationForLoginSchema,
+  apaleoReservationPrefillSchema,
+  apaleoReservationSchema,
+} from "./schemas";
 
 /** Apaleo reservation ids are uppercase letters, digits and hyphens (e.g. "ABCDEFGH-1"). */
 const RESERVATION_ID_PATTERN = /^[A-Z0-9][A-Z0-9-]{2,39}$/;
@@ -30,6 +35,20 @@ export class ApaleoProvider implements PmsProvider {
       "getReservation",
     );
     return mapApaleoReservation(reservation);
+  }
+
+  /**
+   * Occupancy (adults, childrenAges) and guest data for prefilling the online check-in –
+   * same verified endpoint and scope (reservations.read), primaryGuest and additionalGuests
+   * are part of the base model. Booker data is deliberately not used (may be an agency).
+   */
+  async getReservationGuests(reservationId: string): Promise<PmsReservationGuests> {
+    const reservation = await this.#client.get(
+      `/booking/v1/reservations/${encodeURIComponent(reservationId)}`,
+      apaleoReservationPrefillSchema,
+      "getReservationGuests",
+    );
+    return mapApaleoReservationGuests(reservation);
   }
 
   /**

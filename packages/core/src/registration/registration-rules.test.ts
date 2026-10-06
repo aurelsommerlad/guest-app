@@ -5,6 +5,8 @@ import {
   ageOn,
   assessRegistration,
   fieldsForRole,
+  guestMissingFields,
+  guestStepFields,
   missingFields,
   normalizeGuestInput,
   propertyRegistrationConfigSchema,
@@ -50,7 +52,10 @@ describe("property registration config", () => {
     const bad = [
       { ...config, primaryGuest: { required: ["birthDate"], optional: [] } },
       { ...config, primaryGuest: { required: ["firstName", "lastName"], optional: ["firstName"] } },
-      { ...config, companions: { required: ["firstName", "lastName", "email"], optional: [] } },
+      {
+        ...config,
+        companions: { required: ["firstName", "lastName", "passportPhoto"], optional: [] },
+      },
       { ...config, targets: ["apaleo", "apaleo"] },
       { ...config, targets: ["nuki"] },
       { ...config, country: "XX" },
@@ -84,11 +89,11 @@ describe("guest input", () => {
     expect(data).toEqual({
       firstName: "Laura",
       lastName: "Muster",
+      email: "laura@example.com",
       birthDate: "1990-05-17",
       nationality: "DE",
     });
-    // Never collected: e-mail (not a field) and document number (not configured).
-    expect(data).not.toHaveProperty("email");
+    // Never collected: document number (not configured for this property).
     expect(data).not.toHaveProperty("documentNumber");
   });
 
@@ -119,14 +124,22 @@ describe("children rules", () => {
   it("applies children rules by age at arrival", () => {
     expect(ageOn("2008-08-27", arrival)).toBe(18);
     expect(ageOn("2008-08-28", arrival)).toBe(17);
-    expect(rulesFor(config, "companion", { birthDate: "2015-01-01" }, arrival)).toBe(
-      config.children,
-    );
-    expect(rulesFor(config, "companion", { birthDate: "1980-01-01" }, arrival)).toBe(
-      config.companions,
-    );
+    // Children rules (+ the mobile number every traveller needs).
+    expect(rulesFor(config, "companion", { birthDate: "2015-01-01" }, arrival).required).toEqual([
+      "firstName",
+      "lastName",
+      "phone",
+      "birthDate",
+    ]);
+    expect(rulesFor(config, "companion", { birthDate: "1980-01-01" }, arrival).required).toEqual([
+      "firstName",
+      "lastName",
+      "phone",
+      "birthDate",
+      "nationality",
+    ]);
     // Without a birth date the stricter adult rules apply.
-    expect(rulesFor(config, "companion", {}, arrival)).toBe(config.companions);
+    expect(rulesFor(config, "companion", {}, arrival).required).toContain("nationality");
     expect(
       missingFields(
         rulesFor(
@@ -141,32 +154,38 @@ describe("children rules", () => {
           birthDate: "2015-01-01",
         },
       ),
-    ).toEqual([]);
+    ).toEqual(["phone"]);
   });
 });
 
 describe("registration progress", () => {
+  const contact = { email: "laura@example.com", phone: "+491701234567" };
   const primary: RegistrationGuest = {
     position: 0,
     role: "primary",
-    data: { firstName: "Laura", lastName: "Muster", birthDate: "1990-05-17", nationality: "DE" },
+    data: {
+      firstName: "Laura",
+      lastName: "Muster",
+      birthDate: "1990-05-17",
+      nationality: "DE",
+      ...contact,
+    },
   };
   const address = { street: "Weg 1", postalCode: "87452", city: "Altusried", country: "DE" };
 
   it("counts all steps before anything is saved", () => {
     const result = assessRegistration(config, undefined, arrival);
-    expect(result.stepsRemaining).toBe(5);
+    expect(result.stepsRemaining).toBe(4);
     expect(result.nextStep).toBe("trip");
     expect(result.readyToSubmit).toBe(false);
   });
 
-  it("skips companions for one traveller and tracks the next step", () => {
+  it("tracks guests, address and review", () => {
     const draft = { status: "draft" as const, guestCount: 1, guests: [primary] };
     const result = assessRegistration(config, draft, arrival);
     expect(result.steps).toEqual({
       trip: "complete",
-      primary: "complete",
-      companions: "skipped",
+      guests: "complete",
       address: "incomplete",
       review: "incomplete",
     });
@@ -185,33 +204,44 @@ describe("registration progress", () => {
     ).toBe(0);
   });
 
-  it("requires every fellow traveller up to the guest count", () => {
+  it("requires the main guest's e-mail and phone", () => {
+    const noPhone = { ...primary, data: { ...primary.data, phone: undefined } };
+    delete noPhone.data.phone;
+    expect(
+      assessRegistration(config, { status: "draft", guestCount: 1, guests: [noPhone] }, arrival)
+        .steps.guests,
+    ).toBe("incomplete");
+    expect(guestMissingFields(config, 0, noPhone.data, arrival)).toEqual(["phone"]);
+  });
+
+  it("requires every traveller up to the guest count, each with a mobile number", () => {
     const withAddress = { ...primary, data: { ...primary.data, ...address } };
-    const draft = {
-      status: "draft" as const,
-      guestCount: 3,
-      guests: [
-        withAddress,
-        {
-          position: 1,
-          role: "companion" as const,
-          data: { firstName: "Mia", lastName: "M", birthDate: "2015-01-01" },
-        },
-      ],
+    const mia = {
+      position: 1,
+      role: "companion" as const,
+      data: { firstName: "Mia", lastName: "M", birthDate: "2015-01-01" },
     };
-    expect(assessRegistration(config, draft, arrival).steps.companions).toBe("incomplete");
+    const tom = {
+      position: 2,
+      role: "companion" as const,
+      data: { firstName: "Tom", lastName: "M", birthDate: "1985-01-01", nationality: "AT" },
+    };
+    const draft = { status: "draft" as const, guestCount: 3, guests: [withAddress, mia, tom] };
+    // A fellow traveller without a mobile number blocks completion.
+    expect(assessRegistration(config, draft, arrival).steps.guests).toBe("incomplete");
+    expect(assessRegistration(config, draft, arrival).readyToSubmit).toBe(false);
     const full = {
       ...draft,
       guests: [
-        ...draft.guests,
-        {
-          position: 2,
-          role: "companion" as const,
-          data: { firstName: "Tom", lastName: "M", birthDate: "1985-01-01", nationality: "AT" },
-        },
+        withAddress,
+        { ...mia, data: { ...mia.data, phone: "+436641234567" } },
+        { ...tom, data: { ...tom.data, phone: "+491709876543" } },
       ],
     };
     expect(assessRegistration(config, full, arrival).readyToSubmit).toBe(true);
+    // No e-mail required for fellow travellers.
+    expect(guestStepFields(config, 1)).not.toContain("email");
+    expect(guestStepFields(config, 0)).toContain("email");
   });
 
   it("has no address step when the property asks for no address data", () => {
@@ -224,7 +254,9 @@ describe("registration progress", () => {
       {
         status: "draft",
         guestCount: 1,
-        guests: [{ position: 0, role: "primary", data: { firstName: "A", lastName: "B" } }],
+        guests: [
+          { position: 0, role: "primary", data: { firstName: "A", lastName: "B", ...contact } },
+        ],
       },
       arrival,
     );
