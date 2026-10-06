@@ -7,8 +7,8 @@ import { cx } from "../lib/cx";
 export const iconButtonVariants = {
   /** Chalk circle on photography (reference: arrow on image cards). */
   raised: "bg-surface-raised text-text hover:bg-background",
-  /** Filled action circle ("+" in Extras). */
-  action: "bg-action text-on-action hover:bg-action-hover",
+  /** Filled call-to-action circle ("+" in Extras) – same token as the primary button. */
+  action: "bg-cta text-on-cta hover:bg-cta-hover",
   /** Bare icon, e.g. bell or back arrow in the header. */
   ghost: "bg-transparent text-text hover:bg-surface",
 } as const;

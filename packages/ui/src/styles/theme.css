@@ -26,9 +26,10 @@
   --color-text-muted: var(--up-color-text-muted);
   --color-text-inverse: var(--up-color-text-inverse);
   --color-on-accent: var(--up-color-on-accent);
+  --color-cta: var(--up-color-cta);
+  --color-cta-hover: var(--up-color-cta-hover);
+  --color-on-cta: var(--up-color-on-cta);
   --color-action: var(--up-color-action);
-  --color-action-hover: var(--up-color-action-hover);
-  --color-on-action: var(--up-color-on-action);
   --color-border: var(--up-color-border);
   --color-focus: var(--up-color-focus);
   --color-transparent: transparent;

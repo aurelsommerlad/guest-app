@@ -23,9 +23,10 @@ export const baseColorTokens: readonly ColorToken[] = [
   {
     variable: "--up-base-sage-dark",
     name: "primary-dark",
-    role: "Buttons, Links, kleine Akzenttexte",
+    role: "Links, kleine Akzenttexte",
   },
   { variable: "--up-base-ink", name: "text", role: "Headlines, Fließtext" },
+  { variable: "--up-base-night", name: "cta", role: "Primäre Call-to-Action-Buttons" },
   { variable: "--up-base-stone", name: "text-secondary", role: "Sekundärtext, Meta-Informationen" },
   { variable: "--up-base-mist", name: "border", role: "Haarlinien, Outline-Buttons" },
   { variable: "--up-base-chalk", name: "white", role: "Text auf Fotos & Flächen, gehobene Cards" },
@@ -52,8 +53,9 @@ export const semanticColorTokens: readonly ColorToken[] = [
     name: "text-inverse",
     role: "Text auf Fotos, Akzent & Ink",
   },
-  { variable: "--up-color-action", name: "action", role: "Interaktive Elemente" },
-  { variable: "--up-color-on-action", name: "on-action", role: "Text auf action" },
+  { variable: "--up-color-cta", name: "cta", role: "Primärer Button (Call to Action)" },
+  { variable: "--up-color-on-cta", name: "on-cta", role: "Text auf cta" },
+  { variable: "--up-color-action", name: "action", role: "Links, kleine Akzenttexte" },
   { variable: "--up-color-border", name: "border", role: "Linien" },
   { variable: "--up-color-focus", name: "focus", role: "Fokusrahmen (Tastatur)" },
 ];
@@ -73,7 +75,8 @@ export const contrastPairs: readonly {
   },
   { fg: "--up-color-text-muted", bg: "--up-color-surface", usage: "Sekundärtext auf Card" },
   { fg: "--up-color-action", bg: "--up-color-background", usage: "Link/Action auf Hintergrund" },
-  { fg: "--up-color-on-action", bg: "--up-color-action", usage: "Button-Text auf action" },
+  { fg: "--up-color-on-cta", bg: "--up-color-cta", usage: "Button-Text auf cta" },
+  { fg: "--up-color-on-cta", bg: "--up-color-cta-hover", usage: "Button-Text auf cta (Hover)" },
   {
     fg: "--up-color-text-inverse",
     bg: "--up-color-surface-accent",

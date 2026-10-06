@@ -18,6 +18,7 @@
   --up-base-sage: #87977e; /* primary */
   --up-base-sage-dark: #52664e; /* primary-dark */
   --up-base-ink: #171817; /* text */
+  --up-base-night: #17160f; /* primary call to action */
   --up-base-stone: #6b6a65; /* text-secondary (darkened from #74736E for WCAG AA) */
   --up-base-mist: #e4e0d8; /* border */
   --up-base-chalk: #fafaf7; /* white */
@@ -39,9 +40,15 @@
    */
   --up-color-on-accent: var(--up-base-ink);
 
-  --up-color-action: var(--up-base-sage-dark); /* buttons, links, small accent text */
-  --up-color-action-hover: color-mix(in srgb, var(--up-base-sage-dark) 88%, var(--up-base-ink));
-  --up-color-on-action: var(--up-base-chalk);
+  /*
+   * Primary call to action (filled buttons, filled action circles): deep night tone.
+   * Hover lifts it slightly towards chalk; disabled uses the shared 40 % opacity.
+   */
+  --up-color-cta: var(--up-base-night);
+  --up-color-cta-hover: color-mix(in srgb, var(--up-base-night) 84%, var(--up-base-chalk));
+  --up-color-on-cta: var(--up-base-chalk);
+
+  --up-color-action: var(--up-base-sage-dark); /* links, small accent text */
 
   --up-color-border: var(--up-base-mist);
   --up-color-focus: var(--up-base-sage-dark);

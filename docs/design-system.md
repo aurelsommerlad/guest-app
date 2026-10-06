@@ -40,8 +40,9 @@ Stand: Phase 5 (EXPLORE). Dieses Dokument beschreibt das aus den Referenzen abge
 | `background`     | `#F8F6F1` | Seitenhintergrund                                 |
 | `card`           | `#F1EDE4` | Tiles, Cards                                      |
 | `primary`        | `#87977E` | Charakteristische Farbfläche: groß, dekorativ     |
-| `primary-dark`   | `#52664E` | Buttons, Links, kleine Akzenttexte                |
+| `primary-dark`   | `#52664E` | Links, kleine Akzenttexte                         |
 | `text`           | `#171817` | Headlines, Fließtext                              |
+| `night`          | `#17160F` | Primäre Call-to-Action-Buttons                    |
 | `text-secondary` | `#6B6A65` | Sekundärtext (von `#74736E` abgedunkelt, WCAG AA) |
 | `border`         | `#E4E0D8` | Haarlinien, Outline-Buttons                       |
 | `white`          | `#FAFAF7` | Text auf Fotos und Akzentflächen, gehobene Cards  |
@@ -61,8 +62,10 @@ Komponenten verwenden ausschließlich semantische Tokens:
 | `text-muted`       | text-secondary | Subline, Datum, Ort im Header                              |
 | `text-inverse`     | white          | Text auf Fotos und Ink                                     |
 | `on-accent`        | text           | Text auf der Salbei-Fläche (AA, Phase 2)                   |
-| `action`           | primary-dark   | Gefüllte Buttons, Links, kleine Akzenttexte                |
-| `on-action`        | white          | Text auf `action`                                          |
+| `cta`              | night          | Primäre Buttons (gefüllt), gefüllter „+“-Kreis             |
+| `cta-hover`        | night + white  | Hover von `cta` (16 % aufgehellt)                          |
+| `on-cta`           | white          | Text auf `cta`                                             |
+| `action`           | primary-dark   | Links, kleine Akzenttexte                                  |
 | `border`           | border         | Linien                                                     |
 | `focus`            | primary-dark   | Fokusrahmen                                                |
 | Overlay            | text (Alpha)   | Verlauf auf Fotos (unten ca. 62 %, Mitte ca. 28 %, oben 0) |
@@ -75,7 +78,8 @@ Komponenten verwenden ausschließlich semantische Tokens:
 | text-secondary / background          | 5,0        | AA                    |
 | text-secondary / card                | 4,6        | AA                    |
 | primary-dark / background            | 5,8        | AA                    |
-| white / primary-dark (Button)        | 6,0        | AA                    |
+| white / night (Button)               | 17,4       | AAA                   |
+| white / night-hover (Button, Hover)  | 10,8       | AAA                   |
 | white / ink (STAY)                   | 17,0       | AAA                   |
 | **white / primary (Apartment-Tile)** | **3,0**    | **nur große Schrift** |
 
@@ -208,7 +212,7 @@ Gemessen in pt bei 390 pt Breite:
   - Seitentitel in `title-lg` mit Lead
   - Info-Hinweis-Box auf `surface`
   - Primär- und Outline-Button nebeneinander
-  - runder „+“-Button (`action`)
+  - runder „+“-Button (`cta`)
   - Abschluss-Banner auf `surface-accent`
 
 ## 9. Responsive-Prinzipien (B)
@@ -326,7 +330,14 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
 - **Status** als ruhige Badges mit Punkt: Veröffentlicht auf `surface-accent` (Salbei), Entwurf und Archiviert auf `surface` in `text-muted`, ohne Warnfarben. Meldungen in `role="status"`-Regionen auf `surface`.
 - **Guest App:** GUIDE ohne veröffentlichte Inhalte zeigt einen leeren Zustand mit kurzem Lead. Mit denselben Inhalten aus der Datenbank sind STAY, GUIDE und EXPLORE pixelgleich zu Phase 8 (Diff 0 bei 390 und 1440 px, DE/EN).
 
-## 17. Offene Punkte (C)
+## 17. Korrektur nach Phase 9.1: primäre Buttons
+
+- **Regel:** Primäre Call-to-Action-Buttons sind dunkel (`cta` = `#17160F`) mit weißem Text (`on-cta`). Salbei ist keine Button-Farbe mehr; `action` (primary-dark) bleibt für Links und kleine Akzenttexte.
+- Umgesetzt zentral in `@up/ui`: `Button` (Variante `primary`, auch über `buttonStyles("primary")`) und `IconButton` (Variante `action`). Hover hellt um 16 % Richtung Weiß auf, Disabled nutzt weiter 40 % Deckkraft, der Fokusrahmen bleibt `focus`.
+- Login: Die Subline hat keine künstliche Breitenbegrenzung mehr. Ab Tablet steht sie in einer Zeile (DE und EN), auf schmalen Screens bricht sie ausgeglichen um (`text-balance`).
+- Pixelvergleich vorher/nachher (390 und 1440 px): STAY, GUIDE, EXPLORE-Übersicht und Link-ungültig unverändert (Diff 0). Geändert sind nur Login (DE/EN) und der Primär-Button der EXPLORE-Detailseite.
+
+## 18. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

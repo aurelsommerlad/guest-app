@@ -37,7 +37,7 @@ export default async function LoginPage({ params }: Props) {
         <main className="pt-12 pb-16 lg:pt-20">
           <Stack gap={4}>
             <Heading level={1}>{t("title")}</Heading>
-            <Text variant="lead" tone="muted" className="max-w-80 text-balance">
+            <Text variant="lead" tone="muted" className="text-balance">
               {t("lead")}
             </Text>
           </Stack>

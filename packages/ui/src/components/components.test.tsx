@@ -37,9 +37,10 @@ describe("Button", () => {
     expect(renderToStaticMarkup(<Button>Route planen</Button>)).toContain('type="button"');
   });
 
-  it("uses primary-dark (action) for the filled variant", () => {
+  it("uses the night call-to-action token for the filled variant, never sage", () => {
     const markup = renderToStaticMarkup(<Button>Route planen</Button>);
-    expect(markup).toContain("bg-action text-on-action");
+    expect(markup).toContain("bg-cta text-on-cta hover:bg-cta-hover");
+    expect(markup).not.toContain("bg-action");
     expect(markup).toContain("min-h-11"); // 44px touch target
   });
 

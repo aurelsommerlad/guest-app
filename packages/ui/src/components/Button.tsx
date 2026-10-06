@@ -10,9 +10,8 @@ const base =
   "disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40";
 
 export const buttonVariants = {
-  /** Filled action – primary-dark for sufficient contrast with chalk text. */
-  primary:
-    "rounded-control bg-action text-on-action hover:bg-action-hover type-small min-h-11 px-5",
+  /** Filled primary call to action – night tone with chalk text (token `cta`). */
+  primary: "rounded-control bg-cta text-on-cta hover:bg-cta-hover type-small min-h-11 px-5",
   /** Outline – secondary action next to a primary one. */
   secondary:
     "rounded-control border border-border bg-transparent text-text hover:bg-surface type-small min-h-11 px-5",
