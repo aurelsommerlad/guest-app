@@ -27,6 +27,7 @@ export const baseColorTokens: readonly ColorToken[] = [
   },
   { variable: "--up-base-ink", name: "text", role: "Headlines, Fließtext" },
   { variable: "--up-base-night", name: "cta", role: "Primäre Call-to-Action-Buttons" },
+  { variable: "--up-base-ochre", name: "ochre", role: "Warmer Akzent, nur kleine Markierungen" },
   { variable: "--up-base-stone", name: "text-secondary", role: "Sekundärtext, Meta-Informationen" },
   { variable: "--up-base-mist", name: "border", role: "Haarlinien, Outline-Buttons" },
   { variable: "--up-base-chalk", name: "white", role: "Text auf Fotos & Flächen, gehobene Cards" },
@@ -56,6 +57,13 @@ export const semanticColorTokens: readonly ColorToken[] = [
   { variable: "--up-color-cta", name: "cta", role: "Primärer Button (Call to Action)" },
   { variable: "--up-color-on-cta", name: "on-cta", role: "Text auf cta" },
   { variable: "--up-color-action", name: "action", role: "Links, kleine Akzenttexte" },
+  {
+    variable: "--up-color-status-published",
+    name: "status-published",
+    role: "Status „Veröffentlicht“",
+  },
+  { variable: "--up-color-status-draft", name: "status-draft", role: "Status „Entwurf“" },
+  { variable: "--up-color-status-archived", name: "status-archived", role: "Status „Archiviert“" },
   { variable: "--up-color-border", name: "border", role: "Linien" },
   { variable: "--up-color-focus", name: "focus", role: "Fokusrahmen (Tastatur)" },
 ];
@@ -76,6 +84,13 @@ export const contrastPairs: readonly {
   { fg: "--up-color-text-muted", bg: "--up-color-surface", usage: "Sekundärtext auf Card" },
   { fg: "--up-color-action", bg: "--up-color-background", usage: "Link/Action auf Hintergrund" },
   { fg: "--up-color-on-cta", bg: "--up-color-cta", usage: "Button-Text auf cta" },
+  {
+    fg: "--up-color-on-status-published",
+    bg: "--up-color-status-published",
+    usage: "Status „Veröffentlicht“",
+  },
+  { fg: "--up-color-text", bg: "--up-color-status-draft", usage: "Status „Entwurf“" },
+  { fg: "--up-color-text-muted", bg: "--up-color-status-archived", usage: "Status „Archiviert“" },
   { fg: "--up-color-on-cta", bg: "--up-color-cta-hover", usage: "Button-Text auf cta (Hover)" },
   {
     fg: "--up-color-text-inverse",

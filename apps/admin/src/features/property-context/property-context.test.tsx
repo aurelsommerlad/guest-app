@@ -27,6 +27,15 @@ function selector(pathname: string, rememberedId: string | null = null) {
   );
 }
 
+/** Visible text of the selector button (the global context label). */
+const buttonText = (markup: string) =>
+  (/<button[^>]*>([\s\S]*?)<\/button>/.exec(markup)?.[1] ?? "")
+    .replace(/<span class="sr-only">[^<]*<\/span>/g, "")
+    .replace(/<span aria-hidden="true">([^<]*)<\/span>/g, "$1")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const hrefs = (markup: string) => [...markup.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
 
 /** hrefs of links carrying `attribute` (attribute order in the markup does not matter). */
@@ -62,14 +71,16 @@ describe("property selector", () => {
   it("shows the property from the URL and offers all tenant properties as links", () => {
     const markup = selector("/guide/hov");
     expect(markup).toContain('aria-expanded="false"');
-    expect(markup).toMatch(/Objekt<\/span><span class="type-title text-text">.*Höv/);
+    expect(buttonText(markup)).toContain("HØV");
+    expect(buttonText(markup)).toContain("· Altusried");
+    expect(markup).toContain('<span class="sr-only">Objekt: </span>');
     expect(hrefs(markup)).toEqual(["/guide", "/guide/hov", "/guide/laeke", "/guide/alpila"]);
     expect(linksWith(markup, 'aria-current="true"')).toEqual(["/guide/hov"]);
   });
 
   it("shows Alle Objekte at a property module's root, even if another property is remembered", () => {
     const markup = selector("/guide", "laeke");
-    expect(markup).toMatch(/type-title text-text">Alle Objekte</);
+    expect(buttonText(markup)).toBe("Alle Objekte");
     expect(linksWith(markup, 'aria-current="true"')).toEqual(["/guide"]);
   });
 
@@ -80,8 +91,8 @@ describe("property selector", () => {
   });
 
   it("ignores unknown and other tenants' property ids (URL and cookie)", () => {
-    expect(selector("/guide/other-hov")).toMatch(/type-title text-text">Alle Objekte</);
-    expect(selector("/properties", "other-hov")).toMatch(/type-title text-text">Alle Objekte</);
+    expect(buttonText(selector("/guide/other-hov"))).toBe("Alle Objekte");
+    expect(buttonText(selector("/properties", "other-hov"))).toBe("Alle Objekte");
   });
 });
 

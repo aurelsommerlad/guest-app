@@ -71,7 +71,7 @@ export function PropertySelector() {
   return (
     <div
       ref={root}
-      className="relative"
+      className="relative min-w-0 flex-1 md:flex-none"
       onKeyDown={onKeyDown}
       onBlur={(event) => {
         if (open && !root.current?.contains(event.relatedTarget)) setOpen(false);
@@ -86,22 +86,30 @@ export function PropertySelector() {
           setOpenedAt(pathname);
           setOpen((value) => !value);
         }}
-        className="flex min-h-11 items-center gap-3 rounded-control py-1.5 pr-3 pl-4 text-left hover:bg-surface"
+        className="flex min-h-12 w-full min-w-0 items-center gap-3 rounded-control border border-border bg-surface-raised py-2 pr-3 pl-4 text-left transition-colors hover:border-text-muted/50 md:w-auto md:min-w-64"
       >
-        <span className="type-eyebrow text-text-muted">Objekt</span>
-        <span className="type-title text-text">
-          {active ? (
-            <PropertyName name={active.displayName} spokenName={active.spokenName} />
-          ) : (
-            "Alle Objekte"
+        <span className="sr-only">Objekt: </span>
+        <span className="flex min-w-0 flex-1 items-baseline gap-2">
+          <span className="type-title shrink-0 text-text">
+            {active ? (
+              <PropertyName name={active.displayName} spokenName={active.spokenName} />
+            ) : (
+              "Alle Objekte"
+            )}
+          </span>
+          {active && (
+            <span className="type-small truncate text-text-muted">
+              <span aria-hidden>· </span>
+              {active.locationName}
+            </span>
           )}
         </span>
-        <Icon name="chevron-down" size="sm" className="text-text-muted" />
+        <Icon name="chevron-down" size="sm" className="shrink-0 text-text-muted" />
       </button>
       <div
         id={listId}
         hidden={!open}
-        className="absolute top-full left-0 z-20 mt-2 w-72 max-w-full rounded-card bg-surface-raised p-2 shadow-float"
+        className="absolute top-full left-0 z-30 mt-2 w-80 max-w-full rounded-card border border-border bg-surface-raised p-2 shadow-float"
       >
         <ul className="flex flex-col">
           {options.map((option) => {

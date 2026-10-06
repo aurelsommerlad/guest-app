@@ -19,6 +19,7 @@
   --up-base-sage-dark: #52664e; /* primary-dark */
   --up-base-ink: #171817; /* text */
   --up-base-night: #17160f; /* primary call to action */
+  --up-base-ochre: #a67c48; /* warm accent, small marks only (e.g. draft status dot) */
   --up-base-stone: #6b6a65; /* text-secondary (darkened from #74736E for WCAG AA) */
   --up-base-mist: #e4e0d8; /* border */
   --up-base-chalk: #fafaf7; /* white */
@@ -49,6 +50,13 @@
   --up-color-on-cta: var(--up-base-chalk);
 
   --up-color-action: var(--up-base-sage-dark); /* links, small accent text */
+
+  /* Quiet status badges (admin): tinted surface + small dot, text stays readable. */
+  --up-color-status-published: color-mix(in srgb, var(--up-base-sage) 22%, var(--up-base-chalk));
+  --up-color-on-status-published: var(--up-base-sage-dark);
+  --up-color-status-draft: color-mix(in srgb, var(--up-base-ochre) 16%, var(--up-base-chalk));
+  --up-color-status-draft-mark: var(--up-base-ochre);
+  --up-color-status-archived: var(--up-base-linen);
 
   --up-color-border: var(--up-base-mist);
   --up-color-focus: var(--up-base-sage-dark);

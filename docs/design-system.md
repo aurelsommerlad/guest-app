@@ -346,7 +346,18 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
 - **Responsive:** Ab 1024 px feste Sidebar, darunter Kopfzeile mit Menü-Button und Drawer (natives `dialog`: Fokusfalle, Escape, Backdrop).
 - Sekundärtext bleibt beim Token `text-muted` (`#6B6A65`, statt `#74736E` für WCAG AA). Dunkle Primäraktionen nutzen `cta` (`#17160F`), Fließtext weiter `text` (`#171817`).
 
-## 19. Offene Punkte (C)
+## 19. Admin-Feinschliff (Phase 9.3)
+
+- **Top Bar:** eigene, ruhige Leiste über der Arbeitsfläche (Haarlinie unten, sticky). Links der Property Selector als klar umrandetes Feld `HØV · Altusried ˅` (Name in der Markenschrift, Ort in `text-muted`), bei „Alle Objekte“ nur der Text. Rechts bewusst leer. Mobil: Menü-Button + Selector in derselben Leiste.
+- **Breite:** Top Bar und Arbeitsfläche teilen einen Container (`max-w-wide`, 1280 px inkl. Rand), auf großen Monitoren zentriert.
+- **Sidebar:** Navigation in `type-body`. Aktiv: helle Fläche (`surface-raised`) plus feiner Akzentstrich in `action` links, kein Rahmen.
+- **Inhaltslisten:** kompakte Zeilen auf `surface-raised` mit Haarlinie (`border`), Hover nur über eine etwas dunklere Linie. GUIDE-Zeile: Position (01 …), Titelbild oder – ohne Bild – das Themen-Icon auf `surface` (kein Platzhalterfoto), Titel in der Markenschrift, Kurzbeschreibung, rechts Status und `Inhalte · Sprachen`.
+- **Status-Badges:** getönte Fläche + kleiner Punkt. Veröffentlicht: `status-published` (Salbei 22 % auf Weiß, Text `sage-dark`), Entwurf: `status-draft` (neuer warmer Basiston `ochre` 16 %, Punkt `ochre`), Archiviert: `status-archived` (Leinen, `text-muted`).
+- **Tabs:** Text mit Zähler-Pille, aktiver Tab mit 2-px-Linie in `text`. Suche als Feld mit Lupe.
+- **Leerzustand:** kompakte Karte (max. 512 px) mit Icon, Satz und Primäraktion.
+- **Technischer Fund:** Tailwinds benannte Breiten (`max-w-2xl` … `7xl`) existieren im Theme nicht und wirkten nie. Ersetzt durch Tokens bzw. die Spacing-Skala; der Token-Check (`pnpm lint:tokens`) lehnt sie jetzt ab.
+
+## 20. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

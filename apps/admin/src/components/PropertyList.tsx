@@ -18,12 +18,12 @@ export function PropertyList({
   destination: string;
 }) {
   return (
-    <ul className="flex flex-col border-t border-border">
+    <ul className="flex flex-col gap-2">
       {properties.map((property) => (
-        <li key={property.id} className="border-b border-border">
+        <li key={property.id}>
           <Link
             href={href(property.id)}
-            className="group -mx-3 flex min-h-20 items-center gap-6 rounded-card px-3 hover:bg-surface md:-mx-4 md:px-4"
+            className="group flex min-h-20 items-center gap-6 rounded-card border border-border bg-surface-raised px-5 transition-colors hover:border-text-muted/50"
           >
             <span className="flex min-w-0 flex-1 flex-col gap-1 md:flex-row md:items-baseline md:gap-6">
               <span className="type-title text-text md:w-48 md:shrink-0">

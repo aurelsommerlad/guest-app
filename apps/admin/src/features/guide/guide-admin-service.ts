@@ -77,6 +77,11 @@ export type TopicSummary = {
   overrides: OverrideSummary[];
   englishComplete: boolean;
   hasContent: boolean;
+  /** For the content list (display only). */
+  shortDescription: LocalizedText;
+  icon: GuideIcon;
+  heroImageSrc?: string;
+  blockCount: number;
 };
 
 export type PropertyGuide = { property: Property; units: Unit[]; topics: TopicSummary[] };
@@ -143,6 +148,10 @@ export async function loadPropertyGuide(
         .sort((a, b) => a.unitName.localeCompare(b.unitName)),
       englishComplete: topic.translationState.en === "reviewed",
       hasContent: topic.blocks.length > 0 || Boolean(topic.intro),
+      shortDescription: topic.shortDescription,
+      icon: topic.icon,
+      ...(topic.heroImage ? { heroImageSrc: topic.heroImage.src } : {}),
+      blockCount: topic.blocks.length,
     }));
   return { ...owner, topics };
 }

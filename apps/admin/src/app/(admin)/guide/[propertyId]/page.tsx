@@ -5,11 +5,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EmptyState, PageHeader } from "../../../../components/PageHeader";
-import { StatusBadge } from "../../../../components/StatusBadge";
 import { requireAdmin } from "../../../../features/auth/server";
 import { moveTopicAction } from "../../../../features/guide/actions";
+import {
+  GuideTopicList,
+  type ListedTopic,
+} from "../../../../features/guide/components/GuideTopicList";
 import { loadPropertyGuide } from "../../../../features/guide/guide-admin-service";
 import { guideDeps } from "../../../../features/guide/server";
+import {
+  filterHref,
+  matchesFilter,
+  parseTopicFilter,
+  topicCounts,
+} from "../../../../features/guide/topic-list";
 import { getDatabase } from "../../../../server/database";
 
 export async function generateMetadata({
@@ -25,19 +34,26 @@ export async function generateMetadata({
 
 type Props = {
   params: Promise<{ propertyId: string }>;
-  searchParams: Promise<{ archived?: string }>;
+  searchParams: Promise<{ status?: string; archived?: string }>;
 };
 
-/** Topic overview: title, status, order, scope and apartment variants. */
+/** Content list of the property's guide: status tabs, search, topic rows in guest order. */
 export default async function GuideTopicsPage({ params, searchParams }: Props) {
-  const [{ propertyId }, { archived }] = await Promise.all([params, searchParams]);
+  const [{ propertyId }, query] = await Promise.all([params, searchParams]);
   const admin = await requireAdmin();
-  const showArchived = archived === "1";
   const guide = await loadPropertyGuide(guideDeps(), { tenantId: admin.tenantId }, propertyId, {
-    includeArchived: showArchived,
+    includeArchived: true,
   });
   if (!guide) notFound();
   const base = `/guide/${propertyId}`;
+  const filter = parseTopicFilter(query);
+
+  // Position = place in the guest view (archived topics have none).
+  let position = 0;
+  const topics: ListedTopic[] = guide.topics.map((topic) =>
+    topic.status === "archived" ? topic : { ...topic, position: ++position },
+  );
+  const showingArchived = filter === "archived";
 
   return (
     <div className="flex flex-col gap-8">
@@ -47,10 +63,10 @@ export default async function GuideTopicsPage({ params, searchParams }: Props) {
         actions={
           <>
             <Link
-              href={showArchived ? base : `${base}?archived=1`}
+              href={showingArchived ? base : filterHref(base, "archived")}
               className={buttonStyles("secondary")}
             >
-              {showArchived ? "Archivierte ausblenden" : "Archivierte anzeigen"}
+              {showingArchived ? "Archivierte ausblenden" : "Archivierte anzeigen"}
             </Link>
             <Link href={`${base}/new`} className={buttonStyles("primary")}>
               Neues Thema
@@ -59,8 +75,9 @@ export default async function GuideTopicsPage({ params, searchParams }: Props) {
         }
       />
 
-      {guide.topics.length === 0 ? (
+      {topics.length === 0 ? (
         <EmptyState
+          icon="book-open"
           title="Noch keine Guide-Themen"
           description="Lege das erste Thema an, z. B. Anreise, WLAN oder Hausregeln."
           action={
@@ -70,58 +87,16 @@ export default async function GuideTopicsPage({ params, searchParams }: Props) {
           }
         />
       ) : (
-        <ol className="flex flex-col gap-2">
-          {guide.topics.map((topic, index) => (
-            <li
-              key={topic.id}
-              className="flex flex-col gap-3 rounded-card bg-surface p-4 md:flex-row md:items-center"
-            >
-              <div className="flex items-center gap-1" aria-label="Reihenfolge">
-                <span className="type-caption w-6 text-text-muted">{index + 1}</span>
-                <form action={moveTopicAction.bind(null, topic.id, "up")}>
-                  <button
-                    type="submit"
-                    aria-label={`${topic.title.de ?? ""} nach oben`}
-                    disabled={index === 0}
-                    className="type-small min-h-9 min-w-9 rounded-control hover:bg-background disabled:opacity-30"
-                  >
-                    ↑
-                  </button>
-                </form>
-                <form action={moveTopicAction.bind(null, topic.id, "down")}>
-                  <button
-                    type="submit"
-                    aria-label={`${topic.title.de ?? ""} nach unten`}
-                    disabled={index === guide.topics.length - 1}
-                    className="type-small min-h-9 min-w-9 rounded-control hover:bg-background disabled:opacity-30"
-                  >
-                    ↓
-                  </button>
-                </form>
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <Link
-                  href={`${base}/${topic.id}`}
-                  className="type-body truncate rounded-sm text-text hover:underline"
-                >
-                  {topic.title.de}
-                </Link>
-                <p className="type-caption text-text-muted">
-                  {topic.scope.level === "unit"
-                    ? `Nur Apartment ${topic.scope.unitName}`
-                    : "Gesamtes Objekt"}
-                  {topic.overrides.length > 0 &&
-                    ` · Varianten: ${topic.overrides.map((item) => item.unitName).join(", ")}`}
-                  {!topic.englishComplete && " · Englisch unvollständig"}
-                  {!topic.hasContent && " · noch ohne Inhalt"}
-                </p>
-              </div>
-              <div className="self-start md:self-center">
-                <StatusBadge status={topic.status} />
-              </div>
-            </li>
-          ))}
-        </ol>
+        <GuideTopicList
+          // A fresh list (and search) per property and tab.
+          key={`${propertyId}-${filter}`}
+          base={base}
+          filter={filter}
+          counts={topicCounts(topics)}
+          topics={topics.filter((topic) => matchesFilter(topic.status, filter))}
+          moveAction={moveTopicAction}
+          lastPosition={position}
+        />
       )}
     </div>
   );

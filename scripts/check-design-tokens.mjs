@@ -4,7 +4,8 @@
  *
  * Fails if source files contain
  *   - raw HEX colors outside packages/ui/src/styles/tokens.css, or
- *   - Tailwind arbitrary values like `bg-[#fff]`, `p-[13px]`, `aspect-[4/3]`.
+ *   - Tailwind arbitrary values like `bg-[#fff]`, `p-[13px]`, `aspect-[4/3]`, or
+ *   - named widths like `max-w-2xl` (removed by the theme, they silently do nothing).
  * Design values must come from tokens (see docs/design-system.md).
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -18,6 +19,9 @@ const ignoredDirs = new Set(["node_modules", ".next", ".turbo", "coverage", "dis
 
 const HEX = /#[0-9a-fA-F]{3,8}\b/g;
 const ARBITRARY = /(?<![\w-])[a-z][\w:-]*-\[[^\]\s]+\]/g;
+// Tailwind's named container sizes are removed by the theme – such classes silently do nothing.
+const NAMED_WIDTH =
+  /(?<![\w-])(?:[a-z]+:)*(?:max-|min-)?w-(?:3xs|2xs|xs|sm|md|lg|xl|[2-7]xl)(?![\w-])/g;
 
 function* walk(dir) {
   for (const entry of readdirSync(dir)) {
@@ -46,6 +50,11 @@ for (const scanRoot of scanRoots) {
           for (const match of line.matchAll(ARBITRARY)) {
             violations.push(
               `${rel}:${index + 1}  arbitrary value "${match[0]}" – use a design token`,
+            );
+          }
+          for (const match of line.matchAll(NAMED_WIDTH)) {
+            violations.push(
+              `${rel}:${index + 1}  "${match[0]}" does not exist in the theme – use a width token (reading, content, wide) or the spacing scale`,
             );
           }
         }

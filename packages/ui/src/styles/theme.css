@@ -30,6 +30,11 @@
   --color-cta-hover: var(--up-color-cta-hover);
   --color-on-cta: var(--up-color-on-cta);
   --color-action: var(--up-color-action);
+  --color-status-published: var(--up-color-status-published);
+  --color-on-status-published: var(--up-color-on-status-published);
+  --color-status-draft: var(--up-color-status-draft);
+  --color-status-draft-mark: var(--up-color-status-draft-mark);
+  --color-status-archived: var(--up-color-status-archived);
   --color-border: var(--up-color-border);
   --color-focus: var(--up-color-focus);
   --color-transparent: transparent;

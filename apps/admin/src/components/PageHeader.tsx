@@ -1,4 +1,4 @@
-import { Heading, Text } from "@up/ui";
+import { Heading, Icon, type IconName, Text } from "@up/ui";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -59,7 +59,7 @@ export function PageHeader({
             {status}
           </div>
           {description && (
-            <Text variant="small" tone="muted" className="max-w-2xl">
+            <Text variant="small" tone="muted" className="max-w-168">
               {description}
             </Text>
           )}
@@ -86,7 +86,7 @@ export function SectionHeader({
         {title}
       </h2>
       {description && (
-        <Text variant="small" tone="muted" className="max-w-2xl">
+        <Text variant="small" tone="muted" className="max-w-168">
           {description}
         </Text>
       )}
@@ -94,25 +94,34 @@ export function SectionHeader({
   );
 }
 
-/** Calm empty state: what is missing and – if possible – the next step. */
+/** Calm, compact empty state: what is missing and – if possible – the next step. */
 export function EmptyState({
   title,
   description,
   action,
+  icon,
 }: {
   title: string;
   description?: ReactNode;
   action?: ReactNode;
+  icon?: IconName;
 }) {
   return (
-    <div className="flex flex-col items-start gap-3 rounded-card bg-surface px-6 py-10 md:px-10">
-      <p className="type-title text-text">{title}</p>
-      {description && (
-        <Text variant="small" tone="muted" className="max-w-xl">
-          {description}
-        </Text>
+    <div className="flex max-w-128 flex-col items-start gap-4 rounded-card border border-border bg-surface-raised p-6 md:p-8">
+      {icon && (
+        <span className="flex size-12 items-center justify-center rounded-full bg-surface text-text-muted">
+          <Icon name={icon} size="lg" />
+        </span>
       )}
-      {action && <div className="pt-2">{action}</div>}
+      <div className="flex flex-col gap-1.5">
+        <p className="type-title text-text">{title}</p>
+        {description && (
+          <Text variant="small" tone="muted">
+            {description}
+          </Text>
+        )}
+      </div>
+      {action}
     </div>
   );
 }

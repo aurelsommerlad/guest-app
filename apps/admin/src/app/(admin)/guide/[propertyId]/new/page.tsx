@@ -20,7 +20,7 @@ export default async function NewTopicPage({
   const guide = await loadPropertyGuide(guideDeps(), { tenantId: admin.tenantId }, propertyId);
   if (!guide) notFound();
   return (
-    <div className="flex max-w-3xl flex-col gap-8">
+    <div className="flex max-w-192 flex-col gap-8">
       <PageHeader
         title="Neues Thema"
         breadcrumbs={[{ label: "Guide", href: `/guide/${propertyId}` }]}

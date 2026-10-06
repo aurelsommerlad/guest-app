@@ -60,7 +60,7 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
 
   if (entry.kind === "override") {
     return (
-      <div className="flex max-w-4xl flex-col gap-8">
+      <div className="flex max-w-224 flex-col gap-8">
         <PageHeader
           breadcrumbs={
             topic
@@ -85,7 +85,12 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
           status={entry.status}
           deletable={!entry.firstPublishedAt}
         />
-        {editor}
+        <section
+          aria-label="Inhalt der Variante"
+          className="rounded-card border border-border bg-surface-raised p-5 md:p-8"
+        >
+          {editor}
+        </section>
       </div>
     );
   }
@@ -98,7 +103,7 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
   );
 
   return (
-    <div className="flex max-w-4xl flex-col gap-10">
+    <div className="flex max-w-224 flex-col gap-10">
       <PageHeader
         breadcrumbs={[guideCrumb]}
         eyebrow={
@@ -116,7 +121,10 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
       )}
       <StatusActions entryId={entry.id} status={entry.status} deletable={!entry.firstPublishedAt} />
 
-      <section className="flex flex-col gap-4" aria-labelledby="meta-heading">
+      <section
+        className="flex flex-col gap-5 rounded-card border border-border bg-surface-raised p-5 md:p-8"
+        aria-labelledby="meta-heading"
+      >
         <SectionHeader id="meta-heading" title="Angaben" />
         <TopicMetaForm
           key={entry.id}
@@ -125,7 +133,10 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
         />
       </section>
 
-      <section className="flex flex-col gap-4" aria-labelledby="content-heading">
+      <section
+        className="flex flex-col gap-5 rounded-card border border-border bg-surface-raised p-5 md:p-8"
+        aria-labelledby="content-heading"
+      >
         <SectionHeader
           id="content-heading"
           title={entry.scope.level === "property" ? "Allgemeiner Inhalt" : "Inhalt"}
@@ -134,7 +145,10 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
       </section>
 
       {entry.scope.level === "property" && (
-        <section className="flex flex-col gap-4" aria-labelledby="variants-heading">
+        <section
+          className="flex flex-col gap-5 rounded-card border border-border bg-surface-raised p-5 md:p-8"
+          aria-labelledby="variants-heading"
+        >
           <SectionHeader
             id="variants-heading"
             title="Apartment-Varianten"

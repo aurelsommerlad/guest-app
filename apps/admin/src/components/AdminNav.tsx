@@ -35,9 +35,9 @@ export function AdminNav({
                     href={moduleHref(module, activePropertyId)}
                     aria-current={active ? "page" : undefined}
                     className={cx(
-                      "type-small flex min-h-11 items-center gap-3 rounded-control px-3",
+                      "type-body relative flex min-h-11 items-center gap-3 rounded-control px-3",
                       active
-                        ? "bg-surface-raised text-text"
+                        ? "bg-surface-raised text-text before:absolute before:inset-y-2.5 before:left-0 before:w-0.5 before:rounded-full before:bg-action"
                         : "text-text-muted hover:bg-background hover:text-text",
                     )}
                   >
