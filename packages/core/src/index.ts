@@ -47,6 +47,7 @@ export {
   guideKeySchema,
   guideStatusSchema,
   guideTopicMetaSchema,
+  httpUrlSchema,
   localizedSlugSchema,
   localizedTextSchema,
   optionalLocalizedTextSchema,
@@ -73,15 +74,23 @@ export {
   type ExploreCategory,
   type ExploreFilter,
   type ExplorePlace,
-  type GeoCoordinates,
-  type PlaceScope,
+  type ExploreStatus,
 } from "./explore/explore-model";
 export {
+  categoriesOf,
+  compareExplorePlaces,
+  englishStateOf,
   type ExploreContext,
   filterPlacesByCategory,
-  placeScopeApplies,
+  isPlaceVisibleFor,
   selectExplorePlaces,
 } from "./explore/select-explore-places";
+export {
+  exploreCategorySchema,
+  type ExplorePlaceInput,
+  explorePlaceSchema,
+  phoneSchema,
+} from "./explore/explore-schema";
 export {
   ENTITY_KEY_PATTERN,
   EXTERNAL_ENTITY_TYPES,

@@ -1,45 +1,38 @@
 import "server-only";
 
-import { resolveLocalizedText, selectExplorePlaces } from "@up/core";
+import { categoriesOf, EXPLORE_CATEGORIES, type ExploreCategory } from "@up/core";
+import { cache } from "react";
 
-import { type Locale, routing } from "../../i18n/routing";
-import { exploreIntroByProperty, hovExplorePlaces } from "../../mocks/explore/hov-explore";
-import { type GuestContext, stayWindowOf } from "../guest-context/guest-context";
-import { type ExploreCard, type ExploreIntro, type PlaceDetail } from "./model";
+import { type Locale } from "../../i18n/routing";
+import { getDatabase } from "../../server/database";
+import { logger } from "../../server/logger";
+import { type GuestContext } from "../guest-context/guest-context";
+import { loadExplorePlaces } from "./explore-content";
+import { type ExploreCard, type PlaceDetail } from "./model";
 import { createExploreResolver } from "./resolve-explore";
 
-/** EXPLORE data access: content (mock until the database) selected for the guest context. */
-function visiblePlaces(context: GuestContext) {
-  const stay = stayWindowOf(context);
-  return selectExplorePlaces(hovExplorePlaces, {
-    tenantId: context.tenantId,
-    propertyId: context.propertyId,
-    now: context.now,
-    access: "reservation",
-    ...(stay ? { stay } : {}),
-  });
-}
+/** Loaded once per request and guest context (overview, detail page and its metadata). */
+const visiblePlaces = cache((context: GuestContext) =>
+  loadExplorePlaces(getDatabase(), context, logger),
+);
 
-export function getExploreIntro(context: GuestContext, locale: Locale): ExploreIntro | undefined {
-  const intro = exploreIntroByProperty[context.propertyId];
-  if (!intro) return undefined;
-  return {
-    title: resolveLocalizedText(intro.title, locale, routing.defaultLocale),
-    lead: resolveLocalizedText(intro.lead, locale, routing.defaultLocale),
-  };
-}
-
-export function getExploreCards(context: GuestContext, locale: Locale): ExploreCard[] {
+export async function getExploreOverview(
+  context: GuestContext,
+  locale: Locale,
+): Promise<{ cards: ExploreCard[]; categories: ExploreCategory[] }> {
+  const places = await visiblePlaces(context);
   const resolver = createExploreResolver(locale);
-  return visiblePlaces(context).map(resolver.card);
+  return { cards: places.map(resolver.card), categories: categoriesOf(places, EXPLORE_CATEGORIES) };
 }
 
-export function getPlaceDetail(
+export async function getPlaceDetail(
   context: GuestContext,
   locale: Locale,
   slug: string,
-): PlaceDetail | undefined {
+): Promise<PlaceDetail | undefined> {
   const resolver = createExploreResolver(locale);
-  const place = visiblePlaces(context).find((candidate) => resolver.slug(candidate) === slug);
+  const place = (await visiblePlaces(context)).find(
+    (candidate) => resolver.slug(candidate) === slug,
+  );
   return place ? resolver.detail(place) : undefined;
 }

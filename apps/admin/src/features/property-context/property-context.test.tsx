@@ -106,7 +106,8 @@ describe("sidebar navigation", () => {
     expect(markup).toContain("Inhalte");
     expect(markup).toContain("Verwaltung");
     // Future areas are not shown before they exist.
-    for (const future of ["Inbox", "Aufenthalte", "Check-in", "Explore", "Extras", "Dashboard"]) {
+    expect(markup).toContain('href="/explore/hov"');
+    for (const future of ["Inbox", "Aufenthalte", "Check-in", "Extras", "Dashboard"]) {
       expect(markup).not.toContain(future);
     }
   });

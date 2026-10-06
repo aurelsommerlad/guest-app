@@ -15,6 +15,8 @@ export type EditorialImageCardProps = {
   href: string;
   title: string;
   subtitle?: string;
+  /** Small line above the title, e.g. "Essen & Trinken · Lindau". */
+  eyebrow?: string;
   /**
    * The photograph, rendered to fill the card (e.g. next/image with `fill`).
    * Decorative here – the link text names the destination – so pass alt="".
@@ -35,6 +37,7 @@ export function EditorialImageCard({
   href,
   title,
   subtitle,
+  eyebrow,
   media,
   ratio = "standard",
   headingLevel = 2,
@@ -61,6 +64,7 @@ export function EditorialImageCard({
       {/* min-h keeps two-line titles comfortable on compact phones. */}
       <div className="col-start-1 row-start-1 flex min-h-32 items-end justify-between gap-4 px-4 pt-4 pb-3">
         <div className="min-w-0">
+          {eyebrow && <p className="type-eyebrow pb-1 text-text-inverse">{eyebrow}</p>}
           <Heading className="type-title text-text-inverse">{title}</Heading>
           {subtitle && (
             <p className="type-small max-w-54 text-balance text-text-inverse">{subtitle}</p>

@@ -26,7 +26,7 @@ export const optionalLocalizedTextSchema = (max: number) =>
     return Object.keys(result).length > 0 ? result : undefined;
   });
 
-const httpUrl = z
+export const httpUrlSchema = z
   .string()
   .trim()
   .max(2000)
@@ -77,7 +77,7 @@ export function guideBlockSchema(isAllowedImageSrc: (src: string) => boolean) {
       id: blockId,
       type: z.literal("link"),
       label: localizedTextSchema(200),
-      href: httpUrl,
+      href: httpUrlSchema,
     }),
   ]);
 }

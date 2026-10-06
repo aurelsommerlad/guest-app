@@ -18,5 +18,6 @@ Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue
 | 0012 | [Zentraler Guest/Stay Context](0012-guest-context.md)            | Akzeptiert |
 | 0013 | [GUIDE-Content-Management](0013-guide-content-management.md)     | Akzeptiert |
 | 0014 | [Admin App und Admin-Auth](0014-admin-app-and-auth.md)           | Akzeptiert |
+| 0015 | [EXPLORE-Content-Management](0015-explore-content-management.md) | Akzeptiert |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.

@@ -43,6 +43,20 @@
       "when": 1791239372671,
       "tag": "0005_lock_data_api_guide_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791284290753,
+      "tag": "0006_explore_places",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791284300380,
+      "tag": "0007_lock_data_api_explore",
+      "breakpoints": true
     }
   ]
 }

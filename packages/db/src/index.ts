@@ -10,6 +10,8 @@ export {
   ADMIN_USER_STATUSES,
   adminSessions,
   adminUsers,
+  explorePlaceProperties,
+  explorePlaces,
   externalMappings,
   GUIDE_ENTRY_KINDS,
   guestAccess,
@@ -82,5 +84,19 @@ export {
 export { type TenantSeed, type TenantSeedInput, tenantSeedSchema } from "./seed/seed-data";
 export { SeedConflictError, type SeedResult, seedTenant } from "./seed/seed-tenant";
 export { guideFixtures, seedGuideFixtures } from "./seed/guide-fixtures";
+export { exploreFixtures, seedExploreFixtures } from "./seed/explore-fixtures";
+export {
+  createExplorePlace,
+  deleteUnpublishedExplorePlace,
+  ExploreAssignmentError,
+  type ExplorePlaceFields,
+  type ExplorePlaceRecord,
+  getExplorePlace,
+  listExplorePlaces,
+  listPublishedExplorePlaces,
+  setExplorePlaceOrder,
+  setExplorePlaceStatus,
+  updateExplorePlace,
+} from "./repositories/explore-repository";
 export { previewFixturesSeed } from "./seed/preview-fixtures";
 export { uniquePlacesSeed } from "./seed/unique-places";

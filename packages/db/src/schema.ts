@@ -13,6 +13,8 @@ import {
   CONTENT_LOCALES,
   type ContentImage,
   ENTITY_KEY_PATTERN,
+  EXPLORE_CATEGORIES,
+  type ExploreCategory,
   EXTERNAL_ENTITY_TYPES,
   EXTERNAL_PROVIDERS,
   GUIDE_ICONS,
@@ -34,6 +36,7 @@ import {
   index,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -380,6 +383,101 @@ export const guideSections = pgTable(
   ],
 ).enableRLS();
 
+/** Optional http(s) link column. */
+function isHttpUrl(column: AnyPgColumn): SQL {
+  return sql`${column} IS NULL OR (${column} ~ '^https?://' AND char_length(${column}) <= 2000)`;
+}
+
+/**
+ * EXPLORE places (ADR 0015): recommendations of one tenant. Which properties a place is
+ * recommended for lives in explore_place_properties – a place without assignment is shown
+ * nowhere. Same status lifecycle and translation state as GUIDE.
+ */
+export const explorePlaces = pgTable(
+  "explore_places",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    status: text("status", { enum: GUIDE_STATUSES }).notNull().default("draft"),
+    category: text("category").$type<ExploreCategory>().notNull(),
+    slug: jsonb("slug").$type<LocalizedText>().notNull(),
+    title: jsonb("title").$type<LocalizedText>().notNull(),
+    teaser: jsonb("teaser").$type<LocalizedText>().notNull(),
+    description: jsonb("description").$type<LocalizedText>(),
+    tip: jsonb("tip").$type<LocalizedText>(),
+    openingHours: jsonb("opening_hours").$type<LocalizedText>(),
+    heroImage: jsonb("hero_image").$type<ContentImage>(),
+    address: text("address"),
+    locality: text("locality"),
+    mapsUrl: text("maps_url"),
+    websiteUrl: text("website_url"),
+    phone: text("phone"),
+    reservationUrl: text("reservation_url"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    featured: boolean("featured").notNull().default(false),
+    sourceLocale: text("source_locale").notNull().default("de"),
+    translationState: jsonb("translation_state").$type<TranslationState>().notNull().default({}),
+    /** Set on the first publication – a published place can only be archived, not deleted. */
+    firstPublishedAt: timestamp("first_published_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("explore_places_tenant_id_id_key").on(t.tenantId, t.id),
+    index("explore_places_tenant_status_idx").on(t.tenantId, t.status),
+    check("explore_places_status_valid", oneOf(t.status, GUIDE_STATUSES)),
+    check("explore_places_category_valid", oneOf(t.category, EXPLORE_CATEGORIES)),
+    check("explore_places_source_locale_valid", oneOf(t.sourceLocale, CONTENT_LOCALES)),
+    check(
+      "explore_places_texts_present",
+      sql`jsonb_typeof(${t.title}) = 'object' AND ${t.title} ? 'de'
+        AND jsonb_typeof(${t.teaser}) = 'object' AND ${t.teaser} ? 'de'
+        AND jsonb_typeof(${t.slug}) = 'object' AND ${t.slug} ? 'de'`,
+    ),
+    check("explore_places_maps_url_valid", isHttpUrl(t.mapsUrl)),
+    check("explore_places_website_url_valid", isHttpUrl(t.websiteUrl)),
+    check("explore_places_reservation_url_valid", isHttpUrl(t.reservationUrl)),
+    check(
+      "explore_places_phone_valid",
+      sql`${t.phone} IS NULL OR ${t.phone} ~ '^\\+?[0-9][0-9 ()/-]{2,38}$'`,
+    ),
+    check(
+      "explore_places_address_length",
+      sql`(${t.address} IS NULL OR char_length(${t.address}) <= 300)
+        AND (${t.locality} IS NULL OR char_length(${t.locality}) <= 80)`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Which properties a place is recommended for. Both foreign keys include the tenant, so a
+ * place can never be assigned to a property of another tenant.
+ */
+export const explorePlaceProperties = pgTable(
+  "explore_place_properties",
+  {
+    tenantId: text("tenant_id").notNull(),
+    placeId: uuid("place_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: "explore_place_properties_pkey", columns: [t.placeId, t.propertyId] }),
+    foreignKey({
+      name: "explore_place_properties_place_fkey",
+      columns: [t.tenantId, t.placeId],
+      foreignColumns: [explorePlaces.tenantId, explorePlaces.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "explore_place_properties_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    index("explore_place_properties_property_idx").on(t.tenantId, t.propertyId),
+  ],
+).enableRLS();
+
 export const ADMIN_USER_STATUSES = ["active", "disabled"] as const;
 
 /**
@@ -448,4 +546,6 @@ export const schema = {
   guideSections,
   adminUsers,
   adminSessions,
+  explorePlaces,
+  explorePlaceProperties,
 };

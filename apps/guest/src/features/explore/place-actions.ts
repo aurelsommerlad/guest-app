@@ -3,42 +3,47 @@ import { type ExplorePlace } from "@up/core";
 import { type PlaceAction } from "./model";
 
 /** Address as display lines; undefined when nothing is set. */
-export function addressLines(address: ExplorePlace["address"]): string[] | undefined {
-  if (!address) return undefined;
-  const lines = [
-    address.street,
-    [address.postalCode, address.city].filter(Boolean).join(" "),
-  ].filter((line): line is string => Boolean(line && line.trim()));
+export function addressLines(address: string | undefined): string[] | undefined {
+  const lines = (address ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   return lines.length > 0 ? lines : undefined;
 }
 
+/** Only http(s) links leave the app – anything else is dropped (defence in depth). */
+function safeHttpUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
- * Actions of a place – each only when its data exists. The route opens an external
- * maps link (coordinates preferred, else the address); no maps API involved.
+ * Actions of a place – each only when its data exists. The route uses the maintained maps
+ * link, otherwise an external maps search for the address; no maps API involved.
  */
 export function buildPlaceActions(
-  place: Pick<ExplorePlace, "address" | "coordinates" | "website" | "phone" | "bookingUrl">,
+  place: Pick<ExplorePlace, "address" | "mapsUrl" | "websiteUrl" | "phone" | "reservationUrl">,
 ): PlaceAction[] {
   const actions: PlaceAction[] = [];
-
-  const destination = place.coordinates
-    ? `${String(place.coordinates.lat)},${String(place.coordinates.lng)}`
-    : addressLines(place.address)?.join(", ");
-  if (destination) {
-    actions.push({
-      kind: "route",
-      href: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`,
-      external: true,
-    });
+  const address = addressLines(place.address)?.join(", ");
+  const route =
+    safeHttpUrl(place.mapsUrl) ??
+    (address
+      ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
+      : undefined);
+  if (route) actions.push({ kind: "route", href: route, external: true });
+  const website = safeHttpUrl(place.websiteUrl);
+  if (website) actions.push({ kind: "website", href: website, external: true });
+  const digits = place.phone?.replace(/[^\d+]/g, "");
+  if (digits && /\d{3,}/.test(digits)) {
+    actions.push({ kind: "call", href: `tel:${digits}`, external: false });
   }
-  if (place.website) actions.push({ kind: "website", href: place.website, external: true });
-  if (place.phone)
-    actions.push({
-      kind: "call",
-      href: `tel:${place.phone.replace(/[^\d+]/g, "")}`,
-      external: false,
-    });
-  if (place.bookingUrl) actions.push({ kind: "reserve", href: place.bookingUrl, external: true });
-
+  const reservation = safeHttpUrl(place.reservationUrl);
+  if (reservation) actions.push({ kind: "reserve", href: reservation, external: true });
   return actions;
 }

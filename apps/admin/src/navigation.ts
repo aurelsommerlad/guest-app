@@ -38,6 +38,8 @@ export type AdminModule = {
    * tenant:   not property-bound; the selector only remembers the choice.
    */
   scope: { kind: "property"; allProperties: "aggregate" | "choose" } | { kind: "tenant" };
+  /** Second URL segments that are pages of the module, not property ids (e.g. "new"). */
+  reservedSegments?: readonly string[];
 };
 
 export const adminModules: readonly AdminModule[] = [
@@ -48,6 +50,16 @@ export const adminModules: readonly AdminModule[] = [
     segment: "guide",
     icon: "book-open",
     scope: { kind: "property", allProperties: "choose" },
+  },
+  {
+    id: "explore",
+    label: "Explore",
+    group: "content",
+    segment: "explore",
+    icon: "compass",
+    // Places belong to the tenant; "Alle Objekte" shows all of them with their assignment.
+    scope: { kind: "property", allProperties: "aggregate" },
+    reservedSegments: ["places", "new"],
   },
   {
     id: "properties",
@@ -82,7 +94,10 @@ export function parseAdminPath(
   const found = modules.find((candidate) => candidate.segment === segment);
   return {
     module: found,
-    propertyId: found?.scope.kind === "property" && second ? decodeURIComponent(second) : undefined,
+    propertyId:
+      found?.scope.kind === "property" && second && !found.reservedSegments?.includes(second)
+        ? decodeURIComponent(second)
+        : undefined,
   };
 }
 

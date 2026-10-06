@@ -1,58 +1,61 @@
-import { type Visibility } from "../content/visibility";
-import { type ContentImage } from "../guide/guide-model";
+import { type ContentImage, type GuideStatus, type TranslationState } from "../guide/guide-model";
 import { type LocalizedText } from "../i18n/localized-text";
 
 /**
- * EXPLORE content model: places personally recommended by the operator.
- * Shaped like future database rows; not fed by any external places API.
+ * EXPLORE (ADR 0015): places personally recommended by the operator around a property.
+ * Curated content from the admin – not fed by any external places API.
  */
 
-/** Central category list. Extend here (plus DE/EN labels in the app messages). */
-export const EXPLORE_CATEGORIES = ["food-drink", "nature", "active", "culture", "family"] as const;
+/**
+ * Fixed, central taxonomy (DB check constraint + labels in the app messages). A new
+ * category is one entry here, a migration extending the check, and two labels.
+ */
+export const EXPLORE_CATEGORIES = [
+  "food-drink",
+  "nature",
+  "activities",
+  "wellness",
+  "shopping",
+  "sights",
+] as const;
 export type ExploreCategory = (typeof EXPLORE_CATEGORIES)[number];
 
-/** Filter value on the overview: a category or all of them. */
+/** Filter value on the guest overview: a category or all of them. */
 export const EXPLORE_FILTERS = ["all", ...EXPLORE_CATEGORIES] as const;
 export type ExploreFilter = (typeof EXPLORE_FILTERS)[number];
 
-/**
- * Where a place is recommended. One place can belong to several properties
- * (e.g. a Lake Constance trip for LÆKE and HØV). Planned table: place_properties.
- */
-export type PlaceScope =
-  { level: "tenant" } | { level: "properties"; propertyIds: readonly string[] };
-
-export type GeoCoordinates = { lat: number; lng: number };
+/** Same lifecycle as GUIDE: draft (internal) → published (live) → archived (hidden). */
+export type ExploreStatus = GuideStatus;
 
 export type ExplorePlace = {
   id: string;
   tenantId: string;
-  scope: PlaceScope;
-  status: "draft" | "published";
-  /** URL segment per locale. */
+  status: ExploreStatus;
+  category: ExploreCategory;
+  /** URL segment per locale (German required). */
   slug: LocalizedText;
   title: LocalizedText;
-  /** Main category first; a place may appear under several filters. */
-  categories: readonly [ExploreCategory, ...ExploreCategory[]];
-  /** One line on the overview card. */
-  shortDescription: LocalizedText;
-  /** The personal recommendation – why we like it. */
-  recommendation?: LocalizedText;
-  /** Longer description, one entry per paragraph. */
-  description?: readonly LocalizedText[];
-  /** Optional hint ("Gut zu wissen"). */
-  goodToKnow?: LocalizedText;
-  /** First image is the cover. */
-  images: readonly [ContentImage, ...ContentImage[]];
-  address?: { street?: string; postalCode?: string; city?: string };
-  coordinates?: GeoCoordinates;
-  website?: string;
-  phone?: string;
-  /** Free text per locale, e.g. "Mi–So ab 17:00 Uhr" – structured hours come later if needed. */
+  /** One or two lines on the card. */
+  teaser: LocalizedText;
+  /** Longer description; paragraphs separated by blank lines. */
+  description?: LocalizedText;
+  /** Personal tip of UNIQUE PLACES ("Unser Tipp"). */
+  tip?: LocalizedText;
+  /** Editorial hint, e.g. "Mi–So ab 17 Uhr" – no structured opening hours. */
   openingHours?: LocalizedText;
-  bookingUrl?: string;
+  heroImage?: ContentImage;
+  /** Postal address, one line per row. */
+  address?: string;
+  /** Place name shown on the card, e.g. "Lindau". */
+  locality?: string;
+  mapsUrl?: string;
+  websiteUrl?: string;
+  phone?: string;
+  reservationUrl?: string;
   sortOrder: number;
-  /** Featured places come first and get the larger card. */
+  /** Highlights come first and get the larger card. */
   featured: boolean;
-  visibility?: Visibility;
+  /** Properties the place is recommended for. Empty = shown nowhere. */
+  propertyIds: readonly string[];
+  translationState: TranslationState;
 };

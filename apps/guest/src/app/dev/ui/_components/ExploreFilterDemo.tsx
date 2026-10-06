@@ -6,10 +6,11 @@ import { useState } from "react";
 const filters = [
   { id: "all", label: "Alle" },
   { id: "food-drink", label: "Essen & Trinken" },
-  { id: "nature", label: "Natur" },
-  { id: "active", label: "Aktiv" },
-  { id: "culture", label: "Kultur" },
-  { id: "family", label: "Familie" },
+  { id: "nature", label: "Natur & Ausflüge" },
+  { id: "activities", label: "Aktivitäten" },
+  { id: "wellness", label: "Baden & Wellness" },
+  { id: "shopping", label: "Einkaufen" },
+  { id: "sights", label: "Sehenswertes" },
 ] as const;
 
 /** Interactive FilterBar example for the Design Lab. */

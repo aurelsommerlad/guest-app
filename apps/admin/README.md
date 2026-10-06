@@ -1,6 +1,6 @@
 # @up/admin
 
-Admin App von UNIQUE PLACES: zentrales Backend für die Pflege der Guest App. Phase 9 enthält nur den Bereich **GUIDE**. Entscheidungen: [ADR 0014](../../docs/adr/0014-admin-app-and-auth.md) (App, Login) und [ADR 0013](../../docs/adr/0013-guide-content-management.md) (Inhalte, Medien).
+Admin App von UNIQUE PLACES: zentrales Backend für die Pflege der Guest App. Enthalten sind die Bereiche **GUIDE** (Phase 9) und **EXPLORE** (Phase 10). Entscheidungen: [ADR 0014](../../docs/adr/0014-admin-app-and-auth.md) (App, Login) und [ADR 0013](../../docs/adr/0013-guide-content-management.md) (Inhalte, Medien).
 
 ## Lokal starten
 
@@ -32,6 +32,13 @@ Für `staging`/`production` gelten dieselben Ziel-Sicherungen wie bei `pnpm db:m
 | `src/features/guide/`           | GUIDE-Service, Server Actions, Editoren                                     |
 | `src/server/media-storage.ts`   | signierter Direkt-Upload: Pfad, Token, Prüfung des gespeicherten Bildes     |
 | `scripts/admin-user.ts`         | CLI zum Anlegen eines Admin-Kontos                                          |
+
+## EXPLORE pflegen
+
+- **Explore** (Sidebar) zeigt bei „Alle Objekte“ (`/explore`) alle Empfehlungen mit ihrer Objekt-Zuordnung, bei einem Objekt (`/explore/hov`) dessen Empfehlungen in Gast-Reihenfolge.
+- Filter: Status-Tabs, Kategorie, Objekt (nur bei „Alle Objekte“, inkl. „Ohne Objekt-Zuordnung“), Suche über Titel, Beschreibung und Ort.
+- **Empfehlung hinzufügen:** Titel, Kategorie, Kurzbeschreibung, Objekte – danach im Editor Beschreibung, Unser Tipp, Titelbild, Ort & Kontakt, Highlight.
+- Gäste sehen nur veröffentlichte Empfehlungen, die ihrem Objekt zugeordnet sind.
 
 ## GUIDE pflegen
 

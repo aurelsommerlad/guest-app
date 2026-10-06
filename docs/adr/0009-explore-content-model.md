@@ -1,6 +1,6 @@
 # 0009 – EXPLORE-Content-Modell
 
-**Status:** Akzeptiert (Phase 5). Implementiert in `packages/core/src/explore`, Mock-Inhalte in `apps/guest/src/mocks/explore`.
+**Status:** Ersetzt durch [ADR 0015](0015-explore-content-management.md) (Phase 10): EXPLORE kommt aus der Datenbank, die Mock-Inhalte sind entfernt bzw. nur noch lokale Fixtures.
 
 ## Kontext
 

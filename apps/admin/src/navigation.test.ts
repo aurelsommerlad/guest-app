@@ -16,6 +16,7 @@ import {
 const known = ["hov", "huesle", "laeke", "alpila"];
 const guide = adminModules.find((module) => module.id === "guide") as AdminModule;
 const properties = adminModules.find((module) => module.id === "properties") as AdminModule;
+const explore = adminModules.find((module) => module.id === "explore") as AdminModule;
 
 describe("admin navigation registry", () => {
   it("lists only existing modules, in the long-term group order, without empty groups", () => {
@@ -23,6 +24,7 @@ describe("admin navigation registry", () => {
     expect(groups.map((group) => group.label)).toEqual(["Inhalte", "Verwaltung"]);
     expect(groups.flatMap((group) => group.modules.map((module) => module.label))).toEqual([
       "Guide",
+      "Explore",
       "Objekte",
     ]);
     expect(navigationGroups.map((group) => group.label)).toEqual([
@@ -106,6 +108,23 @@ describe("selector and sidebar links", () => {
     expect(moduleHref(guide, "hov")).toBe("/guide/hov");
     expect(moduleHref(guide, null)).toBe("/guide");
     expect(moduleHref(properties, "hov")).toBe("/properties");
+  });
+
+  it("treats EXPLORE pages that are not properties as Alle Objekte and keeps the context in links", () => {
+    expect(parseAdminPath("/explore/places/123e4567-e89b-42d3-a456-426614174000")).toEqual({
+      module: explore,
+      propertyId: undefined,
+    });
+    expect(parseAdminPath("/explore/new")).toEqual({ module: explore, propertyId: undefined });
+    expect(parseAdminPath("/explore/laeke/123e4567-e89b-42d3-a456-426614174000")).toEqual({
+      module: explore,
+      propertyId: "laeke",
+    });
+    expect(activePropertyId(parseAdminPath("/explore/places/x"), known, "hov")).toBeNull();
+    expect(selectorHref("/explore/places/x", "hov")).toBe("/explore/hov");
+    expect(selectorHref("/explore/hov/new", null)).toBe("/explore");
+    expect(moduleHref(explore, "laeke")).toBe("/explore/laeke");
+    expect(explore.scope).toEqual({ kind: "property", allProperties: "aggregate" });
   });
 
   it("keeps old Phase-9 URLs working", () => {

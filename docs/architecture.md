@@ -1,6 +1,6 @@
 # Architektur – UNIQUE PLACES Guest App
 
-Stand: Phase 9 (GUIDE-Content-Management: Inhalte in der Datenbank, Admin App `apps/admin`). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
+Stand: Phase 10 (EXPLORE aus der Datenbank, im Admin pflegbar; davor Phase 9: GUIDE-Content-Management und Admin App `apps/admin`). Dies ist der freigegebene Architekturplan, inklusive der Änderungen aus der Freigabe.
 Einzelne Entscheidungen sind in [`adr/`](adr/) begründet.
 
 ## 1. Leitlinien
@@ -116,7 +116,7 @@ Tests: Integrationstests mit zwei Tenants (Phase 3) beweisen die Isolation.
 
 ## 8. Content-Modell (GUIDE & EXPLORE)
 
-> **EXPLORE ab Phase 5 implementiert:** siehe [ADR 0009](adr/0009-explore-content-model.md).
+> **EXPLORE ab Phase 10 aus der Datenbank:** siehe [ADR 0015](adr/0015-explore-content-management.md) (zuvor Mock-Inhalte, [ADR 0009](adr/0009-explore-content-model.md)).
 >
 > **Ab Phase 3 implementiert:** Das GUIDE-Modell ist in [ADR 0007](adr/0007-guide-content-model.md) beschrieben und liegt in `packages/core/src/guide`. Die folgenden Abschnitte bleiben als Planungsgrundlage, die Details stehen im ADR.
 >
@@ -263,20 +263,21 @@ Für den Austausch der Datenquelle ändert sich nur `features/stay/get-stay.ts`.
 
 ## 14. Roadmap
 
-| Phase   | Inhalt                                                                                                        |
-| ------- | ------------------------------------------------------------------------------------------------------------- |
-| 0       | **Foundation**: Monorepo, Tooling, CI, Env-Validierung, minimale App, Doku ✅                                 |
-| 1       | **Design System**: Tokens, Fonts, Kernkomponenten, `/dev/ui` ✅                                               |
-| 2       | **STAY** mit Mockdaten, responsive, DE/EN ✅                                                                  |
-| 3\*     | **GUIDE**: Übersicht, Detailseite, Content-Modell mit Scope und `Visibility` (Mock-Daten) ✅                  |
-| 4\*     | **Apaleo-Integration**: `PmsProvider`, `ApaleoProvider`, STAY aus einer Testreservierung ✅ (Live-Test offen) |
-| 5\*     | **EXPLORE**: Übersicht, Kategorien, Detailseite (Mock-Inhalte) ✅                                             |
-| 6\*     | **Datenbank-Fundament**: Tenant → Property → Unit, External Mappings, Migrationen, Seed, Repositories ✅      |
-| 7\*     | **Sicherer Gastzugang**: Link, Buchungsnummer + Nachname, Guest Session, Widerruf, Rate Limit ✅              |
-| 8\*     | **Zentraler Guest/Stay Context**: eine Session-basierte Kontextquelle für alle Bereiche ✅                    |
-| **9\*** | **GUIDE-Content-Management**: GUIDE aus der DB, Admin App mit Login, Block-Editor, Varianten (in Abnahme)     |
-| 10+     | Versand der Links, EXPLORE in der DB, weitere Admin-Module, Hardening / Pilot                                 |
-| später  | Rollen in der Admin App, MFA, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI        |
+| Phase  | Inhalt                                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------------------------- |
+| 0      | **Foundation**: Monorepo, Tooling, CI, Env-Validierung, minimale App, Doku ✅                                 |
+| 1      | **Design System**: Tokens, Fonts, Kernkomponenten, `/dev/ui` ✅                                               |
+| 2      | **STAY** mit Mockdaten, responsive, DE/EN ✅                                                                  |
+| 3\*    | **GUIDE**: Übersicht, Detailseite, Content-Modell mit Scope und `Visibility` (Mock-Daten) ✅                  |
+| 4\*    | **Apaleo-Integration**: `PmsProvider`, `ApaleoProvider`, STAY aus einer Testreservierung ✅ (Live-Test offen) |
+| 5\*    | **EXPLORE**: Übersicht, Kategorien, Detailseite (Mock-Inhalte) ✅                                             |
+| 6\*    | **Datenbank-Fundament**: Tenant → Property → Unit, External Mappings, Migrationen, Seed, Repositories ✅      |
+| 7\*    | **Sicherer Gastzugang**: Link, Buchungsnummer + Nachname, Guest Session, Widerruf, Rate Limit ✅              |
+| 8\*    | **Zentraler Guest/Stay Context**: eine Session-basierte Kontextquelle für alle Bereiche ✅                    |
+| 9\*    | **GUIDE-Content-Management**: GUIDE aus der DB, Admin App mit Login, Block-Editor, Varianten ✅               |
+| **10** | **EXPLORE**: kuratierte Empfehlungen aus der DB, Objekt-Zuordnung, Admin-Modul (in Abnahme)                   |
+| 11+    | Versand der Links, weitere Admin-Module, Hardening / Pilot                                                    |
+| später | Rollen in der Admin App, MFA, Monitoring, Chat, Online-Check-in, Nuki, Feratel, Extras-Integration, AI        |
 
 > \* Die Reihenfolge wurde angepasst: GUIDE, Apaleo und EXPLORE kamen vor der Datenbank. Die Reihenfolge ab Phase 7 wird jeweils bei der Freigabe festgelegt.
 

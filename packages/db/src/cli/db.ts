@@ -5,6 +5,7 @@
  *   DATABASE_URL=… pnpm db:seed    --target local|staging|production [--confirm-production]
  *                                  [--with-preview-fixtures]   (never in production)
  *                                  [--with-guide-fixtures]     (local only)
+ *                                  [--with-explore-fixtures]   (local only)
  *
  * DATABASE_URL is read from the process environment only (no .env files are loaded),
  * so the operator always decides which database is used.
@@ -14,6 +15,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 import { createDatabase, describeDatabaseUrl } from "../client";
 import { MIGRATIONS_FOLDER } from "../migrations-folder";
+import { seedExploreFixtures } from "../seed/explore-fixtures";
 import { seedGuideFixtures } from "../seed/guide-fixtures";
 import { previewFixturesSeed } from "../seed/preview-fixtures";
 import { seedTenant } from "../seed/seed-tenant";
@@ -36,6 +38,11 @@ async function main(): Promise<void> {
   const withGuideFixtures = args.includes("--with-guide-fixtures");
   if (withGuideFixtures && options.target !== "local") {
     throw new CliUsageError("--with-guide-fixtures is only allowed with --target local");
+  }
+  // Same for EXPLORE: fictitious sample places exist only in local databases.
+  const withExploreFixtures = args.includes("--with-explore-fixtures");
+  if (withExploreFixtures && options.target !== "local") {
+    throw new CliUsageError("--with-explore-fixtures is only allowed with --target local");
   }
   const url = process.env["DATABASE_URL"];
   if (!url) throw new CliUsageError("DATABASE_URL is not set");
@@ -61,6 +68,13 @@ async function main(): Promise<void> {
       if (withGuideFixtures) {
         const guide = await seedGuideFixtures(db, { tenantId: uniquePlacesSeed.tenant.id });
         console.log("✓ GUIDE development fixtures (local only) – topics written:", guide.written);
+      }
+      if (withExploreFixtures) {
+        const explore = await seedExploreFixtures(db, { tenantId: uniquePlacesSeed.tenant.id });
+        console.log(
+          "✓ EXPLORE development fixtures (local only) – places written:",
+          explore.written,
+        );
       }
     }
   } finally {

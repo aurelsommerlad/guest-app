@@ -15,8 +15,10 @@
  * The server key never leaves the server. The bucket is public for reads (guest app) and
  * has no write policies; its size and MIME limits are enforced by Storage on every upload.
  *
- * Path: <tenantId>/<propertyId>/guide/<random uuid>.<ext> – generated here, never taken
- * from the browser.
+ * Paths (generated here, never taken from the browser):
+ *   GUIDE    <tenantId>/<propertyId>/guide/<random uuid>.<ext>
+ *   EXPLORE  <tenantId>/explore/<random uuid>.<ext>   (a place can serve several properties)
+ * One bucket for all admin media (configured as GUIDE_MEDIA_BUCKET; the name is historic).
  */
 import { randomUUID } from "node:crypto";
 
@@ -72,7 +74,7 @@ export class MediaStorageError extends Error {
   }
 }
 
-const GUIDE_IMAGE_FILE =
+const MEDIA_IMAGE_FILE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/;
 
 function base(config: Pick<MediaStorageConfig, "supabaseUrl">): string {
@@ -87,25 +89,80 @@ function serverHeaders(config: MediaStorageConfig): Record<string, string> {
 }
 
 /** A fresh, unguessable object path for one image of this tenant/property. */
-export function guideImagePath(target: MediaTarget, type: ImageType): string {
-  if (!isEntityKey(target.tenantId) || !isEntityKey(target.propertyId)) {
-    throw new Error("invalid media target");
-  }
-  return `${target.tenantId}/${target.propertyId}/guide/${randomUUID()}.${IMAGE_TYPES[type]}`;
+/**
+ * Where an image belongs. Property-bound modules (GUIDE) use
+ * `<tenantId>/<propertyId>/<module>/<uuid>.<ext>`, tenant-wide modules (EXPLORE, whose
+ * places can serve several properties) `<tenantId>/<module>/<uuid>.<ext>`.
+ */
+export type MediaScope = { tenantId: string; propertyId?: string; module: MediaModule };
+export const MEDIA_MODULES = ["guide", "explore"] as const;
+export type MediaModule = (typeof MEDIA_MODULES)[number];
+
+function prefixParts(scope: MediaScope): string[] {
+  return scope.propertyId === undefined
+    ? [scope.tenantId, scope.module]
+    : [scope.tenantId, scope.propertyId, scope.module];
 }
 
-/** True only for exactly `<tenantId>/<propertyId>/guide/<uuid>.<ext>` of this target. */
-export function isGuideImagePath(path: string, target: MediaTarget): boolean {
+function validScope(scope: MediaScope): boolean {
+  return (
+    isEntityKey(scope.tenantId) &&
+    (scope.propertyId === undefined || isEntityKey(scope.propertyId)) &&
+    (MEDIA_MODULES as readonly string[]).includes(scope.module)
+  );
+}
+
+/** A fresh, unguessable object path for one image of this scope. */
+export function mediaImagePath(scope: MediaScope, type: ImageType): string {
+  if (!validScope(scope)) throw new Error("invalid media target");
+  return `${prefixParts(scope).join("/")}/${randomUUID()}.${IMAGE_TYPES[type]}`;
+}
+
+/** True only for exactly `<prefix of this scope>/<uuid>.<ext>`. */
+export function isMediaImagePath(path: string, scope: MediaScope): boolean {
+  if (!validScope(scope)) return false;
+  const prefix = prefixParts(scope);
   const parts = path.split("/");
   return (
-    parts.length === 4 &&
-    parts[0] === target.tenantId &&
-    parts[1] === target.propertyId &&
-    parts[2] === "guide" &&
-    GUIDE_IMAGE_FILE.test(parts[3] ?? "") &&
-    isEntityKey(target.tenantId) &&
-    isEntityKey(target.propertyId)
+    parts.length === prefix.length + 1 &&
+    prefix.every((part, index) => parts[index] === part) &&
+    MEDIA_IMAGE_FILE.test(parts[prefix.length] ?? "")
   );
+}
+
+/** The object path of a public image URL of this scope, or undefined for anything else. */
+export function mediaPathFromUrl(
+  config: Pick<MediaStorageConfig, "supabaseUrl" | "bucket">,
+  src: string,
+  scope: MediaScope,
+): string | undefined {
+  const prefix = publicImageUrl(config, "");
+  if (!src.startsWith(prefix)) return undefined;
+  const path = src.slice(prefix.length);
+  return isMediaImagePath(path, scope) ? path : undefined;
+}
+
+const guideScope = (target: MediaTarget): MediaScope => ({
+  tenantId: target.tenantId,
+  propertyId: target.propertyId,
+  module: "guide",
+});
+
+/** GUIDE: `<tenantId>/<propertyId>/guide/<uuid>.<ext>`. */
+export function guideImagePath(target: MediaTarget, type: ImageType): string {
+  return mediaImagePath(guideScope(target), type);
+}
+
+export function isGuideImagePath(path: string, target: MediaTarget): boolean {
+  return isMediaImagePath(path, guideScope(target));
+}
+
+export function guideImagePathFromUrl(
+  config: Pick<MediaStorageConfig, "supabaseUrl" | "bucket">,
+  src: string,
+  target: MediaTarget,
+): string | undefined {
+  return mediaPathFromUrl(config, src, guideScope(target));
 }
 
 export function publicImageUrl(
@@ -113,18 +170,6 @@ export function publicImageUrl(
   path: string,
 ): string {
   return `${base(config)}/storage/v1/object/public/${config.bucket}/${path}`;
-}
-
-/** The object path of a public image URL of this target, or undefined for anything else. */
-export function guideImagePathFromUrl(
-  config: Pick<MediaStorageConfig, "supabaseUrl" | "bucket">,
-  src: string,
-  target: MediaTarget,
-): string | undefined {
-  const prefix = publicImageUrl(config, "");
-  if (!src.startsWith(prefix)) return undefined;
-  const path = src.slice(prefix.length);
-  return isGuideImagePath(path, target) ? path : undefined;
 }
 
 /**

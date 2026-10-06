@@ -191,6 +191,7 @@ describe("guide_sections", () => {
 });
 
 describe("guide fixtures (local only)", () => {
+  // Boots a second in-process database (with all migrations) inside the test.
   it("seeds the former mock topics idempotently", async () => {
     const fresh = await createTestDatabase();
     await seedTenant(fresh.db, uniquePlacesSeed);
@@ -198,7 +199,7 @@ describe("guide fixtures (local only)", () => {
     expect((await seedGuideFixtures(fresh.db, up, now)).written).toBe(0);
     expect(await listPublishedGuideEntries(fresh.db, up, { propertyId: "hov" })).toHaveLength(8);
     await fresh.close();
-  });
+  }, 60_000);
 });
 
 describe("admin accounts", () => {

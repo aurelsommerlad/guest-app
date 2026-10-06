@@ -2,62 +2,51 @@ import { describe, expect, it } from "vitest";
 
 import { addressLines, buildPlaceActions } from "./place-actions";
 
-describe("buildPlaceActions", () => {
-  it("offers no actions without data", () => {
+describe("place actions", () => {
+  it("offers only actions whose data exists, in a fixed order", () => {
     expect(buildPlaceActions({})).toEqual([]);
-  });
-
-  it("only offers actions whose information exists", () => {
-    expect(buildPlaceActions({ website: "https://example.com" }).map((a) => a.kind)).toEqual([
-      "website",
-    ]);
-    expect(buildPlaceActions({ phone: "+49 000 0000000" })).toEqual([
-      { kind: "call", href: "tel:+490000000000", external: false },
-    ]);
-    expect(buildPlaceActions({ bookingUrl: "https://example.com/r" }).map((a) => a.kind)).toEqual([
-      "reserve",
-    ]);
-  });
-
-  it("builds an external maps link for the route – from the address", () => {
-    const [route] = buildPlaceActions({
-      address: { street: "Beispielweg 1", postalCode: "00000", city: "Musterort" },
-    });
-    expect(route).toEqual({
-      kind: "route",
-      href: "https://www.google.com/maps/dir/?api=1&destination=Beispielweg%201%2C%2000000%20Musterort",
-      external: true,
-    });
-  });
-
-  it("prefers coordinates for the route", () => {
-    const [route] = buildPlaceActions({
-      coordinates: { lat: 47.8, lng: 10.2 },
-      address: { city: "Musterort" },
-    });
-    expect(route?.href).toBe("https://www.google.com/maps/dir/?api=1&destination=47.8%2C10.2");
-  });
-
-  it("orders actions: route, website, call, reserve", () => {
-    const kinds = buildPlaceActions({
-      bookingUrl: "https://example.com/r",
-      phone: "+49 1",
-      website: "https://example.com",
-      address: { city: "Musterort" },
-    }).map((a) => a.kind);
-    expect(kinds).toEqual(["route", "website", "call", "reserve"]);
-  });
-});
-
-describe("addressLines", () => {
-  it("formats street and postal code with city", () => {
     expect(
-      addressLines({ street: "Beispielweg 1", postalCode: "00000", city: "Musterort" }),
-    ).toEqual(["Beispielweg 1", "00000 Musterort"]);
+      buildPlaceActions({
+        address: "Seepromenade 1\n88131 Lindau",
+        websiteUrl: "https://seecafe.example.org",
+        phone: "+49 (0) 8382 123-45",
+        reservationUrl: "https://seecafe.example.org/tisch",
+      }).map((action) => [action.kind, action.href, action.external]),
+    ).toEqual([
+      [
+        "route",
+        "https://www.google.com/maps/dir/?api=1&destination=Seepromenade%201%2C%2088131%20Lindau",
+        true,
+      ],
+      ["website", "https://seecafe.example.org/", true],
+      ["call", "tel:+490838212345", false],
+      ["reserve", "https://seecafe.example.org/tisch", true],
+    ]);
   });
 
-  it("returns undefined for empty addresses", () => {
+  it("prefers the maintained maps link over the address", () => {
+    expect(
+      buildPlaceActions({ address: "Seepromenade 1", mapsUrl: "https://maps.example.org/x" }),
+    ).toEqual([{ kind: "route", href: "https://maps.example.org/x", external: true }]);
+  });
+
+  it("drops anything that is not an http(s) link (defence in depth)", () => {
+    expect(
+      buildPlaceActions({
+        mapsUrl: "javascript:alert(1)",
+        websiteUrl: "data:text/html,<script>",
+        reservationUrl: "mailto:x@example.org",
+        phone: "call me",
+      }),
+    ).toEqual([]);
+  });
+
+  it("splits the address into lines", () => {
+    expect(addressLines(" Seepromenade 1 \r\n\n88131 Lindau ")).toEqual([
+      "Seepromenade 1",
+      "88131 Lindau",
+    ]);
     expect(addressLines(undefined)).toBeUndefined();
-    expect(addressLines({ street: " " })).toBeUndefined();
+    expect(addressLines("  ")).toBeUndefined();
   });
 });

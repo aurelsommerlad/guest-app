@@ -19,7 +19,7 @@ async function loadPlace(params: Props["params"]) {
   // Places depend on the guest's property, so pages render per request;
   // unknown slugs (or a slug of another locale) are 404s.
   const context = await requireGuestContext(locale);
-  const place = getPlaceDetail(context, locale, slug);
+  const place = await getPlaceDetail(context, locale, slug);
   if (!place) notFound();
   return place;
 }
@@ -71,32 +71,32 @@ export default async function PlacePage({ params }: Props) {
               <Heading level={1}>{place.title}</Heading>
             </header>
 
-            <Image
-              src={place.image.src}
-              width={place.image.width}
-              height={place.image.height}
-              alt={place.image.alt}
-              sizes="(min-width: 768px) 640px, 100vw"
-              preload
-              placeholder={place.image.blurDataUrl ? "blur" : "empty"}
-              blurDataURL={place.image.blurDataUrl}
-              className="mt-6 aspect-hero w-full rounded-card object-cover lg:mt-8"
-            />
-
-            {place.recommendation && (
-              <Text variant="lead" className="mt-8 text-balance">
-                {place.recommendation}
-              </Text>
+            {place.image && (
+              <Image
+                src={place.image.src}
+                width={place.image.width}
+                height={place.image.height}
+                alt={place.image.alt}
+                sizes="(min-width: 768px) 640px, 100vw"
+                preload
+                placeholder={place.image.blurDataUrl ? "blur" : "empty"}
+                blurDataURL={place.image.blurDataUrl}
+                className="mt-6 aspect-hero w-full rounded-card object-cover lg:mt-8"
+              />
             )}
+
+            <Text variant="lead" className="mt-8 text-balance">
+              {place.teaser}
+            </Text>
             {place.description.map((paragraph, index) => (
-              <Text key={index} className="mt-4">
+              <Text key={index} className="mt-4 whitespace-pre-line">
                 {paragraph}
               </Text>
             ))}
 
-            {place.goodToKnow && (
-              <Callout title={t("goodToKnow")} className="mt-8">
-                {place.goodToKnow}
+            {place.tip && (
+              <Callout title={t("tip")} className="mt-8">
+                {place.tip}
               </Callout>
             )}
 

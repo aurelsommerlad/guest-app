@@ -117,6 +117,8 @@ Die Admin App (`apps/admin`, [ADR 0014](adr/0014-admin-app-and-auth.md)) ist ein
 
 **Supabase-Storage-Bucket (einmalig pro Projekt, im Dashboard):** Storage → New bucket → Name `guide-media`, **Public bucket** an, File size limit 8 MB, Allowed MIME types `image/jpeg, image/png, image/webp`. Größen- und MIME-Grenze sind **sicherheitsrelevant**, weil der Browser direkt zu Storage hochlädt (signierter Upload, [ADR 0013](adr/0013-guide-content-management.md)). **Keine** Storage-Policies anlegen: Schreibrechte entstehen nur über die pfadgebundenen Upload-Tokens, die die Admin App serverseitig ausstellt. CORS muss nicht konfiguriert werden.
 
+**EXPLORE (Phase 10):** keine neuen Variablen. Bilder liegen im selben Bucket unter `<tenantId>/explore/<uuid>.<ext>` (GUIDE: `<tenantId>/<propertyId>/guide/…`).
+
 **Vercel-Projekt `admin`:** wie unten für `guest`, aber Root Directory `apps/admin` (Region `fra1` über `apps/admin/vercel.json`), Domain `admin.unique-places.com` für Production, Staging idealerweise mit Deployment Protection.
 
 **Erstes Admin-Konto:** `ADMIN_SETUP_TOKEN` setzen, deployen, `/setup` öffnen, Token, Tenant-Slug, E-Mail und Passwort eingeben. Danach ist `/setup` gesperrt (404); das Token aus Vercel entfernen. Lokal oder mit direkter DB-Verbindung alternativ `pnpm admin-user:create` (siehe `apps/admin/README.md`).

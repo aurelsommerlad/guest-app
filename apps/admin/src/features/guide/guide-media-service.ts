@@ -1,47 +1,31 @@
 /**
- * GUIDE image uploads (ADR 0013): the server issues a signed upload for one generated path
- * and verifies the stored file afterwards. Every step runs with the admin session's tenant.
+ * GUIDE image uploads (ADR 0013): images belong to one property of the admin's tenant.
+ * The generic signed-upload logic lives in features/media.
  */
-import { type Logger, type TenantContext } from "@up/core";
-import { type Database, getPropertyById, hitRateLimit } from "@up/db";
+import { getPropertyById } from "@up/db";
 
+import { type MediaScope } from "../../server/media-storage";
 import {
-  createSignedImageUpload,
-  guideImagePath,
-  isGuideImagePath,
-  isImageType,
-  MAX_IMAGE_BYTES,
-  type MediaStorageConfig,
-  type MediaTarget,
-  publicImageUrl,
-  verifyStoredImage,
-} from "../../server/media-storage";
-import { type Result } from "./guide-admin-service";
+  confirmMediaUpload,
+  type MediaAdmin,
+  type MediaResult,
+  type MediaUploadDeps,
+  requestMediaUpload,
+} from "../media/media-upload-service";
 
-export type GuideMediaDeps = {
-  db: Database;
-  logger: Logger;
-  now: () => Date;
-  storage: MediaStorageConfig;
-};
+export { UPLOAD_GRANT_LIMIT } from "../media/media-upload-service";
+export type GuideMediaDeps = MediaUploadDeps;
 
-export type MediaAdmin = TenantContext & { adminUserId: string };
-
-/** Upload grants per admin account: generous for editing, bounded against abuse. */
-export const UPLOAD_GRANT_LIMIT = { windowMs: 15 * 60 * 1000, max: 60 } as const;
-
-const MAX_DIMENSION = 20_000;
-
-const fail = (error: string): { ok: false; error: string } => ({ ok: false, error });
-
-async function targetFor(
+async function guideScope(
   deps: GuideMediaDeps,
   admin: MediaAdmin,
   propertyId: unknown,
-): Promise<MediaTarget | undefined> {
+): Promise<MediaScope | undefined> {
   if (typeof propertyId !== "string") return undefined;
   const property = await getPropertyById(deps.db, { tenantId: admin.tenantId }, propertyId);
-  return property ? { tenantId: admin.tenantId, propertyId: property.id } : undefined;
+  return property
+    ? { tenantId: admin.tenantId, propertyId: property.id, module: "guide" }
+    : undefined;
 }
 
 /** Step 1: checks and a signed upload for exactly one freshly generated path. */
@@ -50,37 +34,10 @@ export async function requestImageUpload(
   admin: MediaAdmin,
   propertyId: unknown,
   file: { contentType: unknown; size: unknown },
-): Promise<Result<{ uploadUrl: string; path: string }>> {
-  const target = await targetFor(deps, admin, propertyId);
-  if (!target) return fail("Objekt nicht gefunden.");
-  if (!isImageType(file.contentType)) return fail("Erlaubt sind JPG, PNG und WebP.");
-  if (typeof file.size !== "number" || !Number.isInteger(file.size) || file.size < 1) {
-    return fail("Die Datei ist leer.");
-  }
-  if (file.size > MAX_IMAGE_BYTES) return fail("Das Bild ist größer als 8 MB.");
-
-  const bucket = await hitRateLimit(
-    deps.db,
-    `guide-upload:${admin.adminUserId}`,
-    UPLOAD_GRANT_LIMIT.windowMs,
-    deps.now(),
-  );
-  if (bucket.hits > UPLOAD_GRANT_LIMIT.max) {
-    deps.logger.warn("guide image upload rate limited", { propertyId: target.propertyId });
-    return fail("Zu viele Uploads. Bitte versuche es in einigen Minuten erneut.");
-  }
-
-  try {
-    const upload = await createSignedImageUpload(
-      deps.storage,
-      guideImagePath(target, file.contentType),
-    );
-    deps.logger.info("guide image upload granted", { propertyId: target.propertyId });
-    return { ok: true, ...upload };
-  } catch {
-    deps.logger.error("guide image upload grant failed", { propertyId: target.propertyId });
-    return fail("Der Upload konnte nicht vorbereitet werden.");
-  }
+): Promise<MediaResult<{ uploadUrl: string; path: string }>> {
+  const scope = await guideScope(deps, admin, propertyId);
+  if (!scope) return { ok: false, error: "Objekt nicht gefunden." };
+  return requestMediaUpload(deps, admin, scope, file);
 }
 
 /** Step 3: the stored file must be an allowed image of this tenant/property. */
@@ -89,37 +46,8 @@ export async function confirmImageUpload(
   admin: MediaAdmin,
   propertyId: unknown,
   input: { path: unknown; width: unknown; height: unknown },
-): Promise<Result<{ image: { src: string; width: number; height: number } }>> {
-  const target = await targetFor(deps, admin, propertyId);
-  if (!target) return fail("Objekt nicht gefunden.");
-  if (typeof input.path !== "string" || !isGuideImagePath(input.path, target)) {
-    return fail("Ungültiger Upload.");
-  }
-  const dimension = (value: unknown) =>
-    typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= MAX_DIMENSION;
-  if (!dimension(input.width) || !dimension(input.height)) {
-    return fail("Bitte eine Bilddatei (JPG, PNG oder WebP) auswählen.");
-  }
-  try {
-    const check = await verifyStoredImage(deps.storage, input.path);
-    if (check !== "ok") {
-      deps.logger.warn("guide image upload rejected", { propertyId: target.propertyId, check });
-      return fail(
-        check === "missing"
-          ? "Das Bild wurde nicht hochgeladen."
-          : "Erlaubt sind JPG, PNG und WebP bis 8 MB.",
-      );
-    }
-  } catch {
-    deps.logger.error("guide image verification failed", { propertyId: target.propertyId });
-    return fail("Das Bild konnte nicht geprüft werden.");
-  }
-  return {
-    ok: true,
-    image: {
-      src: publicImageUrl(deps.storage, input.path),
-      width: input.width as number,
-      height: input.height as number,
-    },
-  };
+): Promise<MediaResult<{ image: { src: string; width: number; height: number } }>> {
+  const scope = await guideScope(deps, admin, propertyId);
+  if (!scope) return { ok: false, error: "Objekt nicht gefunden." };
+  return confirmMediaUpload(deps, admin, scope, input);
 }

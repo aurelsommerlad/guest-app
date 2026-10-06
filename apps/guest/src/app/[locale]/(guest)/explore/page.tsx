@@ -1,4 +1,4 @@
-import { EXPLORE_FILTERS, type ExploreFilter } from "@up/core";
+import { EXPLORE_CATEGORIES, type ExploreCategory, type ExploreFilter } from "@up/core";
 import { Container, Heading, Text } from "@up/ui";
 import type { Metadata } from "next";
 import { hasLocale } from "next-intl";
@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 
 import { BrandHeader } from "../../../../components/GuestHeader";
 import { ExploreBrowser } from "../../../../features/explore/components/ExploreBrowser";
-import { getExploreCards, getExploreIntro } from "../../../../features/explore/get-explore";
+import { getExploreOverview } from "../../../../features/explore/get-explore";
 import { headerPropertyOf } from "../../../../features/guest-context/guest-context";
 import { requireGuestContext } from "../../../../features/guest-context/server";
 import { routing } from "../../../../i18n/routing";
@@ -29,19 +29,21 @@ export default async function ExplorePage({ params }: Props) {
 
   const t = await getTranslations("explore");
   const context = await requireGuestContext(locale);
-  const intro = getExploreIntro(context, locale);
-  const cards = getExploreCards(context, locale);
+  const { cards, categories } = await getExploreOverview(context, locale);
 
-  const filters = EXPLORE_FILTERS.map((id) => ({ id, label: t(`categories.${id}`) }));
+  const categoryLabels = Object.fromEntries(
+    EXPLORE_CATEGORIES.map((id) => [id, t(`categories.${id}`)]),
+  ) as Record<ExploreCategory, string>;
+  const filterIds: ExploreFilter[] = ["all", ...categories];
+  const filters = filterIds.map((id) => ({ id, label: t(`categories.${id}`) }));
   const countLabels = Object.fromEntries(
-    EXPLORE_FILTERS.map((id) => [
+    filterIds.map((id) => [
       id,
       t("resultsCount", {
-        count:
-          id === "all" ? cards.length : cards.filter((card) => card.categories.includes(id)).length,
+        count: id === "all" ? cards.length : cards.filter((card) => card.category === id).length,
       }),
     ]),
-  ) as Record<ExploreFilter, string>;
+  ) as Partial<Record<ExploreFilter, string>>;
 
   return (
     <div className="safe-top">
@@ -53,25 +55,28 @@ export default async function ExplorePage({ params }: Props) {
             <Text variant="eyebrow" tone="muted">
               {t("eyebrow")}
             </Text>
-            {intro && (
-              <>
-                <Heading level={1}>{intro.title}</Heading>
-                <Text variant="lead" tone="muted" className="max-w-72 text-balance">
-                  {intro.lead}
-                </Text>
-              </>
-            )}
+            <Heading level={1}>{t("title", { location: context.property.location })}</Heading>
+            <Text variant="lead" tone="muted" className="max-w-72 text-balance">
+              {t("lead")}
+            </Text>
           </div>
 
           <div className="mt-6 lg:mt-10">
-            <ExploreBrowser
-              cards={cards}
-              filters={filters}
-              filterLabel={t("filterLabel")}
-              countLabels={countLabels}
-              emptyText={t("empty")}
-              placesHeading={t("placesHeading")}
-            />
+            {cards.length > 0 ? (
+              <ExploreBrowser
+                cards={cards}
+                filters={filters}
+                categoryLabels={categoryLabels}
+                filterLabel={t("filterLabel")}
+                countLabels={countLabels}
+                emptyText={t("emptyCategory")}
+                placesHeading={t("placesHeading")}
+              />
+            ) : (
+              <Text tone="muted" className="max-w-reading text-balance">
+                {t("empty")}
+              </Text>
+            )}
           </div>
         </main>
       </Container>

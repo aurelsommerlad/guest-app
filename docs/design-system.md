@@ -357,7 +357,15 @@ scripts/check-design-tokens.mjs     ← Guard: keine HEX-Werte/Arbitrary Values 
 - **Leerzustand:** kompakte Karte (max. 512 px) mit Icon, Satz und Primäraktion.
 - **Technischer Fund:** Tailwinds benannte Breiten (`max-w-2xl` … `7xl`) existieren im Theme nicht und wirkten nie. Ersetzt durch Tokens bzw. die Spacing-Skala; der Token-Check (`pnpm lint:tokens`) lehnt sie jetzt ab.
 
-## 20. Offene Punkte (C)
+## 20. EXPLORE aus der Datenbank (Phase 10)
+
+- **Karte:** `EditorialImageCard` hat eine optionale Dachzeile (`eyebrow`), hier „Kategorie · Ort“ über Titel und Kurzbeschreibung. Bestehende Karten (STAY) sind unverändert.
+- **Ohne Titelbild:** ruhige Ink-Fläche (`surface-inverse`) mit Kompass-Icon statt eines Platzhalterfotos; weiße Schrift bleibt AAA-lesbar.
+- **Übersicht:** Titel „{Ort} entdecken“ aus dem Objekt, Lead „Unsere Lieblingsplätze für Dich.“; Kategoriefilter nur mit vorhandenen Kategorien (ab zwei). Ohne Empfehlungen ein ruhiger Satz statt Beispielinhalten.
+- **Detail:** Titelbild (falls vorhanden), Kurzbeschreibung als Lead, Beschreibung, „Unser Tipp“ als `Callout`, Infos (Öffnungszeiten, Adresse) und Aktionen nur mit Daten.
+- **Admin:** Liste und Editor folgen der GUIDE-Sprache aus Phase 9.3 (Karten-Zeilen, Abschnitts-Karten, ruhige Status-Badges, Primäraktion `cta`).
+
+## 21. Offene Punkte (C)
 
 | Nr. | Thema                                                     | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
