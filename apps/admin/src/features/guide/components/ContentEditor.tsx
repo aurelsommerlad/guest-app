@@ -11,8 +11,9 @@ import {
   Select,
   TextArea,
 } from "../../../components/fields";
-import { type GuideFormState, type UploadResult } from "../actions";
+import { type GuideFormState } from "../actions";
 import { fromEditorContent } from "./content-mapping";
+import { type ImageUploadActions, uploadImageFile } from "./image-upload";
 import {
   BLOCK_TYPES,
   type EditorBlock,
@@ -26,7 +27,7 @@ import {
 type Props = {
   initial: EditorContent;
   saveAction: (previous: GuideFormState, formData: FormData) => Promise<GuideFormState>;
-  uploadAction: (formData: FormData) => Promise<UploadResult>;
+  uploadActions: ImageUploadActions;
   uploadEnabled: boolean;
 };
 
@@ -34,7 +35,7 @@ type Props = {
  * Structured content editor: intro, hero image and an ordered list of blocks – no HTML.
  * Block editors are looked up by type, so specialised editors can be added per type later.
  */
-export function ContentEditor({ initial, saveAction, uploadAction, uploadEnabled }: Props) {
+export function ContentEditor({ initial, saveAction, uploadActions, uploadEnabled }: Props) {
   const [content, setContent] = useState(initial);
   const [nextType, setNextType] = useState<EditorBlock["type"]>("paragraph");
   const [state, formAction, pending] = useActionState(saveAction, { status: "idle" });
@@ -87,7 +88,7 @@ export function ContentEditor({ initial, saveAction, uploadAction, uploadEnabled
         onChange={(heroImage) => {
           setContent({ ...content, heroImage });
         }}
-        uploadAction={uploadAction}
+        uploadActions={uploadActions}
         uploadEnabled={uploadEnabled}
       />
 
@@ -136,7 +137,7 @@ export function ContentEditor({ initial, saveAction, uploadAction, uploadEnabled
               onChange={(changed) => {
                 setBlock(index, changed);
               }}
-              uploadAction={uploadAction}
+              uploadActions={uploadActions}
               uploadEnabled={uploadEnabled}
             />
           </article>
@@ -236,11 +237,11 @@ function TextsInputs({
 type BlockEditorProps = {
   block: EditorBlock;
   onChange: (block: EditorBlock) => void;
-  uploadAction: Props["uploadAction"];
+  uploadActions: Props["uploadActions"];
   uploadEnabled: boolean;
 };
 
-function BlockEditor({ block, onChange, uploadAction, uploadEnabled }: BlockEditorProps) {
+function BlockEditor({ block, onChange, uploadActions, uploadEnabled }: BlockEditorProps) {
   switch (block.type) {
     case "heading":
       return (
@@ -364,7 +365,7 @@ function BlockEditor({ block, onChange, uploadAction, uploadEnabled }: BlockEdit
             onChange={(image) => {
               onChange({ ...block, image });
             }}
-            uploadAction={uploadAction}
+            uploadActions={uploadActions}
             uploadEnabled={uploadEnabled}
           />
           <TextsInputs
@@ -399,13 +400,13 @@ function ImageEditor({
   label,
   image,
   onChange,
-  uploadAction,
+  uploadActions,
   uploadEnabled,
 }: {
   label: string;
   image: EditorImage | undefined;
   onChange: (image: EditorImage | undefined) => void;
-  uploadAction: Props["uploadAction"];
+  uploadActions: Props["uploadActions"];
   uploadEnabled: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
@@ -416,12 +417,7 @@ function ImageEditor({
     setBusy(true);
     setMessage(undefined);
     try {
-      const size = await measure(file);
-      const data = new FormData();
-      data.set("file", file);
-      data.set("width", String(size.width));
-      data.set("height", String(size.height));
-      const result = await uploadAction(data);
+      const result = await uploadImageFile(file, uploadActions, measure);
       if (result.ok) onChange({ ...result.image, alt: image?.alt ?? emptyTexts() });
       else setMessage(result.error);
     } catch {

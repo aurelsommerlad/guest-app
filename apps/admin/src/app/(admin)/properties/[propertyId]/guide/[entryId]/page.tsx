@@ -6,10 +6,11 @@ import { notFound } from "next/navigation";
 import { StatusBadge } from "../../../../../../components/StatusBadge";
 import { requireAdmin } from "../../../../../../features/auth/server";
 import {
+  confirmImageUploadAction,
   createOverrideAction,
+  requestImageUploadAction,
   saveContentAction,
   updateTopicAction,
-  uploadImageAction,
 } from "../../../../../../features/guide/actions";
 import { CreateOverrideForm } from "../../../../../../features/guide/components/CreateOverrideForm";
 import { ContentEditor } from "../../../../../../features/guide/components/ContentEditor";
@@ -45,7 +46,10 @@ export default async function GuideEntryPage({ params, searchParams }: Props) {
       key={entry.id}
       initial={toEditorContent(entry)}
       saveAction={saveContentAction.bind(null, entry.id)}
-      uploadAction={uploadImageAction.bind(null, propertyId)}
+      uploadActions={{
+        request: requestImageUploadAction.bind(null, propertyId),
+        confirm: confirmImageUploadAction.bind(null, propertyId),
+      }}
       uploadEnabled={mediaStorageConfig() !== undefined}
     />
   );

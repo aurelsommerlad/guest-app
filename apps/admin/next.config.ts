@@ -30,10 +30,6 @@ const baseConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ["@up/core", "@up/db", "@up/ui"],
   images: { remotePatterns: storageImagePatterns() },
-  experimental: {
-    // Image uploads (max 8 MB, checked again on the server).
-    serverActions: { bodySizeLimit: "9mb" },
-  },
   headers: () => Promise.resolve([{ source: "/:path*", headers: securityHeaders }]),
 };
 

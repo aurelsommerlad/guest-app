@@ -23,6 +23,7 @@ const MEDIA = "https://abc.supabase.co/storage/v1/object/public/guide-media/";
 let test: TestDatabase;
 let db: Database;
 let deps: GuideAdminDeps;
+let verified: string[];
 
 beforeEach(async () => {
   test = await createTestDatabase();
@@ -47,7 +48,12 @@ beforeEach(async () => {
     now: () => new Date("2026-10-10T08:00:00Z"),
     isAllowedImageSrc: (src, target) =>
       src.startsWith(`${MEDIA}${target.tenantId}/${target.propertyId}/`),
+    verifyNewImage: (src) => {
+      verified.push(src);
+      return Promise.resolve(!src.includes("broken"));
+    },
   };
+  verified = [];
 });
 
 afterEach(async () => {
@@ -266,6 +272,50 @@ describe("GUIDE administration", () => {
     expect(await updateTopic(deps, up, second.id, { ...meta, slugDe: "internet-zugang" })).toEqual({
       ok: true,
     });
+  });
+
+  it("verifies the stored file of every new image on save, but not images already saved", async () => {
+    const created = await createTopic(deps, up, "hov", wifiInput);
+    if (!created.ok) throw new Error(created.error);
+    const image = (name: string) => ({
+      src: `${MEDIA}unique-places/hov/guide/${name}`,
+      width: 10,
+      height: 10,
+      alt: { de: "Bild" },
+    });
+    const withImages = (...names: string[]) =>
+      JSON.stringify({
+        heroImage: image(names[0] ?? ""),
+        blocks: names
+          .slice(1)
+          .map((name, i) => ({ id: `i${String(i)}`, type: "image", image: image(name) })),
+      });
+
+    expect(await updateContent(deps, up, created.id, withImages("a.png", "b.png"))).toEqual({
+      ok: true,
+    });
+    expect(verified).toEqual([
+      `${MEDIA}unique-places/hov/guide/a.png`,
+      `${MEDIA}unique-places/hov/guide/b.png`,
+    ]);
+
+    verified = [];
+    expect(
+      await updateContent(deps, up, created.id, withImages("a.png", "b.png", "c.png")),
+    ).toEqual({
+      ok: true,
+    });
+    expect(verified).toEqual([`${MEDIA}unique-places/hov/guide/c.png`]);
+
+    expect(await updateContent(deps, up, created.id, withImages("a.png", "broken.png"))).toEqual({
+      ok: false,
+      error: "Ein Bild ist ungültig oder fehlt. Bitte lade es erneut hoch.",
+    });
+    const stored = await loadGuideEntry(deps, up, created.id);
+    expect(stored?.entry.blocks).toHaveLength(2); // unchanged
+
+    deps.verifyNewImage = () => Promise.reject(new Error("storage down"));
+    expect((await updateContent(deps, up, created.id, withImages("d.png"))).ok).toBe(false);
   });
 
   it("tracks whether English is complete (prepared for later translation)", async () => {

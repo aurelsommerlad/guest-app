@@ -4,8 +4,6 @@ import { GUIDE_STATUSES, type GuideStatus } from "@up/core";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "../auth/server";
-import { logger } from "../../server/logger";
-import { MediaUploadError, uploadGuideImage } from "../../server/media-storage";
 import {
   changeStatus,
   createOverride,
@@ -16,7 +14,8 @@ import {
   updateContent,
   updateTopic,
 } from "./guide-admin-service";
-import { guideDeps, mediaStorageConfig } from "./server";
+import { confirmImageUpload, requestImageUpload } from "./guide-media-service";
+import { guideDeps, guideMediaDeps } from "./server";
 
 // Admin pages are dynamic (session cookie): every navigation renders fresh data, so no
 // revalidatePath is needed – it would only trigger extra re-renders of open editors.
@@ -150,52 +149,42 @@ export type UploadResult =
   | { ok: true; image: { src: string; width: number; height: number } }
   | { ok: false; error: string };
 
-/** Image upload for the editor – the file goes through the server, never to Storage directly. */
-export async function uploadImageAction(
+export type UploadGrant =
+  { ok: true; uploadUrl: string; path: string } | { ok: false; error: string };
+
+const UPLOAD_NOT_CONFIGURED = {
+  ok: false,
+  error: "Der Bild-Upload ist nicht konfiguriert.",
+} as const;
+
+/**
+ * Image upload, step 1: the server checks session, property, type and size and returns a
+ * signed upload for one generated path. The browser then uploads directly to Storage.
+ */
+export async function requestImageUploadAction(
   propertyId: string,
-  formData: FormData,
+  file: { contentType: string; size: number },
+): Promise<UploadGrant> {
+  const admin = await requireAdmin();
+  const deps = guideMediaDeps();
+  if (!deps) return UPLOAD_NOT_CONFIGURED;
+  return requestImageUpload(deps, admin, propertyId, {
+    contentType: (file as { contentType?: unknown }).contentType,
+    size: (file as { size?: unknown }).size,
+  });
+}
+
+/** Image upload, step 3: the stored file is verified before the editor may use it. */
+export async function confirmImageUploadAction(
+  propertyId: string,
+  input: { path: string; width: number; height: number },
 ): Promise<UploadResult> {
-  const context = await tenant();
-  const deps = guideDeps();
-  const storage = mediaStorageConfig();
-  if (!storage) return { ok: false, error: "Der Bild-Upload ist nicht konfiguriert." };
-  const { getPropertyById } = await import("@up/db");
-  if (!(await getPropertyById(deps.db, context, propertyId))) {
-    return { ok: false, error: "Objekt nicht gefunden." };
-  }
-  const file = formData.get("file");
-  const width = Number(field(formData, "width", 10));
-  const height = Number(field(formData, "height", 10));
-  if (
-    !(file instanceof File) ||
-    !Number.isInteger(width) ||
-    !Number.isInteger(height) ||
-    width < 1 ||
-    height < 1
-  ) {
-    return { ok: false, error: "Bitte eine Bilddatei (JPG, PNG oder WebP) auswählen." };
-  }
-  try {
-    const src = await uploadGuideImage(
-      storage,
-      { tenantId: context.tenantId, propertyId },
-      {
-        bytes: new Uint8Array(await file.arrayBuffer()),
-      },
-    );
-    return {
-      ok: true,
-      image: { src, width: Math.min(width, 20_000), height: Math.min(height, 20_000) },
-    };
-  } catch (error) {
-    const reason = error instanceof MediaUploadError ? error.reason : "storage-failed";
-    logger.warn("guide image upload failed", { reason });
-    const messages = {
-      "too-large": "Das Bild ist größer als 8 MB.",
-      "unsupported-type": "Erlaubt sind JPG, PNG und WebP.",
-      empty: "Die Datei ist leer.",
-      "storage-failed": "Das Bild konnte nicht gespeichert werden.",
-    } as const;
-    return { ok: false, error: messages[reason] };
-  }
+  const admin = await requireAdmin();
+  const deps = guideMediaDeps();
+  if (!deps) return UPLOAD_NOT_CONFIGURED;
+  return confirmImageUpload(deps, admin, propertyId, {
+    path: (input as { path?: unknown }).path,
+    width: (input as { width?: unknown }).width,
+    height: (input as { height?: unknown }).height,
+  });
 }

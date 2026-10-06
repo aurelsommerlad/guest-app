@@ -44,7 +44,22 @@ export type GuideAdminDeps = {
   now: () => Date;
   /** Images must come from this tenant's/property's media storage (or local fixtures). */
   isAllowedImageSrc: (src: string, target: { tenantId: string; propertyId: string }) => boolean;
+  /**
+   * Checks the stored file behind an image that is new in the saved content (size and
+   * content type). Images already stored with the entry are not checked again.
+   */
+  verifyNewImage: (
+    src: string,
+    target: { tenantId: string; propertyId: string },
+  ) => Promise<boolean>;
 };
+
+function imageSources(content: Pick<GuideContent, "heroImage" | "blocks">): string[] {
+  return [
+    ...(content.heroImage ? [content.heroImage.src] : []),
+    ...content.blocks.flatMap((block) => (block.type === "image" ? [block.image.src] : [])),
+  ];
+}
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -384,6 +399,18 @@ export async function updateContent(
     ...(parsed.data.intro ? { intro: parsed.data.intro } : {}),
     ...(parsed.data.heroImage ? { heroImage: parsed.data.heroImage } : {}),
   };
+  const target = { tenantId: context.tenantId, propertyId: loaded.property.id };
+  const stored = new Set(imageSources(loaded.entry));
+  for (const src of new Set(imageSources(content))) {
+    if (stored.has(src)) continue;
+    let verified = false;
+    try {
+      verified = await deps.verifyNewImage(src, target);
+    } catch {
+      deps.logger.error("guide image verification failed", { propertyId: target.propertyId });
+    }
+    if (!verified) return fail("Ein Bild ist ungültig oder fehlt. Bitte lade es erneut hoch.");
+  }
   const ok = await updateGuideContent(deps.db, context, entryId, {
     ...content,
     translationState: translationStateOf(

@@ -36,14 +36,19 @@ Ohne Unit (z. B. Gast ohne zugewiesenes Apartment) sieht der Gast den allgemeine
 
 **Übersetzung:** Quellsprache ist Deutsch (`source_locale = 'de'`). `translation_state` (`jsonb`, z. B. `{ "en": "reviewed" }`) mit den Werten `missing | outdated | machine | reviewed` bereitet eine spätere AI-Übersetzung vor. Heute setzt die Admin App den Zustand selbst: `reviewed`, wenn alle Texte eine englische Fassung haben, sonst `missing`. Fehlt EN, zeigt die Guest App DE.
 
-**Medien (Supabase Storage):**
+**Medien (Supabase Storage)**, ab Phase 9.1 als signierter Direkt-Upload:
 
-- Ein öffentlicher Bucket (`GUIDE_MEDIA_BUCKET`, Standard `guide-media`) pro Supabase-Projekt, angelegt im Dashboard (8 MB, nur `image/jpeg`, `image/png`, `image/webp`).
-- Uploads laufen **nur serverseitig** über eine Server Action der Admin App mit `SUPABASE_SERVICE_ROLE_KEY`. Der Browser bekommt nie einen Storage-Key und keine signierten Upload-URLs.
-- Pfad: `<tenantId>/<propertyId>/guide/<uuid>.<ext>`. Der Typ wird an den Magic Bytes erkannt, nicht an Dateiname oder MIME-Angabe. Maximal 8 MB. `x-upsert: false`, also kein Überschreiben.
-- Beim Speichern akzeptiert die Admin App nur Bild-URLs unter dem eigenen Tenant/Property-Präfix (lokal zusätzlich `/fixtures/guide/`). Fremde URLs sind damit nicht einschleusbar.
+- Ein öffentlich lesbarer Bucket (`GUIDE_MEDIA_BUCKET`, Standard `guide-media`) pro Supabase-Projekt, angelegt im Dashboard: **8 MB, nur `image/jpeg`, `image/png`, `image/webp`**. Es gibt **keine** Storage-Policies für Schreibzugriffe; `anon` und `authenticated` können nicht hochladen.
+- Ablauf (offizielle Storage-API, entspricht supabase-js `createSignedUploadUrl` / `uploadToSignedUrl`):
+  1. Der Browser fragt eine Server Action nach einer Upload-Berechtigung und sendet nur Dateityp und Größe. Die Admin App prüft Admin Session, Tenant (aus der Session), Property (tenant-scoped aus der DB), Typ (JPG/PNG/WebP), Größe (1 Byte bis 8 MB) und ein Rate Limit (60 Berechtigungen pro 15 Minuten und Konto).
+  2. Die Admin App erzeugt den Pfad selbst, `<tenantId>/<propertyId>/guide/<uuid>.<ext>`, und lässt sich von Storage mit `SUPABASE_SERVICE_ROLE_KEY` ein signiertes Upload-Token für **genau diesen Pfad** ausstellen (`POST /storage/v1/object/upload/sign/{bucket}/{path}`, ohne Upsert).
+  3. Der Browser lädt die Datei direkt zu Storage hoch (`PUT …/upload/sign/{bucket}/{path}?token=…`). Das Token gilt nur für diesen Pfad und erlaubt kein Überschreiben. Storage erzwingt die Größen- und MIME-Grenzen des Buckets.
+  4. Eine zweite Server Action lädt das gespeicherte Objekt serverseitig und prüft Größe und Inhalt (Magic Bytes passend zur Endung). Alles andere wird sofort gelöscht. Erst danach bekommt der Editor die öffentliche URL.
+- Beim Speichern eines Inhalts akzeptiert die Admin App nur URLs, die exakt dem Muster `…/object/public/<bucket>/<tenantId>/<propertyId>/guide/<uuid>.<ext>` der Session entsprechen (keine Präfix-Tricks, kein `..`; lokal zusätzlich `/fixtures/guide/…`). **Neue** Bilder werden dabei noch einmal am gespeicherten Objekt geprüft, auch wenn jemand die Oberfläche umgeht.
+- Der Service-Role-Key verlässt nie den Server. Der Browser sieht nur das pfadgebundene Token. Laut Supabase-Dokumentation gilt es 2 Stunden; kürzer konfigurieren lässt es sich auf gehostetem Supabase nicht. Weil der Pfad zufällig ist, das Token nur diesen Pfad erlaubt und nicht überschreiben kann, ist das hinnehmbar.
+- Warum kein Upload über den Server: Vercel begrenzt Request-Bodies von Functions auf 4,5 MB; Bilder bis 8 MB wären nicht möglich.
 - Die Guest App lädt Bilder über `next/image`; `remotePatterns` erlaubt nur `${SUPABASE_URL}/storage/v1/object/public/**`.
-- Gelöschte oder ersetzte Bilder bleiben vorerst im Bucket (kein Garbage Collection in Phase 9).
+- Nicht verwendete Uploads (abgebrochen oder ersetzt) bleiben vorerst im Bucket, kein Garbage Collection.
 
 **Fixtures:** Die bisherigen HØV-Mock-Inhalte liegen als `packages/db/src/seed/guide-fixtures.ts` vor und werden nur lokal (`pnpm db:seed --target local --with-guide-fixtures`) und in Tests eingespielt. Staging und Production bekommen keine Mock-Inhalte; dort legt UNIQUE PLACES die echten Inhalte über die Admin App an.
 

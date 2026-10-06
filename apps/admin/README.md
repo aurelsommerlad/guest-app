@@ -29,7 +29,7 @@ Für `staging`/`production` gelten dieselben Ziel-Sicherungen wie bei `pnpm db:m
 | `src/components/AdminShell.tsx` | Layout mit Seitennavigation                                                |
 | `src/features/auth/`            | Login, Sessions, `/setup`, Rate Limits                                     |
 | `src/features/guide/`           | GUIDE-Service, Server Actions, Editoren                                    |
-| `src/server/media-storage.ts`   | serverseitiger Upload nach Supabase Storage                                |
+| `src/server/media-storage.ts`   | signierter Direkt-Upload: Pfad, Token, Prüfung des gespeicherten Bildes    |
 | `scripts/admin-user.ts`         | CLI zum Anlegen eines Admin-Kontos                                         |
 
 ## GUIDE pflegen
