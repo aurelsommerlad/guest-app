@@ -54,6 +54,60 @@ const paragraphs = (sections: Awaited<ReturnType<typeof loadGuideSections>>) =>
     section.blocks.map((block) => (block.type === "paragraph" ? block.text.de : block.type)).join(),
   );
 
+describe("GUIDE for the Apaleo TEST property (content source HØV)", () => {
+  function testGuest(unitId: string, tenantId = "unique-places"): GuestContext {
+    const property = findPropertyById("test-run");
+    if (!property) throw new Error("test-run missing");
+    return { ...guestIn("ros"), tenantId, propertyId: "test-run", unitId, property };
+  }
+
+  it("shows HØV's published content – Ap. 1 with the ROS variant, Ap. 2 the general one", async () => {
+    const wifi = await createGuideTopic(db, up, {
+      key: "wifi",
+      scope: { level: "property", propertyId: "hov" },
+      sortOrder: 20,
+      icon: "wifi",
+      slug: { de: "wlan", en: "wifi" },
+      title: { de: "WLAN", en: "Wi-Fi" },
+      shortDescription: { de: "Netzwerk", en: "Network" },
+      blocks: [{ id: "p", type: "paragraph", text: { de: "Allgemein", en: "General" } }],
+      translationState: {},
+    });
+    const ros = await createGuideOverride(db, up, {
+      key: "wifi",
+      scope: { level: "unit", propertyId: "hov", unitId: "ros" },
+      blocks: [{ id: "p", type: "paragraph", text: { de: "Nur ROS", en: "ROS only" } }],
+      translationState: {},
+    });
+    const draft = await createGuideTopic(db, up, {
+      key: "draft",
+      scope: { level: "property", propertyId: "hov" },
+      sortOrder: 30,
+      icon: "info",
+      slug: { de: "entwurf", en: "draft" },
+      title: { de: "Entwurf" },
+      shortDescription: { de: "Noch nicht live" },
+      blocks: [],
+      translationState: {},
+    });
+    await setGuideEntryStatus(db, up, wifi.id, "published", now);
+    await setGuideEntryStatus(db, up, ros.id, "published", now);
+
+    expect(paragraphs(await loadGuideSections(db, testGuest("test-ap-1"), logger))).toEqual([
+      "Nur ROS",
+    ]);
+    expect(paragraphs(await loadGuideSections(db, testGuest("test-ap-2"), logger))).toEqual([
+      "Allgemein",
+    ]);
+    // Drafts stay drafts – the link shows exactly what HØV guests see.
+    expect(draft.status).toBe("draft");
+    // A context of another tenant never reaches HØV's content through the link.
+    expect(await loadGuideSections(db, testGuest("test-ap-1", "other-tenant"), logger)).toEqual(
+      [],
+    );
+  });
+});
+
 describe("GUIDE from the database", () => {
   it("shows the DB content for the guest context with the unit override (ESL)", async () => {
     const wifi = await createGuideTopic(db, up, {

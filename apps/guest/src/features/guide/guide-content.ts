@@ -6,7 +6,8 @@ import { guideContextOf } from "./guide-context";
 
 /**
  * GUIDE content for the guest context (ADR 0013): published entries of the guest's tenant,
- * property and unit from the database, resolved with unit overrides by `key`.
+ * property and unit (or a test property's content source) from the database, resolved with
+ * unit overrides by `key`.
  * Without a database (local preview without DATABASE_URL) the guide is simply empty.
  */
 export async function loadGuideSections(
@@ -16,12 +17,13 @@ export async function loadGuideSections(
 ): Promise<GuideSection[]> {
   if (!db) return [];
   try {
+    const scope = guideContextOf(context);
     const entries = await listPublishedGuideEntries(
       db,
-      { tenantId: context.tenantId },
-      { propertyId: context.propertyId, ...(context.unitId ? { unitId: context.unitId } : {}) },
+      { tenantId: scope.tenantId },
+      { propertyId: scope.propertyId, ...(scope.unitId ? { unitId: scope.unitId } : {}) },
     );
-    return resolveGuideSections(entries, guideContextOf(context));
+    return resolveGuideSections(entries, scope);
   } catch (error) {
     logger.error("guide content could not be loaded", {
       error: error instanceof Error ? { name: error.name } : "unknown",

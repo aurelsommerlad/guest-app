@@ -88,6 +88,14 @@ describe("EXPLORE from the database", () => {
     ]);
   });
 
+  it("shows HØV's places for the Apaleo TEST property (content source)", async () => {
+    await published("nur-hov", { propertyIds: ["hov"] });
+    await published("nur-laeke");
+    const places = await loadExplorePlaces(db, guestOf("test-run"), logger);
+    expect(places.map((place) => place.slug.de)).toEqual(["nur-hov"]);
+    expect(await loadExplorePlaces(db, guestOf("test-run", "other-tenant"), logger)).toEqual([]);
+  });
+
   it("never shows places of another tenant", async () => {
     await published("eigen");
     const foreignGuest = guestOf("laeke", "other-tenant");

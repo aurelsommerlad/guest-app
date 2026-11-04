@@ -22,5 +22,6 @@ Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue
 | 0016 | [Guest Journey, Online-Check-in und Registrierungs-Sync](0016-guest-journey-and-online-check-in.md) | Akzeptiert |
 | 0017 | [Provider-neutraler Zugang (Access)](0017-provider-neutral-access.md)                               | Akzeptiert |
 | 0018 | [Zahlungsübersicht und zahlungsabhängige Zugangsfreigabe](0018-payments-and-access-gating.md)       | Vorschlag  |
+| 0019 | [Inhaltsquelle für Testobjekte](0019-content-source-for-test-properties.md)                         | Akzeptiert |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.

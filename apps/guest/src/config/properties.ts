@@ -35,6 +35,15 @@ export type RegisteredProperty = {
   pms: { provider: "apaleo"; propertyId: string };
   /** Test properties are never resolved in production. */
   testOnly?: boolean;
+  /**
+   * Test properties only: show the published content (GUIDE, EXPLORE, photo cards) of a real
+   * property of the same tenant instead of their own – no copies, the source stays the only
+   * place it is managed (Admin). `units` maps own unit ids to source unit ids for
+   * apartment-specific content; unmapped units see the source property's general content.
+   * Reservation, access, check-in and identity stay the test property's own.
+   * See content-source.ts for the guards.
+   */
+  contentSource?: { propertyId: string; units?: Readonly<Record<string, string>> };
   units: readonly RegisteredUnit[];
 };
 
@@ -100,6 +109,8 @@ export const propertyRegistry: readonly RegisteredProperty[] = [
     timeZone: "Europe/Berlin",
     pms: { provider: "apaleo", propertyId: "TEST" },
     testOnly: true,
+    // Preview HØV's real, Admin-managed content with the TEST reservation (Ap. 1 as ROS).
+    contentSource: { propertyId: "hov", units: { "test-ap-1": "ros" } },
     units: [
       { id: "test-ap-1", name: "Ap. 1", externalId: "TEST-ZHF" },
       { id: "test-ap-2", name: "Ap. 2", externalId: "TEST-WEZ" },

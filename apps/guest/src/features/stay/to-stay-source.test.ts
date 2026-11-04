@@ -77,6 +77,20 @@ describe("toStaySource", () => {
     });
   });
 
+  it("gives the TEST property HØV's photo cards (content source), keeping its own identity", () => {
+    const test = { ...reservation, externalPropertyId: "TEST", externalUnitId: "TEST-ZHF" };
+    const asked: string[] = [];
+    const source = toStaySource(test, {
+      allowTestProperties: true,
+      cardsFor: (propertyId) => {
+        asked.push(propertyId);
+        return cards;
+      },
+    });
+    expect(asked).toEqual(["hov"]);
+    expect(source.property).toMatchObject({ id: "test-run", name: "TEST" });
+  });
+
   it("shows no stay for canceled or no-show reservations", () => {
     expect(failure({ ...reservation, status: "canceled" })).toBe("reservation-inactive");
     expect(failure({ ...reservation, status: "no-show" })).toBe("reservation-inactive");

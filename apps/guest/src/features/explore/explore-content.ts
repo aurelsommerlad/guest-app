@@ -1,6 +1,7 @@
 import { type ExplorePlace, type Logger, selectExplorePlaces } from "@up/core";
 import { type Database, listPublishedExplorePlaces } from "@up/db";
 
+import { contentScopeOf } from "../../config/content-source";
 import { type GuestContext } from "../guest-context/guest-context";
 
 /**
@@ -14,15 +15,17 @@ export async function loadExplorePlaces(
   logger: Logger,
 ): Promise<ExplorePlace[]> {
   if (!db) return [];
+  // A test property may read a real property's places (content source, same tenant only).
+  const scope = contentScopeOf(context.tenantId, context.property, context.unitId);
   try {
     const places = await listPublishedExplorePlaces(
       db,
-      { tenantId: context.tenantId },
-      context.propertyId,
+      { tenantId: scope.tenantId },
+      scope.propertyId,
     );
     return selectExplorePlaces(places, {
-      tenantId: context.tenantId,
-      propertyId: context.propertyId,
+      tenantId: scope.tenantId,
+      propertyId: scope.propertyId,
     });
   } catch (error) {
     logger.error("explore places could not be loaded", {

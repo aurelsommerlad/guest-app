@@ -1,5 +1,6 @@
 import { type PmsReservation } from "@up/core";
 
+import { contentScopeOf } from "../../config/content-source";
 import { findPropertyByPmsId, type RegisteredProperty } from "../../config/properties";
 import { type StayCardSource, type StaySource } from "./model";
 
@@ -74,6 +75,7 @@ export function toStaySource(reservation: PmsReservation, options: StaySourceOpt
       checkOutAt: reservation.departureAt,
       ...(reservation.guestCount ? { guestCount: reservation.guestCount } : {}),
     },
-    cards: options.cardsFor(property.id),
+    // Photo cards follow the content scope (a test property may borrow a real property's).
+    cards: options.cardsFor(contentScopeOf(property.tenantId, property, unit.id).propertyId),
   };
 }
