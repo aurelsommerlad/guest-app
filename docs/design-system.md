@@ -450,6 +450,25 @@ Die linke Kachel zeigt vor der Anreise den Aufenthalt, sonst die nächste Zeit (
 - Ohne Zahlungsdaten trifft STAY **keine** Aussage: weder „bezahlt“ noch „offen“.
 - Die Kachel spiegelt nur den Status. Gesperrt wird serverseitig in `getAccessForStay` (ADR 0018, Phase C). Weil der Zugangszustand „Willkommen!“ am echten Access-Ergebnis hängt, verschwindet er automatisch, sobald das Gate greift.
 
+### Feinschliff „leichter, großzügiger“ (Phase 11.5)
+
+- **Begrüßung:**
+  - `display` 34 / 42 (≈ +13 %), Desktop 48.
+  - `display-compact` 27 / 33 (vor Anreise, Desktop 42). Die zweite Zeile ist ein eigener ausgeglichener Block („schön, dass Du / bald bei uns bist.“).
+  - Der Untertitel „Wir wünschen Dir einen wunderbaren Aufenthalt.“ steht wieder in jeder Phase. `lead` ist jetzt 16 / 22, Light.
+- **Kacheln:**
+  - Kennzahlen `figure` in Schnitt 250.
+  - `statement` 19 / 23, Light, ausgeglichen umbrochen („Check-in / geschafft.“).
+- **Bildkarten:**
+  - Neue Rolle `type-title-photo` (21 / 25, Light 300). `type-title` bleibt für Listen und Formulare unverändert.
+  - Untertitel `small` 14 / 20, Regular.
+  - Innenabstand 20 px (unten 18 px).
+  - Seitenverhältnis 2 : 1 (erste Karte, vorher 2,2 : 1) bzw. 2,4 : 1 (vorher 2,75 : 1).
+  - Verlauf nur im unteren Teil (bis 58 %).
+  - Pfeil-Button 36 px, leicht transparent.
+- **Navigation:** `nav` Light 300, Laufweite +0,08 em; STAY-Kreis 60 px (vorher 64 px).
+- **Header** unverändert (UP-Monogramm folgt, sobald das Logo als SVG vorliegt).
+
 ## 22. Offene Punkte (C)
 
 | Nr. | Thema                                                                                                            | Befund                                                                                                                                                                                                                          | Vorschlag                                                                                                                                                            |

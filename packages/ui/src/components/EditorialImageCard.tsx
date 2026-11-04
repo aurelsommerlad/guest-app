@@ -62,19 +62,19 @@ export function EditorialImageCard({
       </div>
       <div aria-hidden className="overlay-image absolute inset-0 -z-10" />
       {/* min-h keeps two-line titles comfortable on compact phones. */}
-      <div className="col-start-1 row-start-1 flex min-h-32 items-end justify-between gap-4 px-4 pt-4 pb-3">
+      <div className="col-start-1 row-start-1 flex min-h-32 items-end justify-between gap-4 px-5 pt-5 pb-4.5">
         <div className="min-w-0">
           {eyebrow && <p className="type-eyebrow pb-1 text-text-inverse">{eyebrow}</p>}
-          <Heading className="type-title text-text-inverse">{title}</Heading>
+          <Heading className="type-title-photo text-text-inverse">{title}</Heading>
           {subtitle && (
-            <p className="type-caption max-w-54 text-balance text-text-inverse">{subtitle}</p>
+            <p className="type-small mt-1 max-w-56 text-balance text-text-inverse">{subtitle}</p>
           )}
         </div>
         <span
           aria-hidden
-          className="mb-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-text transition-colors duration-150 group-hover:bg-background"
+          className="mb-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-raised/85 text-text transition-colors duration-150 group-hover:bg-surface-raised"
         >
-          <Icon name="arrow-right" size="md" />
+          <Icon name="arrow-right" size="sm" />
         </span>
       </div>
     </Link>

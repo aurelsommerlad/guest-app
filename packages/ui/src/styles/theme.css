@@ -67,8 +67,8 @@
   --aspect-square: 1 / 1;
   --aspect-landscape: 4 / 3;
   --aspect-portrait: 4 / 5;
-  --aspect-photo-feature: 11 / 5; /* first photo card, ~2.2 : 1 */
-  --aspect-photo: 11 / 4; /* following photo cards, ~2.75 : 1 */
+  --aspect-photo-feature: 2 / 1; /* first photo card – Phase 11.5: a little taller than 2.2 : 1 */
+  --aspect-photo: 12 / 5; /* following photo cards, 2.4 : 1 (was 2.75 : 1) */
   --aspect-hero: 3 / 2; /* hero image on guide detail pages (secondary reference) */
 
   /* Radii */
@@ -96,21 +96,21 @@
 /* Greeting / page hero ("Hallo Laura, schön, dass Du da bist.") */
 @utility type-display {
   font-family: var(--up-font-heading);
-  font-size: 1.875rem; /* 30px – reference greeting, measured at 390pt */
-  font-weight: 300; /* Light: the reference's airy, young tone */
-  line-height: 1.2; /* 36px */
-  letter-spacing: -0.005em;
+  font-size: 2.125rem; /* 34px – Phase 11.5: ~13 % larger than the measured 30px, more presence */
+  font-weight: 300;
+  line-height: 1.24; /* 42px – generous, editorial */
+  letter-spacing: -0.01em;
 
   /* Compact phones (< 360px): keeps the greeting's line breaks intact */
   @media (width < 22.5rem) {
-    font-size: 1.625rem; /* 26px */
+    font-size: 1.8125rem; /* 29px */
   }
 
   /* Desktop: editorial scale-up (derived – the reference defines mobile only) */
   @media (width >= 64rem) {
-    font-size: 2.75rem; /* 44px */
-    line-height: 1.12;
-    letter-spacing: -0.01em;
+    font-size: 3rem; /* 48px */
+    line-height: 1.14;
+    letter-spacing: -0.015em;
   }
 }
 
@@ -118,19 +118,20 @@
    reference sets it smaller than the in-stay greeting so it keeps two lines */
 @utility type-display-compact {
   font-family: var(--up-font-heading);
-  font-size: 1.5rem; /* 24px – keeps "… bald bei uns bist." on one line at 390pt */
+  font-size: 1.6875rem; /* 27px – longer greeting before arrival, balanced over three lines */
   font-weight: 300;
-  line-height: 1.22;
-  letter-spacing: -0.005em;
+  line-height: 1.24;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 
   @media (width < 22.5rem) {
-    font-size: 1.3125rem; /* 21px */
+    font-size: 1.5rem; /* 24px */
   }
 
   @media (width >= 64rem) {
-    font-size: 2.375rem; /* 38px */
+    font-size: 2.625rem; /* 42px */
     line-height: 1.14;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
   }
 }
 
@@ -152,21 +153,31 @@
 @utility type-title {
   font-family: var(--up-font-heading);
   font-size: 1.09375rem; /* 17.5px */
-  font-weight: 400; /* Regular: light enough, still steady on photography */
+  font-weight: 400;
   line-height: 1.25;
   letter-spacing: 0;
+}
+
+/* Titles on the large photo cards (STAY) – Phase 11.5: larger and finer than type-title */
+@utility type-title-photo {
+  font-family: var(--up-font-heading);
+  font-size: 1.3125rem; /* 21px */
+  font-weight: 300; /* Light – the bottom gradient keeps it legible */
+  line-height: 1.2;
+  letter-spacing: -0.005em;
 }
 
 /* Short statements in tiles ("Fast geschafft.", "12.–14. Jan.") – fits a half-width tile */
 @utility type-statement {
   font-family: var(--up-font-heading);
-  font-size: 1.3125rem; /* 21px */
+  font-size: 1.1875rem; /* 19px */
   font-weight: 300;
-  line-height: 1.15;
+  line-height: 1.22;
   letter-spacing: -0.005em;
+  text-wrap: balance; /* "Check-in / geschafft." instead of a lone last word */
 
   @media (width < 22.5rem) {
-    font-size: 1.1875rem; /* 19px */
+    font-size: 1.0625rem; /* 17px */
   }
 }
 
@@ -174,7 +185,7 @@
 @utility type-figure {
   font-family: var(--up-font-heading);
   font-size: 2rem; /* 32px */
-  font-weight: 300;
+  font-weight: 250; /* between Thin and Light: airy figures as in the reference */
   line-height: 1;
   letter-spacing: -0.01em;
   font-variant-numeric: lining-nums;
@@ -213,9 +224,9 @@
 @utility type-nav {
   font-family: var(--up-font-heading);
   font-size: 0.6875rem; /* 11px */
-  font-weight: 400;
+  font-weight: 300; /* fine, as in the reference */
   line-height: 1.2;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -223,7 +234,7 @@
 @utility type-nav-compact {
   font-family: var(--up-font-heading);
   font-size: 0.625rem; /* 10px */
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1.2;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -232,9 +243,9 @@
 /* Sub-line under the greeting ("Wir wünschen Dir einen wunderbaren Aufenthalt.") */
 @utility type-lead {
   font-family: var(--up-font-body);
-  font-size: 0.9375rem; /* 15px */
-  font-weight: 300; /* Light, as in the reference – muted colour keeps it quiet */
-  line-height: 1.35;
+  font-size: 1rem; /* 16px – grows with the larger greeting */
+  font-weight: 300;
+  line-height: 1.4;
   letter-spacing: 0;
 }
 

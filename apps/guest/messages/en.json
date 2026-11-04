@@ -58,8 +58,8 @@
       "previewDate": "You will find your access details here on your arrival day, {date}.",
       "codeHint": "For your security, the code is only shown when you ask for it."
     },
-    "greetingUpcoming": "Hello {firstName},<br></br>so glad you're coming.",
-    "greetingUpcomingWithoutName": "Hello,<br></br>so glad you're coming.",
+    "greetingUpcoming": "Hello {firstName},<line>so glad you're coming.</line>",
+    "greetingUpcomingWithoutName": "Hello,<line>so glad you're coming.</line>",
     "summary": {
       "label": "Your reservation",
       "travellers": "{adults, plural, one {# adult} other {# adults}}{children, plural, =0 {} one {, # child} other {, # children}}",

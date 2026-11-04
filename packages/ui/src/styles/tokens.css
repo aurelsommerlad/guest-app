@@ -78,9 +78,9 @@
   /* Legibility gradient for text on photography (bottom-up darkening). */
   --up-overlay-image: linear-gradient(
     to top,
-    color-mix(in srgb, var(--up-base-ink) 55%, transparent) 0%,
-    color-mix(in srgb, var(--up-base-ink) 22%, transparent) 45%,
-    transparent 72%
+    color-mix(in srgb, var(--up-base-ink) 50%, transparent) 0%,
+    color-mix(in srgb, var(--up-base-ink) 18%, transparent) 32%,
+    transparent 58%
   );
 
   /* ── Typography ─────────────────────────────────────────────── */
@@ -120,5 +120,5 @@
   --up-width-wide: 1280px; /* lab, wide grids */
   --up-touch-target: 44px;
   --up-nav-height: 72px; /* bottom navigation, excluding the safe-area inset */
-  --up-nav-active-size: 64px; /* circular active navigation item */
+  --up-nav-active-size: 60px; /* circular active navigation item (Phase 11.5: was 64px) */
 }

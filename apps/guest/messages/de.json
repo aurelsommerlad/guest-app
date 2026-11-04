@@ -58,8 +58,8 @@
       "previewDate": "Deine Zugangsinformationen findest Du am Anreisetag, {date}, hier.",
       "codeHint": "Aus Sicherheitsgründen wird der Code erst auf Deinen Wunsch angezeigt."
     },
-    "greetingUpcoming": "Hallo {firstName},<br></br>schön, dass Du bald bei uns bist.",
-    "greetingUpcomingWithoutName": "Hallo,<br></br>schön, dass Du bald bei uns bist.",
+    "greetingUpcoming": "Hallo {firstName},<line>schön, dass Du bald bei uns bist.</line>",
+    "greetingUpcomingWithoutName": "Hallo,<line>schön, dass Du bald bei uns bist.</line>",
     "summary": {
       "label": "Deine Reservierung",
       "travellers": "{adults, plural, one {# Erwachsener} other {# Erwachsene}}{children, plural, =0 {} one {, # Kind} other {, # Kinder}}",
