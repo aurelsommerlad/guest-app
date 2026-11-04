@@ -8,8 +8,11 @@ import { type LinkComponent } from "./link";
 const tones = {
   /** Warm linen tile (e.g. check-out). */
   card: { surface: "bg-surface text-text", meta: "text-text-muted" },
-  /** Characteristic sage tile (e.g. apartment, online check-in). */
-  accent: { surface: "bg-surface-accent text-on-accent", meta: "text-on-accent" },
+  /**
+   * Characteristic sage tile (e.g. apartment, online check-in) – light text as in the STAY
+   * reference (chalk on sage ≈ 2.8:1: decided by design, Phase 11.4; see design-system.md).
+   */
+  accent: { surface: "bg-surface-accent text-text-inverse", meta: "text-text-inverse" },
 } as const;
 
 const valueStyles = {

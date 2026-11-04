@@ -27,7 +27,7 @@ function Progress({ steps }: { steps: readonly { done: boolean }[] }) {
       {steps.map((step, index) => (
         <span
           key={index}
-          className={"h-1 flex-1 rounded-full " + (step.done ? "bg-on-accent" : "bg-on-accent/20")}
+          className={"h-1 flex-1 rounded-full " + (step.done ? "bg-text-inverse" : "bg-text-inverse/30")}
         />
       ))}
     </span>

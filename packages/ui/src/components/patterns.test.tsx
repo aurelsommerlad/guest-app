@@ -35,13 +35,13 @@ describe("InfoTile", () => {
     expect(markup).toContain("type-figure");
   });
 
-  it("uses on-accent text on the sage tone", () => {
+  it("uses light text on the sage tile, as in the reference", () => {
     const markup = renderToStaticMarkup(
       <dl>
         <InfoTile icon="home" label="Apartment" value="ROS" tone="accent" />
       </dl>,
     );
-    expect(markup).toContain("bg-surface-accent text-on-accent");
+    expect(markup).toContain("bg-surface-accent text-text-inverse");
   });
 
   it("supports short text values", () => {

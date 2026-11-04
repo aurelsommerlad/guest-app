@@ -430,9 +430,7 @@ Verbindliche Referenz ist wieder die ursprüngliche iPhone-Visualisierung: Begr�
   - Gegenüber `#87977E`: heller, weniger Buntheit, Farbton vom Grün (99°) zum Oliv-Grau der Referenz (~91°).
   - Gemessen ist die Referenzfläche im Mockup absolut sogar etwas dunkler (`#7B876F`), weil das ganze Mockup dunkler gerendert ist (Hintergrund `#F2EDE3` statt `#F8F6F1`). Übernommen wurde deshalb der gedeckte Farbton, nicht der absolute Wert.
 - `--up-base-sage` (Marke, Status, Fortschritt) bleibt unverändert.
-- **Schrift auf Salbei** bleibt Ink:
-  - Ink erreicht 6,1 : 1 (WCAG AA für alle Größen).
-  - Weiß wie im Mockup erreicht nur 2,8 : 1 und fällt selbst für große Schrift durch.
+- **Schrift auf der Salbei-Kachel** ist hell (`text-inverse`), wie in der Referenz – Entscheidung der Gestaltung (Phase 11.4). Kontrast ≈ 2,8 : 1, also unter WCAG AA (4,5 : 1 für normale, 3 : 1 für große Schrift). Ein etwas dunklerer Ton `#84907A` würde 3,2 : 1 erreichen (AA für große Schrift). Andere Salbeiflächen (z. B. Admin) behalten `on-accent` = Ink.
 
 **Rechte Kachel – Zustände.** Die Reihenfolge ist zugleich die Priorität. Grundlage ist ausschließlich der echte Datenstand.
 
