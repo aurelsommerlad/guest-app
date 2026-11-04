@@ -6,6 +6,7 @@ import { serverEnv } from "../../env/server";
 import { redirect } from "../../i18n/navigation";
 import { type Locale } from "../../i18n/routing";
 import { loginPms } from "../../server/pms";
+import { accessWindowPolicyFor } from "./access-window-policy";
 import { loginWithBookingReference, type LoginOutcome } from "./guest-access-service";
 import { clientAddressFrom } from "./rate-limit";
 import { getGuestAccessDeps, guestSessionCookie } from "./server";
@@ -41,7 +42,11 @@ export async function loginAction(
   const deps = getGuestAccessDeps();
   const outcome: LoginOutcome = deps
     ? await loginWithBookingReference(
-        { ...deps, pms: loginPms() },
+        {
+          ...deps,
+          pms: loginPms(),
+          accessWindowPolicyFor: (property) => accessWindowPolicyFor(serverEnv.APP_ENV, property),
+        },
         {
           tenantSlug: serverEnv.GUEST_TENANT_SLUG,
           bookingReference,

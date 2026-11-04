@@ -130,4 +130,23 @@ describe("prefill from the reservation", () => {
     );
     expect(guest?.data).toEqual({ firstName: "Laura", lastName: "Muster" });
   });
+
+  it("reads a national number in the property's country when the guest's is unknown", () => {
+    const [guest] = prefillGuests(
+      config,
+      { guests: [{ firstName: "Aurel", lastName: "Sommerlad", phone: "015201234567" }] },
+      1,
+      today,
+    );
+    expect(guest?.data.phone).toBe("+4915201234567");
+    expect(guest?.prefilledFields).toContain("phone");
+    // The guest's own country still wins over the property's.
+    const [austrian] = prefillGuests(
+      config,
+      { guests: [{ firstName: "Tom", lastName: "Muster", phone: "0664 1234567", country: "AT" }] },
+      1,
+      today,
+    );
+    expect(austrian?.data.phone).toBe("+436641234567");
+  });
 });

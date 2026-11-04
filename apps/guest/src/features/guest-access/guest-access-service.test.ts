@@ -9,6 +9,7 @@ import {
   createGuestAccess,
   type Database,
   findGuestAccessForReservation,
+  previewFixturesSeed,
   revokeGuestAccessForReservation,
   seedTenant,
   uniquePlacesSeed,
@@ -24,6 +25,7 @@ import {
   resolveGuestSession,
   SESSION_MAX_AGE_MS,
 } from "./guest-access-service";
+import { accessWindowPolicyFor, TEST_PROPERTY_ACCESS_WINDOW } from "./access-window-policy";
 import { LOGIN_RATE_LIMIT } from "./rate-limit";
 
 const NOW = new Date("2026-08-29T10:00:00Z");
@@ -41,6 +43,7 @@ const reservation: PmsReservation = {
   primaryGuest: { firstName: "Laura" },
 };
 const LAST_NAME = "Müller";
+const NOT_FOUND = { ok: false, reason: "not-found" };
 
 let test: TestDatabase;
 let db: Database;
@@ -398,5 +401,97 @@ describe("booking number + last name", () => {
   it("supports the Apaleo reservation id only – no guessing for other numbers", async () => {
     // The mock knows only reservation ids; an OTA-style number is simply not found.
     expect(await login("4711223344", LAST_NAME)).toEqual({ ok: false, reason: "not-found" });
+  });
+
+  describe("access window per property", () => {
+    // Arrival in about four months: outside the default window (30 days before arrival).
+    const testStay: PmsReservation = {
+      provider: "apaleo",
+      externalId: "JTKQSYFX-1",
+      status: "confirmed",
+      arrivalAt: "2027-01-12T16:00:00+01:00",
+      departureAt: "2027-01-14T10:00:00+01:00",
+      externalPropertyId: "TEST",
+      externalUnitId: "TEST-ZHF",
+      primaryGuest: { firstName: "Aurel" },
+    };
+    const hovStay: PmsReservation = {
+      ...testStay,
+      externalId: "EARLYHOV-1",
+      externalPropertyId: "ALTUS",
+      externalUnitId: "ALTUS-SWA",
+    };
+
+    function loginAt(
+      appEnv: "local" | "staging" | "production",
+      bookingReference: string,
+      reservations: PmsReservation[],
+    ) {
+      return loginWithBookingReference(
+        {
+          ...deps,
+          pms: pms(reservations, "Sommerlad"),
+          accessWindowPolicyFor: (property) => accessWindowPolicyFor(appEnv, property),
+        },
+        {
+          tenantSlug: "unique-places",
+          bookingReference,
+          lastName: "Sommerlad",
+          clientAddress: "203.0.113.9",
+        },
+      );
+    }
+
+    beforeEach(async () => {
+      await seedTenant(db, previewFixturesSeed);
+    });
+
+    it("opens a test property's reservation early outside production", async () => {
+      const outcome = await loginAt("staging", "JTKQSYFX-1", [testStay]);
+      expect(outcome.ok).toBe(true);
+      const [access] = await findGuestAccessForReservation(db, uniquePlaces, {
+        provider: "apaleo",
+        externalReservationId: "JTKQSYFX-1",
+      });
+      expect(access).toMatchObject({ propertyId: "test-run", unitId: "test-ap-1" });
+      expect(access?.validFrom).toEqual(
+        computeAccessWindow(testStay, TEST_PROPERTY_ACCESS_WINDOW).validFrom,
+      );
+      // Closes as for every guest: 3 days after departure.
+      expect(access?.validUntil).toEqual(computeAccessWindow(testStay).validUntil);
+    });
+
+    it("keeps the default window for real properties and in production", async () => {
+      expect(await loginAt("staging", "EARLYHOV-1", [hovStay])).toEqual(NOT_FOUND);
+      expect(await loginAt("production", "JTKQSYFX-1", [testStay])).toEqual(NOT_FOUND);
+      // Without a policy (e.g. the CLI or older wiring) the default applies, too.
+      expect(await login("JTKQSYFX-1", LAST_NAME, { reservations: [testStay] })).toEqual(NOT_FOUND);
+      expect(
+        await findGuestAccessForReservation(db, uniquePlaces, {
+          provider: "apaleo",
+          externalReservationId: "JTKQSYFX-1",
+        }),
+      ).toEqual([]);
+    });
+
+    it("still requires the matching last name and an active reservation", async () => {
+      const canceled = { ...testStay, status: "canceled" as const };
+      expect(
+        await loginWithBookingReference(
+          {
+            ...deps,
+            pms: pms([testStay], "Sommerlad"),
+            accessWindowPolicyFor: () => TEST_PROPERTY_ACCESS_WINDOW,
+          },
+          {
+            tenantSlug: "unique-places",
+            bookingReference: "JTKQSYFX-1",
+            lastName: "Muster",
+            clientAddress: "203.0.113.9",
+          },
+        ),
+      ).toEqual(NOT_FOUND);
+      expect(await loginAt("staging", "JTKQSYFX-1", [canceled])).toEqual(NOT_FOUND);
+    });
   });
 });

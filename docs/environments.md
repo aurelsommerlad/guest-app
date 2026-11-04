@@ -91,6 +91,8 @@ pnpm guest-access:revoke --target local --tenant unique-places --provider mock -
 
 Auf Staging mit einer Apaleo-Testreservierung: `--provider apaleo --reservation <id> --base-url https://staging.stay.unique-places.com`, dazu `APALEO_CLIENT_ID` und `APALEO_CLIENT_SECRET` in der Shell.
 
+**Testreservierungen aus dem Apaleo-Objekt `TEST` per Login (Staging/Preview):** Reservierungsnummer (z. B. `JTKQSYFX-1`) + Nachname, wie bei echten Gästen. Für `TEST` öffnet der Login außerhalb von Production bis zu 365 Tage vor Anreise (ADR 0011). Voraussetzungen in der Staging-Datenbank und die Reihenfolge der SQL-Skripte: [`docs/staging/README.md`](staging/README.md).
+
 ## Admin App und GUIDE-Medien (Phase 9)
 
 Die Admin App (`apps/admin`, [ADR 0014](adr/0014-admin-app-and-auth.md)) ist ein eigenes Vercel-Projekt und nutzt pro Environment dieselbe Datenbank wie die Guest App.

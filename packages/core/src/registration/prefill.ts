@@ -55,9 +55,9 @@ export function prefillGuests(
     const email = usableContactEmail(source.email);
     if (email) raw["email"] = email;
     else delete raw["email"];
-    // National numbers are read in the guest's own country if the PMS knows it.
-    const hint = source.country ?? source.nationality;
-    if (hint) raw["phoneCountry"] = hint;
+    // National numbers ("0170 …") are read in the guest's own country if the PMS knows it,
+    // otherwise in the property's country. The guest sees the dial code and can correct it.
+    raw["phoneCountry"] = source.country ?? source.nationality ?? config.country;
     const { data } = normalizeGuestInput(raw, fieldsForRole(config, role), today);
     const fields = Object.keys(data) as RegistrationField[];
     if (fields.length === 0) continue;

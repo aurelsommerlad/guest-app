@@ -55,6 +55,7 @@ Link /{locale}/s/{token}                 Login /{locale}/login (Buchungsnummer +
 ### Gültigkeit
 
 - `computeAccessWindow()` in `@up/core`, mit Defaults `opensDaysBeforeArrival: 30` und `closesDaysAfterDeparture: 3`. Die Policy-Struktur erlaubt später Werte pro Tenant oder Property.
+- **Testobjekte (Nachtrag):** Für Objekte, die in der Registry als `testOnly` markiert sind (heute nur `test-run` = Apaleo `TEST`), öffnet der Login den Zugang außerhalb von Production bis zu 365 Tage vor Anreise (`TEST_PROPERTY_ACCESS_WINDOW`, `apps/guest/src/features/guest-access/access-window-policy.ts`). Alles andere bleibt gleich: Nachname, Status, Tenant-Mapping, Widerruf, Schließen 3 Tage nach Abreise. Echte Objekte und Production nutzen immer den Default; die Production-App löst Testobjekte ohnehin nie auf.
 - `evaluateAccess()` liefert `valid | not-yet-valid | expired | revoked`. Ein Widerruf hat Vorrang. `valid_from` zählt inklusiv, `valid_until` exklusiv.
 - Unbekannte Tokens und Inkonsistenzen sind ebenfalls ungültig:
   - Die Reservierung passt nicht mehr zu Property oder Tenant.
@@ -86,6 +87,7 @@ Link /{locale}/s/{token}                 Login /{locale}/login (Buchungsnummer +
 
 ### Buchungsnummer + Nachname
 
+- **Welche Nummer:** die Apaleo-**Reservierungsnummer** (`JTKQSYFX-1`), nicht die Buchungsnummer (`JTKQSYFX`, ohne `-n`). Eine Buchung kann mehrere Reservierungen (Apartments) haben; die Buchungsnummer allein ergibt daher keine eindeutige Reservierung und wird heute als „nicht gefunden“ beantwortet.
 - **Normalisierung der Buchungsnummer:** trimmen, innere Leerzeichen entfernen, Großbuchstaben, Muster `^[A-Z0-9][A-Z0-9-]{2,39}$`. Andere Eingaben erreichen das PMS nie.
 - **Nachname:**
   - Normalisierung: NFC, trimmen, innere Leerzeichen zusammenfassen, Kleinbuchstaben.

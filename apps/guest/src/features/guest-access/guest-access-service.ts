@@ -8,6 +8,7 @@
  * Never logged: link tokens, session secrets, booking numbers, last names.
  */
 import {
+  type AccessWindowPolicy,
   computeAccessWindow,
   evaluateAccess,
   generateSecret,
@@ -160,6 +161,11 @@ const NOT_FOUND = { ok: false, reason: "not-found" } as const;
 export async function loginWithBookingReference(
   deps: GuestAccessDeps & {
     pms: { provider: ReservationProvider; pms: PmsProvider } | undefined;
+    /** Access window of a property; undefined → default policy (test properties only). */
+    accessWindowPolicyFor?: (property: {
+      tenantId: string;
+      propertyId: string;
+    }) => AccessWindowPolicy | undefined;
   },
   input: LoginInput,
   previousSessionSecret?: string,
@@ -235,7 +241,10 @@ export async function loginWithBookingReference(
     if (!access) {
       // A revoked access blocks the reservation – the login must not reopen it.
       if (existing.some((candidate) => candidate.revokedAt)) return reject("revoked");
-      const window = computeAccessWindow(reservation);
+      const window = computeAccessWindow(
+        reservation,
+        deps.accessWindowPolicyFor?.({ tenantId: tenant.id, propertyId }),
+      );
       if (evaluateAccess(window, now) !== "valid") return reject("outside-window");
       // Same kind of record as a link access; its token is never handed out.
       access = await createGuestAccess(deps.db, context, {
