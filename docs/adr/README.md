@@ -21,5 +21,6 @@ Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue
 | 0015 | [EXPLORE-Content-Management](0015-explore-content-management.md)                                    | Akzeptiert |
 | 0016 | [Guest Journey, Online-Check-in und Registrierungs-Sync](0016-guest-journey-and-online-check-in.md) | Akzeptiert |
 | 0017 | [Provider-neutraler Zugang (Access)](0017-provider-neutral-access.md)                               | Akzeptiert |
+| 0018 | [Zahlungsübersicht und zahlungsabhängige Zugangsfreigabe](0018-payments-and-access-gating.md)       | Vorschlag  |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.
