@@ -1,0 +1,79 @@
+name: Database · Staging
+
+# Applies pending Drizzle migrations to the Supabase STAGING database – never production.
+# Runs automatically when a push changes migrations (on the branches below) and manually
+# via "Run workflow" (optionally also setting up the Apaleo test property TEST).
+#
+# Setup (once, GitHub → Settings → Environments → "staging"):
+#   secret   STAGING_DATABASE_URL         Supabase Session Pooler URI (port 5432) of the staging project
+#   variable STAGING_SUPABASE_PROJECT_REF staging project ref (Project Settings → General)
+# The CLI refuses to run unless the URL belongs to exactly that project. Restrict
+# "Deployment branches" of the environment to the branches that may migrate staging.
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_property:
+        description: "Apaleo-Testobjekt TEST + Online-Check-in einrichten (nur einfügend, Skripte N und M)"
+        type: boolean
+        default: false
+  push:
+    branches: [staging, "claude/**"]
+    paths:
+      - "packages/db/drizzle/**"
+      - ".github/workflows/db-staging.yml"
+
+# One migration run at a time; never cancel a run that may be inside a migration.
+concurrency:
+  group: db-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    name: Migrate staging database
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    env:
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      EXPECTED_PROJECT: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+    steps:
+      - name: Check configuration
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$EXPECTED_PROJECT" ]; then
+            echo "::error::Environment 'staging' needs secret STAGING_DATABASE_URL and variable STAGING_SUPABASE_PROJECT_REF (see header of this workflow)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Migrations apply cleanly to an empty database
+        # PGlite in-memory: every migration of this commit, from scratch, plus the schema tests.
+        run: pnpm --filter @up/db test
+
+      - name: Status before (read-only)
+        # Exit code 2 = migrations pending – expected here.
+        run: pnpm -s db:status --target staging --expect-project "$EXPECTED_PROJECT" || [ $? -eq 2 ]
+
+      - name: Apply pending migrations
+        run: pnpm -s db:migrate --target staging --expect-project "$EXPECTED_PROJECT"
+
+      - name: Apaleo test property TEST + online check-in (insert-only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_property }}
+        run: pnpm -s db:test-property --target staging --expect-project "$EXPECTED_PROJECT"
+
+      - name: Status after (read-only, fails if anything is pending)
+        run: pnpm -s db:status --target staging --expect-project "$EXPECTED_PROJECT"

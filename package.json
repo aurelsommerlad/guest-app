@@ -1,7 +1,7 @@
 {
   "name": "unique-places-guest-app",
   "private": true,
-  "description": "UNIQUE PLACES Guest App \u2013 Guest Experience Platform (Monorepo)",
+  "description": "UNIQUE PLACES Guest App – Guest Experience Platform (Monorepo)",
   "packageManager": "pnpm@10.28.0",
   "engines": {
     "node": ">=22.12.0",
@@ -22,7 +22,9 @@
     "db:seed": "pnpm --filter @up/db db:seed",
     "guest-access:create": "pnpm --filter @up/guest guest-access:create",
     "guest-access:revoke": "pnpm --filter @up/guest guest-access:revoke",
-    "admin-user:create": "pnpm --filter @up/admin admin-user:create"
+    "admin-user:create": "pnpm --filter @up/admin admin-user:create",
+    "db:status": "pnpm --filter @up/db db:status",
+    "db:test-property": "pnpm --filter @up/db db:test-property"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

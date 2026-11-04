@@ -63,7 +63,7 @@ Details zu Schema, Isolation und RLS: [ADR 0010](adr/0010-database-foundation.md
 3. Unter Database → Settings → SSL Configuration „Enforce SSL“ aktivieren.
 4. Über **Connect** zwei Connection Strings kopieren:
    - Transaction Pooler (Port 6543) → Vercel `DATABASE_URL`
-   - Session Pooler (Port 5432) → nur für `pnpm db:migrate` und `pnpm db:seed`
+   - Session Pooler (Port 5432) → nur für `pnpm db:migrate` und `pnpm db:seed`; für Staging als GitHub-Secret `STAGING_DATABASE_URL` im Environment `staging` (Workflow `Database · Staging`, siehe `packages/db/README.md`)
 
 ## Gastzugang (Phase 7)
 
@@ -90,6 +90,8 @@ pnpm guest-access:revoke --target local --tenant unique-places --provider mock -
 ```
 
 Auf Staging mit einer Apaleo-Testreservierung: `--provider apaleo --reservation <id> --base-url https://staging.stay.unique-places.com`, dazu `APALEO_CLIENT_ID` und `APALEO_CLIENT_SECRET` in der Shell.
+
+**Welche Datenbank nutzt ein Deployment?** `GET /api/health` zeigt `database.status`, `database.project` (Fingerprint, 8 Zeichen) und `database.migrations` (Anzahl). Staging-Projekt `unique-places-guest-staging`: Fingerprint `2aea375d`. `pnpm db:status` und der Workflow zeigen denselben Fingerprint.
 
 **Testreservierungen aus dem Apaleo-Objekt `TEST` per Login (Staging/Preview):** Reservierungsnummer (z. B. `JTKQSYFX-1`) + Nachname, wie bei echten Gästen. Für `TEST` öffnet der Login außerhalb von Production bis zu 365 Tage vor Anreise (ADR 0011). Voraussetzungen in der Staging-Datenbank und die Reihenfolge der SQL-Skripte: [`docs/staging/README.md`](staging/README.md).
 

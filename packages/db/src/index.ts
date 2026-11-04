@@ -69,6 +69,7 @@ export {
   recordAdminLogin,
   revokeAdminSession,
 } from "./repositories/admin-repository";
+export { countAppliedMigrations } from "./health";
 export {
   assertTarget as assertDatabaseTarget,
   CliUsageError,
@@ -76,6 +77,7 @@ export {
   DB_TARGETS,
   type DbTarget,
   parseCliOptions as parseDatabaseCliOptions,
+  projectFingerprint,
 } from "./cli/target-guard";
 export {
   type ExternalReference,

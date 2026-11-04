@@ -14,7 +14,9 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/cli/db.ts migrate",
-    "db:seed": "tsx src/cli/db.ts seed"
+    "db:seed": "tsx src/cli/db.ts seed",
+    "db:status": "tsx src/cli/db.ts status",
+    "db:test-property": "tsx src/cli/db.ts test-property"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

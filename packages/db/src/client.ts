@@ -12,7 +12,23 @@ export type DatabaseTarget = {
   port: string;
   database: string;
   isLocal: boolean;
+  /**
+   * Supabase project ref (20 lowercase letters/digits) – from the pooler user
+   * `postgres.<ref>` or the direct host `db.<ref>.supabase.co`. Not a secret: it
+   * identifies the project, so the CLI can check it before changing anything.
+   */
+  projectRef?: string;
 };
+
+const PROJECT_REF = /^[a-z0-9]{20}$/;
+
+function supabaseProjectRef(parsed: URL): string | undefined {
+  const user = decodeURIComponent(parsed.username);
+  const fromUser = user.startsWith("postgres.") ? user.slice("postgres.".length) : undefined;
+  if (fromUser && PROJECT_REF.test(fromUser)) return fromUser;
+  const fromHost = /^db\.([a-z0-9]{20})\.supabase\.co$/.exec(parsed.hostname)?.[1];
+  return fromHost;
+}
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
@@ -30,11 +46,13 @@ export function describeDatabaseUrl(url: string): DatabaseTarget {
   if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
     throw new Error("DATABASE_URL must use the postgres:// or postgresql:// scheme");
   }
+  const projectRef = supabaseProjectRef(parsed);
   return {
     host: parsed.hostname,
     port: parsed.port || "5432",
     database: parsed.pathname.replace(/^\//, "") || "postgres",
     isLocal: LOCAL_HOSTS.has(parsed.hostname),
+    ...(projectRef ? { projectRef } : {}),
   };
 }
 

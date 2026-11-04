@@ -1,5 +1,11 @@
 # SQL-Skripte für Supabase Staging
 
+> **Regelfall: nicht mehr manuell.** Migrationen laufen über den GitHub-Workflow
+> `Database · Staging` (`.github/workflows/db-staging.yml`); das Testobjekt richtet
+> derselbe Workflow mit der Option „Apaleo-Testobjekt TEST einrichten“ ein
+> (`pnpm db:test-property`, führt N und M aus). Die Skripte hier bleiben als geprüftes
+> Notfall-Werkzeug für den Supabase SQL Editor.
+
 Für den Supabase SQL Editor des **Staging**-Projekts – nie Production. Keine Secrets, keine
 Gästedaten. Alle Skripte prüfen ihre Voraussetzungen, laufen in einer Transaktion und
 überschreiben nichts; ein zweiter Lauf ist unschädlich (L ändert nie etwas).

@@ -1,8 +1,14 @@
 /**
  * Explicit database CLI – never run automatically on app start or deploy.
  *
+ *   DATABASE_URL=… pnpm db:status  --target local|staging|production [--expect-project <ref>]
  *   DATABASE_URL=… pnpm db:migrate --target local|staging|production [--confirm-production]
  *   DATABASE_URL=… pnpm db:seed    --target local|staging|production [--confirm-production]
+ *   DATABASE_URL=… pnpm db:test-property --target local|staging    (Apaleo TEST + check-in
+ *                                  configuration, insert-only SQL from docs/staging; never production)
+ *
+ * staging/production additionally require --expect-project <Supabase project ref>: the
+ * command refuses to run unless DATABASE_URL points to exactly that project.
  *                                  [--with-preview-fixtures]   (never in production)
  *                                  [--with-guide-fixtures]     (local only)
  *                                  [--with-explore-fixtures]   (local only)
@@ -13,9 +19,14 @@
  * so the operator always decides which database is used.
  */
 /* eslint-disable no-console -- CLI output */
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
 
 import { createDatabase, describeDatabaseUrl } from "../client";
+import { type MigrationStatus, readMigrationStatus } from "../migration-status";
 import { MIGRATIONS_FOLDER } from "../migrations-folder";
 import { seedExploreFixtures } from "../seed/explore-fixtures";
 import { seedGuideFixtures } from "../seed/guide-fixtures";
@@ -23,9 +34,23 @@ import { seedJourneyFixtures } from "../seed/journey-fixtures";
 import { previewFixturesSeed } from "../seed/preview-fixtures";
 import { seedTenant } from "../seed/seed-tenant";
 import { uniquePlacesSeed } from "../seed/unique-places";
-import { assertTarget, CliUsageError, parseCliOptions } from "./target-guard";
+import { assertTarget, CliUsageError, parseCliOptions, projectFingerprint } from "./target-guard";
 
-const COMMANDS = ["migrate", "seed"] as const;
+const COMMANDS = ["status", "migrate", "seed", "test-property"] as const;
+
+/** Insert-only setup of the Apaleo test property, in this order (docs/staging/README.md). */
+const TEST_PROPERTY_SCRIPTS = ["N-testobjekt-zuordnung.sql", "M-checkin-config-test.sql"];
+const STAGING_SQL_FOLDER = join(MIGRATIONS_FOLDER, "..", "..", "..", "docs", "staging");
+
+function printStatus(label: string, status: MigrationStatus): void {
+  console.log(
+    `${label}: ${String(status.applied)} applied, ${String(status.expected)} in this code base, ` +
+      `pending: ${status.pending.length > 0 ? status.pending.join(", ") : "none"}` +
+      (status.unknownApplied > 0
+        ? ` – ${String(status.unknownApplied)} applied migration(s) unknown to this branch`
+        : ""),
+  );
+}
 
 async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
@@ -52,20 +77,50 @@ async function main(): Promise<void> {
   if (withJourneyFixtures && options.target !== "local") {
     throw new CliUsageError("--with-journey-fixtures is only allowed with --target local");
   }
+  if (command === "test-property" && options.target === "production") {
+    throw new CliUsageError("test-property is not allowed in production");
+  }
   const url = process.env["DATABASE_URL"];
   if (!url) throw new CliUsageError("DATABASE_URL is not set");
   const target = describeDatabaseUrl(url);
-  assertTarget(options, target);
+  assertTarget(options, target, { requireProject: true });
 
+  const fingerprint = projectFingerprint(target.projectRef);
   console.log(
-    `→ ${command} on ${options.target}: ${target.host}:${target.port}/${target.database}`,
+    `→ ${command} on ${options.target}: ${target.host}:${target.port}/${target.database}` +
+      (fingerprint ? ` (project fingerprint ${fingerprint})` : ""),
   );
 
   const { db, close } = createDatabase(url, { maxConnections: 1 });
   try {
-    if (command === "migrate") {
+    if (command === "status") {
+      const status = await readMigrationStatus(db);
+      printStatus("migrations", status);
+      if (status.pending.length > 0) process.exitCode = 2;
+    } else if (command === "migrate") {
+      const before = await readMigrationStatus(db);
+      printStatus("before", before);
       await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+      const after = await readMigrationStatus(db);
+      printStatus("after", after);
+      if (after.pending.length > 0) throw new Error("migrations are still pending");
       console.log("✓ migrations applied");
+    } else if (command === "test-property") {
+      // Plain SQL files with their own guards and transactions (simple query protocol).
+      const client = postgres(url, {
+        prepare: false,
+        max: 1,
+        onnotice: () => {},
+        ...(target.isLocal ? {} : { ssl: "require" as const }),
+      });
+      try {
+        for (const file of TEST_PROPERTY_SCRIPTS) {
+          await client.unsafe(readFileSync(join(STAGING_SQL_FOLDER, file), "utf8"));
+          console.log(`✓ ${file}`);
+        }
+      } finally {
+        await client.end();
+      }
     } else {
       const result = await seedTenant(db, uniquePlacesSeed);
       console.log("✓ seed UNIQUE PLACES – rows written:", result.written);

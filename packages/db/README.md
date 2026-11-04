@@ -46,26 +46,33 @@ Regeln:
 
 ```bash
 pnpm db:generate --name <beschreibung>   # Migration aus schema.ts erzeugen (ohne DB)
-DATABASE_URL=… pnpm db:migrate --target local|staging|production [--confirm-production]
-DATABASE_URL=… pnpm db:seed    --target local|staging|production [--confirm-production]
+DATABASE_URL=… pnpm db:status  --target local|staging|production [--expect-project <ref>]   # nur lesend
+DATABASE_URL=… pnpm db:migrate --target local|staging|production --expect-project <ref> [--confirm-production]
+DATABASE_URL=… pnpm db:seed    --target local|staging|production --expect-project <ref> [--confirm-production]
                                [--with-preview-fixtures]   # Apaleo TEST, nie Production
                                [--with-guide-fixtures]     # GUIDE-Beispielinhalte, nur --target local
                                [--with-explore-fixtures]   # EXPLORE-Beispielorte, nur --target local
                                [--with-journey-fixtures]   # Beispiel-Check-in/Zugang, nur --target local
+DATABASE_URL=… pnpm db:test-property --target local|staging --expect-project <ref>
+                               # Apaleo TEST + Check-in-Konfiguration (docs/staging N + M, nur einfügend), nie Production
 ```
 
 Der CLI liest `DATABASE_URL` **nur aus der Shell**. Er lädt keine `.env`-Dateien, damit nie unbemerkt eine falsche Datenbank verwendet wird. Sicherungen:
 
 - `--target` ist Pflicht.
 - `local` akzeptiert nur localhost. `staging` und `production` lehnen localhost ab und erzwingen TLS.
+- `staging` und `production` verlangen `--expect-project <Supabase-Projekt-Ref>`: Der CLI bricht ab, wenn `DATABASE_URL` zu einem anderen Projekt gehört (die Fehlermeldung nennt keines der beiden).
 - `production` verlangt zusätzlich `--confirm-production`.
-- Vor jeder Aktion zeigt der CLI Ziel, Host und Datenbank an, ohne Zugangsdaten. Auch Fehlermeldungen enthalten nie die URL.
+- Vor jeder Aktion zeigt der CLI Ziel, Host, Datenbank und einen **Projekt-Fingerprint** (8 Zeichen, nicht umkehrbar) an, ohne Zugangsdaten. Derselbe Fingerprint steht in `/api/health` der Guest App – so ist sichtbar, ob ein Deployment dieselbe Datenbank nutzt. Auch Fehlermeldungen enthalten nie die URL.
+- `migrate` zeigt den Stand vorher und nachher und schlägt fehl, wenn danach noch etwas offen ist. `status` endet mit Exit-Code 2, solange Migrationen offen sind.
+
+**Automatisch für Staging:** GitHub Actions, Workflow [`db-staging.yml`](../../.github/workflows/db-staging.yml) – siehe „Ablauf je Umgebung“.
 
 Damit die URL nicht in der Shell-History landet:
 
 ```bash
 read -rs DATABASE_URL && export DATABASE_URL   # URL aus dem Passwortmanager einfügen
-pnpm db:migrate --target staging
+pnpm db:migrate --target staging --expect-project <staging-ref>
 unset DATABASE_URL
 ```
 
@@ -85,18 +92,24 @@ Destruktive Änderungen (Spalte entfernen, umbenennen) laufen in zwei Schritten 
 - Supabase CLI (`supabase start`, Postgres auf Port 54322) oder ein beliebiges lokales Postgres ab Version 15.
 - `DATABASE_URL=postgres://postgres:postgres@localhost:54322/postgres pnpm db:migrate --target local`, danach `pnpm db:seed --target local`.
 
-**staging:**
+**staging (automatisch):**
 
-- Nach dem Merge nach `staging` und **vor** dem ersten Deployment, das das neue Schema braucht: `pnpm db:migrate --target staging`, falls nötig auch `pnpm db:seed --target staging`.
-- Verwende dafür die Session-Pooler-URL des Staging-Projekts.
+- GitHub Actions, Workflow `Database · Staging` ([`db-staging.yml`](../../.github/workflows/db-staging.yml)), GitHub-Environment `staging`:
+  - Secret `STAGING_DATABASE_URL` = Session-Pooler-URL (Port 5432) des Staging-Projekts,
+  - Variable `STAGING_SUPABASE_PROJECT_REF` = Projekt-Ref des Staging-Projekts.
+- Läuft bei jedem Push, der `packages/db/drizzle/**` ändert (Branches `staging` und `claude/**`), und manuell über „Run workflow“ (Option: Apaleo-Testobjekt `TEST` einrichten).
+- Ablauf: Migrationen gegen eine leere In-Memory-Datenbank (Schema-Tests) → `db:status` → `db:migrate` → `db:status` (muss „pending: none“ zeigen). Jeder Schritt prüft die Projekt-Identität.
+- Ein Lauf zur Zeit (`concurrency`), nie abgebrochen.
+- Additive Migrationen (neue Tabellen/Spalten) laufen, während die alte Version noch deployt ist; destruktive nur expand → contract.
+- Manuell bleibt möglich: `pnpm db:migrate --target staging --expect-project <ref>` mit der Session-Pooler-URL. Die SQL-Skripte in [`docs/staging`](../../docs/staging/README.md) sind nur noch Notfall-Werkzeug.
 
 **production:**
 
 - Erst wenn die Migration auf Staging gelaufen und abgenommen ist.
 - Vorher prüfen, dass ein aktuelles Supabase-Backup existiert.
-- Dann `pnpm db:migrate --target production --confirm-production` ausführen, danach `main` deployen.
+- Dann `pnpm db:migrate --target production --expect-project <ref> --confirm-production` ausführen, danach `main` deployen. (Ein Production-Workflow folgt erst mit einem Production-Projekt – dann mit Pflicht-Freigabe im GitHub-Environment `production`.)
 
-Migrationen laufen nie automatisch beim App-Start oder Build.
+Migrationen laufen nie beim App-Start oder Vercel-Build – nur über den CLI bzw. den Workflow.
 
 ## Seed
 
