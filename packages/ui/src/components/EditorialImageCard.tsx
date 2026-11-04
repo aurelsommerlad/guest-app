@@ -67,7 +67,7 @@ export function EditorialImageCard({
           {eyebrow && <p className="type-eyebrow pb-1 text-text-inverse">{eyebrow}</p>}
           <Heading className="type-title text-text-inverse">{title}</Heading>
           {subtitle && (
-            <p className="type-small max-w-54 text-balance text-text-inverse">{subtitle}</p>
+            <p className="type-caption max-w-54 text-balance text-text-inverse">{subtitle}</p>
           )}
         </div>
         <span

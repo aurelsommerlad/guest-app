@@ -15,7 +15,7 @@ const tones = {
 const valueStyles = {
   /** Short key figures ("10:00", "ROS"). */
   figure: "type-figure",
-  /** Short statements ("Fast geschafft.", "12.–14. Jan. 2027"). */
+  /** Short statements ("Fast geschafft.", "12.–14. Jan."). */
   statement: "type-statement",
   /** Short phrases in card size ("Jetzt erledigen"). */
   text: "type-title",
@@ -66,19 +66,19 @@ export function InfoTile({
   return (
     <div
       className={cx(
-        "relative flex flex-col gap-4 rounded-card p-3 pb-2.5 lg:p-4 lg:pb-3",
+        "relative flex flex-col gap-3 rounded-card p-4 pb-3.5 lg:p-5 lg:pb-4",
         href && "transition duration-150 hover:brightness-97",
         colors.surface,
         className,
       )}
     >
-      <dt className="flex items-center gap-2">
+      <dt className="flex items-center gap-3.5">
         <Icon name={icon} size="sm" />
         <span className="type-eyebrow">{label}</span>
       </dt>
-      <dd className="flex flex-1 flex-col gap-1">
+      <dd className="flex flex-1 flex-col gap-2">
         <span className={valueStyles[valueStyle]}>{value}</span>
-        {meta && <span className={cx("type-small", colors.meta)}>{meta}</span>}
+        {meta && <span className={cx("type-caption", colors.meta)}>{meta}</span>}
         {footer && <span className="mt-auto block pt-2">{footer}</span>}
         {href && (
           <Link href={href} className="absolute inset-0 rounded-card">

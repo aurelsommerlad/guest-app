@@ -80,8 +80,6 @@
       "progress": "Fortschritt",
       "completedTitle": "Online-Check-in abgeschlossen",
       "completedBody": "Vielen Dank! Deine Angaben sind bei uns eingegangen.",
-      "guestRegistrationSubmitted": "Gästemeldung übermittelt",
-      "guestRegistrationPending": "Gästemeldung wird vorbereitet",
       "done": "erledigt",
       "open": "offen",
       "steps": {
@@ -95,11 +93,18 @@
     "linksHeading": "Für Deinen Aufenthalt",
     "tiles": {
       "stay": "Dein Aufenthalt",
-      "notStarted": "Jetzt starten.",
+      "notStarted": "Jetzt erledigen.",
       "inProgress": "Weiter geht's.",
       "almostDone": "Fast geschafft.",
-      "completed": "Erledigt.",
-      "completedMeta": "Bis bald!"
+      "beforeArrival": "Vor der Anreise",
+      "checkInDone": "Check-in geschafft.",
+      "seeYouSoon": "Bis bald!",
+      "payment": "Zahlung",
+      "paymentOpen": "Noch etwas offen.",
+      "paymentAction": "Zahlung abschließen",
+      "access": "Dein Zugang",
+      "welcome": "Willkommen!",
+      "accessAction": "Zugangsdaten ansehen"
     }
   },
   "stayError": {

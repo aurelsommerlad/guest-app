@@ -36,7 +36,7 @@ function Progress({ steps }: { steps: readonly { done: boolean }[] }) {
 
 /**
  * The two tiles under the greeting (original STAY design): left the stay or the next time,
- * right – in sage – the open online check-in, its completion, or the apartment.
+ * right – in sage – whatever matters now (check-in, payment, access, apartment, check-out).
  */
 export async function StayTiles({
   start,
@@ -99,7 +99,8 @@ export async function StayTiles({
         }
         valueStyle="statement"
         meta={t("checkInCard.openSteps", { count: accent.stepsRemaining })}
-        footer={<Progress steps={accent.steps} />}
+        // Progress only once there is some – an empty bar says nothing.
+        footer={accent.state === "in-progress" ? <Progress steps={accent.steps} /> : undefined}
         href={accent.href}
         linkLabel={
           accent.state === "not-started" ? t("checkInCard.start") : t("checkInCard.continue")
@@ -110,16 +111,41 @@ export async function StayTiles({
       <InfoTile
         icon="circle-check"
         tone="accent"
-        label={t("onlineCheckIn")}
-        value={t("tiles.completed")}
+        label={t("tiles.beforeArrival")}
+        value={t("tiles.checkInDone")}
         valueStyle="statement"
-        meta={
-          accent.guestRegistration === "submitted"
-            ? t("checkInCard.guestRegistrationSubmitted")
-            : accent.guestRegistration === "pending"
-              ? t("checkInCard.guestRegistrationPending")
-              : t("tiles.completedMeta")
-        }
+        meta={t("tiles.seeYouSoon")}
+      />
+    ) : accent.kind === "payment" ? (
+      <InfoTile
+        icon="credit-card"
+        tone="accent"
+        label={t("tiles.payment")}
+        value={t("tiles.paymentOpen")}
+        valueStyle="statement"
+        meta={<WithArrow text={t("tiles.paymentAction")} />}
+        href={accent.href}
+        linkLabel={t("tiles.paymentAction")}
+        linkComponent={Link}
+      />
+    ) : accent.kind === "access" ? (
+      <InfoTile
+        icon="key"
+        tone="accent"
+        label={t("tiles.access")}
+        value={t("tiles.welcome")}
+        valueStyle="statement"
+        meta={<WithArrow text={t("tiles.accessAction")} />}
+        href={accent.href}
+        linkLabel={t("tiles.accessAction")}
+      />
+    ) : accent.kind === "check-out" ? (
+      <InfoTile
+        icon="calendar"
+        tone="accent"
+        label={t("checkOut")}
+        value={<time dateTime={accent.dateTime}>{accent.time}</time>}
+        meta={t("tiles.seeYouSoon")}
       />
     ) : (
       <InfoTile

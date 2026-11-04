@@ -338,7 +338,7 @@ describe("STAY tiles (original two-tile design)", () => {
     );
     expect(model.tiles.start).toEqual({
       kind: "stay",
-      dates: "27.–31. Aug. 2026",
+      dates: "27.–31. Aug.",
       title: "HØV · ROS",
       href: "/guide",
     });
@@ -369,7 +369,7 @@ describe("STAY tiles (original two-tile design)", () => {
     });
   });
 
-  it("shows the completion before arrival – and nothing invented about the guest registration", () => {
+  it("shows the completion before arrival – without promising access yet", () => {
     const model = buildStayViewModel(source, "de", before, {
       ...journeyAt(before, "completed", notReleased),
       assessment: { stepsRemaining: 0, steps: done },
@@ -413,6 +413,87 @@ describe("STAY tiles (original two-tile design)", () => {
     expect(model.tiles.accent).toEqual({ kind: "apartment", name: "ROS", href: "/guide" });
   });
 
+  const arrivalDay = new Date("2026-08-27T16:00:00+02:00");
+  const departureDay = new Date("2026-08-31T08:00:00+02:00");
+
+  it("arrival day with released access: check-in time left, access right", () => {
+    const model = buildStayViewModel(
+      source,
+      "de",
+      arrivalDay,
+      journeyAt(arrivalDay, "completed", keybox),
+    );
+    expect(model.tiles.accent).toEqual({ kind: "access", href: "#stay-access" });
+    expect(model.tiles.start).toMatchObject({ kind: "time" });
+  });
+
+  it("arrival day before the release: no access promise, the apartment stays", () => {
+    const early = new Date("2026-08-27T09:00:00+02:00");
+    const pendingRelease: StayAccess = {
+      status: "pending",
+      reason: "not-yet-released",
+      releasesAt: "2026-08-27T15:00:00+02:00",
+    };
+    const model = buildStayViewModel(
+      source,
+      "de",
+      early,
+      journeyAt(early, "completed", pendingRelease),
+    );
+    expect(model.tiles.accent).toEqual({ kind: "apartment", name: "ROS", href: "/guide" });
+  });
+
+  it("arrival day with access still requiring the check-in: the check-in, not the access", () => {
+    const required: StayAccess = { status: "pending", reason: "registration-required" };
+    const model = buildStayViewModel(
+      source,
+      "de",
+      arrivalDay,
+      journeyAt(arrivalDay, "in-progress", required, 2),
+    );
+    expect(model.tiles.accent).toMatchObject({ kind: "check-in", state: "in-progress" });
+  });
+
+  it("departure day: check-out time right, apartment left", () => {
+    const model = buildStayViewModel(
+      source,
+      "de",
+      departureDay,
+      journeyAt(departureDay, "completed", keybox),
+    );
+    expect(model.tiles.accent).toEqual({
+      kind: "check-out",
+      time: "10:00",
+      date: "31. August 2026",
+      dateTime: "2026-08-31T10:00:00+02:00",
+    });
+    expect(model.tiles.start).toEqual({ kind: "apartment", name: "ROS", href: "/guide" });
+  });
+
+  it("a required payment comes first – but only when the payment module says so", () => {
+    const base = journeyAt(arrivalDay, "completed", keybox);
+    const due = buildStayViewModel(source, "de", arrivalDay, {
+      ...base,
+      payment: { state: "due", href: "/stay/payment" },
+    });
+    expect(due.tiles.accent).toEqual({ kind: "payment", href: "/stay/payment" });
+    expect(due.tiles.start).toEqual({ kind: "apartment", name: "ROS", href: "/guide" });
+    const failed = buildStayViewModel(source, "de", arrivalDay, {
+      ...base,
+      payment: { state: "failed", href: "/stay/payment" },
+    });
+    expect(failed.tiles.accent.kind).toBe("payment");
+    for (const state of ["paid", "pending", "review", "unknown", "not-due"] as const) {
+      const model = buildStayViewModel(source, "de", arrivalDay, {
+        ...base,
+        payment: { state, href: "/stay/payment" },
+      });
+      expect(model.tiles.accent.kind).toBe("access");
+    }
+    // No payment data (integration not wired): no statement at all.
+    expect(buildStayViewModel(source, "de", arrivalDay, base).tiles.accent.kind).toBe("access");
+  });
+
   it("formats the short stay range per locale", () => {
     const model = buildStayViewModel(
       source,
@@ -423,7 +504,7 @@ describe("STAY tiles (original two-tile design)", () => {
     expect(model.tiles.start).toMatchObject({ kind: "stay" });
     // Intl uses thin spaces around the en dash.
     expect(model.tiles.start.kind === "stay" && model.tiles.start.dates.replace(/\s/g, " ")).toBe(
-      "Aug 27 – 31, 2026",
+      "Aug 27 – 31",
     );
   });
 });

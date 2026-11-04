@@ -269,6 +269,12 @@ export const iconPaths = {
       <path d="m16 9-5.5 5.5L8 12" />
     </>
   ),
+  "credit-card": (
+    <>
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <path d="M2 10h20" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof iconPaths;

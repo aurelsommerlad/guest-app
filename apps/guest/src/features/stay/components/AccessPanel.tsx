@@ -23,8 +23,9 @@ export async function AccessPanel({ access, preview }: Props) {
     access.kind === "not-issued";
   return (
     <section
+      id="stay-access"
       aria-labelledby="stay-access-heading"
-      className="flex flex-col gap-4 rounded-card bg-surface p-4 text-text xs:p-5"
+      className="flex scroll-mt-6 flex-col gap-4 rounded-card bg-surface p-4 text-text xs:p-5"
     >
       <h2 id="stay-access-heading" className="flex items-center gap-3">
         <Icon name={locked ? "lock" : "key"} size="md" />

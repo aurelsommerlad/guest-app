@@ -2,6 +2,7 @@ import {
   CHECK_IN_STEPS,
   deriveStayPhase,
   type GuestJourney,
+  type JourneyPhase,
   type LocalizedText,
   type RegistrationAssessment,
   resolveLocalizedText,
@@ -15,6 +16,7 @@ import {
   type LocalTime,
   type StartTileView,
   type StayAccessView,
+  type StayPaymentInput,
   type StaySource,
   type StayStatus,
   type StayViewModel,
@@ -30,7 +32,12 @@ export type StayJourneyInput = {
   guestRegistration?: "pending" | "submitted";
   /** Submitted check-in whose person count no longer matches the reservation. */
   occupancyChanged?: boolean;
+  /** From the payment module (ADR 0018) – not wired yet, so STAY makes no payment statement. */
+  payment?: StayPaymentInput;
 };
+
+/** Anchor of the access panel on the STAY screen. */
+export const ACCESS_HREF = "#stay-access";
 
 export const CHECK_IN_HREF = "/check-in";
 
@@ -81,10 +88,11 @@ export function buildStayViewModel(
             ...localTime(reservation.checkOutAt),
           }
       : status;
+  // Without the year: the stay tile is shown before an upcoming stay only, and the light,
+  // large statement must fit a half-width tile on one line ("27.–31. Aug.").
   const shortRange = new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
-    year: "numeric",
     timeZone: property.timeZone,
   }).formatRange(new Date(reservation.checkInAt), new Date(reservation.checkOutAt));
   return {
@@ -130,8 +138,12 @@ export function buildStayViewModel(
     ...(checkIn ? { checkIn } : {}),
     tiles: selectTiles({
       upcoming,
+      journeyPhase: journey?.journey.phase,
       checkIn,
+      access,
+      payment: journey?.payment,
       timeTile,
+      checkOut: localTime(reservation.checkOutAt),
       unit,
       stay: { dates: shortRange, title: `${property.name} · ${source.unit.name}` },
     }),
@@ -204,51 +216,68 @@ function selectAccess(
   }
 }
 
+/** Payment states that ask the guest to act. Anything else – or no data – asks nothing. */
+const PAYMENT_ACTION_STATES = new Set(["due", "failed"]);
+
 /**
- * The two tiles under the greeting. Only true states: the right tile shows the check-in
- * while it is open, its completion before arrival, otherwise the apartment (as in the
- * original design). The apartment stays reachable in every state.
+ * The two tiles under the greeting. Only true states. The right tile follows the guest's
+ * situation (priority: payment required → open check-in → departure day → access released →
+ * check-in done → apartment); the left one shows the stay or the next time, and takes the
+ * apartment whenever the right one does not show it.
  */
 export function selectTiles(input: {
   upcoming: boolean;
+  journeyPhase: JourneyPhase | undefined;
   checkIn: CheckInCardView | undefined;
+  access: StayAccessView | undefined;
+  payment: StayPaymentInput | undefined;
   timeTile: Extract<StayStatus, { kind: "check-in" | "check-out" }>;
+  checkOut: LocalTime;
   unit: { name: string; href: string };
   stay: { dates: string; title: string };
 }): { start: StartTileView; accent: AccentTileView } {
-  const { checkIn, unit } = input;
+  const { checkIn, unit, journeyPhase, access, payment } = input;
   const open = checkIn && checkIn.state !== "completed" ? checkIn : undefined;
+  const released = access?.kind === "available" || access?.kind === "manual";
+
+  const accent: AccentTileView =
+    payment && PAYMENT_ACTION_STATES.has(payment.state)
+      ? { kind: "payment", href: payment.href }
+      : open
+        ? open.state === "in-progress"
+          ? {
+              kind: "check-in",
+              state: "in-progress",
+              stepsRemaining: open.stepsRemaining,
+              steps: open.steps,
+              href: open.href,
+            }
+          : {
+              kind: "check-in",
+              state: "not-started",
+              stepsRemaining: open.steps.length,
+              steps: open.steps.map((id) => ({ id, done: false })),
+              href: open.href,
+            }
+        : journeyPhase === "departure-day"
+          ? { kind: "check-out", ...pickLocalTime(input.checkOut) }
+          : journeyPhase === "arrival-day" && released
+            ? { kind: "access", href: ACCESS_HREF }
+            : checkIn?.state === "completed"
+              ? {
+                  kind: "check-in-completed",
+                  ...(checkIn.occupancyChanged ? { occupancyChanged: true } : {}),
+                }
+              : { kind: "apartment", ...unit };
+
   const start: StartTileView = input.upcoming
     ? { kind: "stay", ...input.stay, href: unit.href }
-    : open
-      ? { kind: "apartment", ...unit }
-      : {
+    : accent.kind === "apartment" || accent.kind === "access"
+      ? {
           kind: "time",
           which: input.timeTile.kind,
           today: input.timeTile.kind === "check-out" && input.timeTile.today,
           ...pickLocalTime(input.timeTile),
-        };
-  const accent: AccentTileView = open
-    ? open.state === "in-progress"
-      ? {
-          kind: "check-in",
-          state: "in-progress",
-          stepsRemaining: open.stepsRemaining,
-          steps: open.steps,
-          href: open.href,
-        }
-      : {
-          kind: "check-in",
-          state: "not-started",
-          stepsRemaining: open.steps.length,
-          steps: open.steps.map((id) => ({ id, done: false })),
-          href: open.href,
-        }
-    : checkIn?.state === "completed"
-      ? {
-          kind: "check-in-completed",
-          ...(checkIn.guestRegistration ? { guestRegistration: checkIn.guestRegistration } : {}),
-          ...(checkIn.occupancyChanged ? { occupancyChanged: true } : {}),
         }
       : { kind: "apartment", ...unit };
   return { start, accent };

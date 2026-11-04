@@ -1,7 +1,7 @@
 import { cx } from "../lib/cx";
 
 /**
- * Glyphs of branded property names that the heading font (Josefin Sans) lacks,
+ * Glyphs of branded property names that the brand font (Josefin Sans) lacks,
  * mapped to a typographic substitute rendered with the font's own glyphs.
  */
 const SUBSTITUTES: Readonly<Record<string, { glyph: string; className: string }>> = {
@@ -19,8 +19,9 @@ export type PropertyNameProps = {
 };
 
 /**
- * A property name in the brand typography. Special letters (Ø, Ū, Æ) come straight
- * from the font; Λ is drawn from a mirrored "V". Screen readers get `spokenName`.
+ * A property name in the brand typography – always Josefin Sans (`font-brand`), whatever
+ * the surrounding text uses, because the Λ substitute is calibrated to its "V". Special
+ * letters (Ø, Ū, Æ) come straight from the font. Screen readers get `spokenName`.
  */
 export function PropertyName({ name, spokenName, className }: PropertyNameProps) {
   const characters = Array.from(name);
@@ -28,11 +29,11 @@ export function PropertyName({ name, spokenName, className }: PropertyNameProps)
   const accessibleName = spokenName ?? name;
 
   if (!needsSubstitution && accessibleName === name) {
-    return <span className={className}>{name}</span>;
+    return <span className={cx("font-brand", className)}>{name}</span>;
   }
 
   return (
-    <span className={className}>
+    <span className={cx("font-brand", className)}>
       <span aria-hidden>
         {characters.map((character, index) => {
           const substitute = SUBSTITUTES[character];

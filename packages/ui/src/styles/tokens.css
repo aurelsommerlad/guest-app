@@ -17,6 +17,11 @@
   --up-base-linen: #f1ede4; /* card */
   --up-base-sage: #87977e; /* primary */
   --up-base-sage-dark: #52664e; /* primary-dark */
+  /*
+   * Lighter, greyer sage for the large accent tile (STAY reference, Phase 11.4): hue moved
+   * from green (99°) towards the reference's olive grey (~90°), less chroma, a little lighter.
+   */
+  --up-base-sage-soft: #8f9b84;
   --up-base-ink: #171817; /* text */
   --up-base-night: #17160f; /* primary call to action */
   --up-base-ochre: #a67c48; /* warm accent, small marks only (e.g. draft status dot) */
@@ -28,16 +33,17 @@
   --up-color-background: var(--up-base-sand);
   --up-color-surface: var(--up-base-linen); /* tiles, cards */
   --up-color-surface-raised: var(--up-base-chalk); /* list cards, circular image buttons */
-  --up-color-surface-accent: var(--up-base-sage); /* characteristic sage area (large, decorative) */
+  --up-color-surface-accent: var(
+    --up-base-sage-soft
+  ); /* characteristic sage area (large, decorative) */
   --up-color-surface-inverse: var(--up-base-ink); /* highlighted nav item (STAY) */
 
   --up-color-text: var(--up-base-ink);
   --up-color-text-muted: var(--up-base-stone);
   --up-color-text-inverse: var(--up-base-chalk); /* on photos and ink surfaces */
   /*
-   * Text on the sage accent surface. Chalk on sage reaches only 3.0:1 (large text only),
-   * so small labels and links use ink (5.7:1, WCAG AA). Switch to --up-base-chalk here to
-   * restore the white-on-sage look of the reference (then AA for large text only).
+   * Text on the sage accent surface. Chalk on the soft sage reaches only 2.8:1 (fails even
+   * for large text), ink reaches 6.1:1 (WCAG AA for every size) – so ink it is.
    */
   --up-color-on-accent: var(--up-base-ink);
 
@@ -79,7 +85,14 @@
 
   /* ── Typography ─────────────────────────────────────────────── */
   /* --font-josefin / --font-roboto are provided by next/font in the app. */
-  --up-font-heading: var(--font-josefin, "Josefin Sans"), ui-sans-serif, system-ui, sans-serif;
+  /*
+   * Phase 11.4: the STAY reference sets every UI text in a light humanist sans – not in
+   * Josefin Sans. Roboto (already loaded, variable 100–900) in light cuts matches it closely,
+   * so headings and figures use it too. Josefin Sans stays the BRAND face: wordmark and
+   * property names (HØV, ΛLPILΛ), where its character and the Λ substitute belong.
+   */
+  --up-font-brand: var(--font-josefin, "Josefin Sans"), ui-sans-serif, system-ui, sans-serif;
+  --up-font-heading: var(--font-roboto, "Roboto"), ui-sans-serif, system-ui, sans-serif;
   --up-font-body: var(--font-roboto, "Roboto"), ui-sans-serif, system-ui, sans-serif;
 
   /* ── Radii ──────────────────────────────────────────────────── */

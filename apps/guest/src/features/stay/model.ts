@@ -101,17 +101,21 @@ export type CheckInStepId = CheckInStep;
 export type StartTileView =
   | {
       kind: "stay";
-      /** "12.–14. Jan. 2027" */
+      /** "12.–14. Jan." */
       dates: string;
       /** "HØV · ROS" */
       title: string;
       href: string;
     }
   | ({ kind: "time"; which: "check-in" | "check-out"; today: boolean } & LocalTime)
-  /** During the stay while the check-in is still open: the apartment moves left. */
+  /** The right tile shows the check-in or the check-out: the apartment moves left. */
   | { kind: "apartment"; name: string; href: string };
 
-/** Right (sage) tile: the open online check-in, its completion, or the apartment. */
+/**
+ * Right (sage) tile – follows the guest's situation, in this priority:
+ * payment required → open check-in → departure day → access released (arrival day) →
+ * check-in done (before arrival) → apartment. Every state comes from real data only.
+ */
 export type AccentTileView =
   | {
       kind: "check-in";
@@ -121,12 +125,25 @@ export type AccentTileView =
       steps: readonly { id: CheckInStepId; done: boolean }[];
       href: string;
     }
-  | {
-      kind: "check-in-completed";
-      guestRegistration?: "pending" | "submitted";
-      occupancyChanged?: boolean;
-    }
-  | { kind: "apartment"; name: string; href: string };
+  /** Check-in completed, arrival still ahead – no statement about access yet. */
+  | { kind: "check-in-completed"; occupancyChanged?: boolean }
+  /** A payment the payment module reports as required (ADR 0018). */
+  | { kind: "payment"; href: string }
+  /** Arrival day and access information is released. */
+  | { kind: "access"; href: string }
+  | { kind: "apartment"; name: string; href: string }
+  /** Departure day: the check-out time (no check-out function exists, so no link). */
+  | ({ kind: "check-out" } & LocalTime);
+
+/**
+ * Payment state for STAY, delivered by the payment module once it exists (ADR 0018, Phase A).
+ * Not wired yet: without it STAY makes no statement about payments – never "paid" or "open".
+ * The tile only reflects it; access itself is gated server-side, not by this screen.
+ */
+export type StayPaymentState =
+  "not-applicable" | "not-due" | "due" | "pending" | "paid" | "failed" | "review" | "unknown";
+
+export type StayPaymentInput = { state: StayPaymentState; href: string };
 
 export type CheckInCardView =
   | { state: "not-started"; href: string; steps: readonly CheckInStepId[] }

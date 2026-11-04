@@ -153,7 +153,9 @@ describe("BottomNavigation", () => {
 describe("PropertyName", () => {
   it("renders Latin special letters directly from the font", () => {
     for (const name of ["HØV", "HŪSLE", "LÆKE"]) {
-      expect(renderToStaticMarkup(<PropertyName name={name} />)).toBe(`<span>${name}</span>`);
+      expect(renderToStaticMarkup(<PropertyName name={name} />)).toBe(
+        `<span class="font-brand">${name}</span>`,
+      );
     }
   });
 

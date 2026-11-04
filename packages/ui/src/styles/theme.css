@@ -44,6 +44,7 @@
   --color-current: currentColor;
 
   /* Font families */
+  --font-brand: var(--up-font-brand);
   --font-heading: var(--up-font-heading);
   --font-body: var(--up-font-body);
 
@@ -95,20 +96,21 @@
 /* Greeting / page hero ("Hallo Laura, schön, dass Du da bist.") */
 @utility type-display {
   font-family: var(--up-font-heading);
-  font-size: 2rem; /* 32px */
-  font-weight: 350; /* between Light and Regular: elegant, but not fragile on mobile */
-  line-height: 1.125; /* 36px */
-  letter-spacing: 0;
+  font-size: 1.875rem; /* 30px – reference greeting, measured at 390pt */
+  font-weight: 300; /* Light: the reference's airy, young tone */
+  line-height: 1.2; /* 36px */
+  letter-spacing: -0.005em;
 
   /* Compact phones (< 360px): keeps the greeting's line breaks intact */
   @media (width < 22.5rem) {
-    font-size: 1.75rem; /* 28px */
+    font-size: 1.625rem; /* 26px */
   }
 
   /* Desktop: editorial scale-up (derived – the reference defines mobile only) */
   @media (width >= 64rem) {
     font-size: 2.75rem; /* 44px */
-    line-height: 1.1;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -116,18 +118,19 @@
    reference sets it smaller than the in-stay greeting so it keeps two lines */
 @utility type-display-compact {
   font-family: var(--up-font-heading);
-  font-size: 1.5rem; /* 24px */
-  font-weight: 350;
-  line-height: 1.2;
-  letter-spacing: 0;
+  font-size: 1.5rem; /* 24px – keeps "… bald bei uns bist." on one line at 390pt */
+  font-weight: 300;
+  line-height: 1.22;
+  letter-spacing: -0.005em;
 
   @media (width < 22.5rem) {
     font-size: 1.3125rem; /* 21px */
   }
 
   @media (width >= 64rem) {
-    font-size: 2.25rem; /* 36px */
-    line-height: 1.12;
+    font-size: 2.375rem; /* 38px */
+    line-height: 1.14;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -135,34 +138,35 @@
 @utility type-title-lg {
   font-family: var(--up-font-heading);
   font-size: 1.75rem; /* 28px */
-  font-weight: 350;
-  line-height: 1.15;
-  letter-spacing: 0;
+  font-weight: 300;
+  line-height: 1.18;
+  letter-spacing: -0.005em;
 
   @media (width >= 64rem) {
     font-size: 2.25rem; /* 36px */
+    letter-spacing: -0.01em;
   }
 }
 
 /* Card titles on photography ("Alles für Deinen Aufenthalt") */
 @utility type-title {
   font-family: var(--up-font-heading);
-  font-size: 1.0625rem; /* 17px */
-  font-weight: 400;
-  line-height: 1.3;
+  font-size: 1.09375rem; /* 17.5px */
+  font-weight: 400; /* Regular: light enough, still steady on photography */
+  line-height: 1.25;
   letter-spacing: 0;
 }
 
-/* Short statements in tiles ("Fast geschafft.", "12.–14. Jan. 2027") – fits a half-width tile */
+/* Short statements in tiles ("Fast geschafft.", "12.–14. Jan.") – fits a half-width tile */
 @utility type-statement {
   font-family: var(--up-font-heading);
-  font-size: 1.1875rem; /* 19px */
-  font-weight: 350;
+  font-size: 1.3125rem; /* 21px */
+  font-weight: 300;
   line-height: 1.15;
-  letter-spacing: 0;
+  letter-spacing: -0.005em;
 
   @media (width < 22.5rem) {
-    font-size: 1.0625rem; /* 17px */
+    font-size: 1.1875rem; /* 19px */
   }
 }
 
@@ -170,15 +174,15 @@
 @utility type-figure {
   font-family: var(--up-font-heading);
   font-size: 2rem; /* 32px */
-  font-weight: 350;
+  font-weight: 300;
   line-height: 1;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
   font-variant-numeric: lining-nums;
 }
 
 /* Property name in the header ("HØV · Altusried") */
 @utility type-brand {
-  font-family: var(--up-font-heading);
+  font-family: var(--up-font-brand);
   font-size: 0.8125rem; /* 13px */
   font-weight: 400;
   line-height: 1.4;
@@ -188,16 +192,16 @@
 /* Uppercase labels ("CHECK-OUT", "APARTMENT") */
 @utility type-eyebrow {
   font-family: var(--up-font-heading);
-  font-size: 0.6875rem; /* 11px – cap height matches the reference */
+  font-size: 0.65625rem; /* 10.5px – quiet, as in the reference */
   font-weight: 400;
   line-height: 1.3;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em; /* small caps need air */
   text-transform: uppercase;
 }
 
 /* Text wordmark "UNIQUE PLACES" – placeholder until the logo is available as SVG */
 @utility type-wordmark {
-  font-family: var(--up-font-heading);
+  font-family: var(--up-font-brand);
   font-size: 0.6875rem; /* 11px */
   font-weight: 400;
   line-height: 1.2;
@@ -209,9 +213,9 @@
 @utility type-nav {
   font-family: var(--up-font-heading);
   font-size: 0.6875rem; /* 11px */
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.2;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -219,9 +223,9 @@
 @utility type-nav-compact {
   font-family: var(--up-font-heading);
   font-size: 0.625rem; /* 10px */
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.2;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -229,8 +233,8 @@
 @utility type-lead {
   font-family: var(--up-font-body);
   font-size: 0.9375rem; /* 15px */
-  font-weight: 400; /* Regular for mobile readability (reference looks lighter) */
-  line-height: 1.3;
+  font-weight: 300; /* Light, as in the reference – muted colour keeps it quiet */
+  line-height: 1.35;
   letter-spacing: 0;
 }
 

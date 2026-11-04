@@ -80,8 +80,6 @@
       "progress": "Progress",
       "completedTitle": "Online check-in complete",
       "completedBody": "Thank you! We have received your details.",
-      "guestRegistrationSubmitted": "Guest registration submitted",
-      "guestRegistrationPending": "Guest registration being prepared",
       "done": "done",
       "open": "open",
       "steps": {
@@ -95,11 +93,18 @@
     "linksHeading": "For your stay",
     "tiles": {
       "stay": "Your stay",
-      "notStarted": "Start now.",
+      "notStarted": "Get it done.",
       "inProgress": "Keep going.",
       "almostDone": "Almost done.",
-      "completed": "All done.",
-      "completedMeta": "See you soon!"
+      "beforeArrival": "Before arrival",
+      "checkInDone": "Check-in done.",
+      "seeYouSoon": "See you soon!",
+      "payment": "Payment",
+      "paymentOpen": "Something's open.",
+      "paymentAction": "Complete payment",
+      "access": "Your access",
+      "welcome": "Welcome!",
+      "accessAction": "View access details"
     }
   },
   "stayError": {
