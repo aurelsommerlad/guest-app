@@ -10,8 +10,10 @@ import {
 
 import { type Locale, routing } from "../../i18n/routing";
 import {
+  type AccentTileView,
   type CheckInCardView,
   type LocalTime,
+  type StartTileView,
   type StayAccessView,
   type StaySource,
   type StayStatus,
@@ -68,13 +70,30 @@ export function buildStayViewModel(
         }
       : undefined;
   const [firstCard] = source.cards;
+  const unit = { name: source.unit.name, href: "/guide" };
+  const timeTile: Extract<StayStatus, { kind: "check-in" | "check-out" }> =
+    status.kind === "online-check-in"
+      ? phase === "pre-arrival"
+        ? { kind: "check-in", ...localTime(reservation.checkInAt) }
+        : {
+            kind: "check-out",
+            today: journey?.journey.phase === "departure-day",
+            ...localTime(reservation.checkOutAt),
+          }
+      : status;
+  const shortRange = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: property.timeZone,
+  }).formatRange(new Date(reservation.checkInAt), new Date(reservation.checkOutAt));
   return {
     locale,
     phase,
     ...(journey ? { journeyPhase: journey.journey.phase } : {}),
     guest: source.guest.firstName ? { firstName: source.guest.firstName } : {},
     property: { name: property.name, spokenName: property.spokenName, location: property.location },
-    unit: { name: source.unit.name, href: "/guide" },
+    unit,
     status,
     ...(access ? { access } : {}),
     ...(preview ? { accessPreview: preview } : {}),
@@ -107,17 +126,15 @@ export function buildStayViewModel(
         : {}),
       href: "/guide",
     },
-    timeTile:
-      status.kind === "online-check-in"
-        ? phase === "pre-arrival"
-          ? { kind: "check-in", ...localTime(reservation.checkInAt) }
-          : {
-              kind: "check-out",
-              today: journey?.journey.phase === "departure-day",
-              ...localTime(reservation.checkOutAt),
-            }
-        : status,
+    timeTile,
     ...(checkIn ? { checkIn } : {}),
+    tiles: selectTiles({
+      upcoming,
+      checkIn,
+      timeTile,
+      unit,
+      stay: { dates: shortRange, title: `${property.name} · ${source.unit.name}` },
+    }),
     cards: source.cards.map((card) => ({
       id: card.id,
       href: card.href,
@@ -185,6 +202,60 @@ function selectAccess(
       }
       return { kind: "not-issued" };
   }
+}
+
+/**
+ * The two tiles under the greeting. Only true states: the right tile shows the check-in
+ * while it is open, its completion before arrival, otherwise the apartment (as in the
+ * original design). The apartment stays reachable in every state.
+ */
+export function selectTiles(input: {
+  upcoming: boolean;
+  checkIn: CheckInCardView | undefined;
+  timeTile: Extract<StayStatus, { kind: "check-in" | "check-out" }>;
+  unit: { name: string; href: string };
+  stay: { dates: string; title: string };
+}): { start: StartTileView; accent: AccentTileView } {
+  const { checkIn, unit } = input;
+  const open = checkIn && checkIn.state !== "completed" ? checkIn : undefined;
+  const start: StartTileView = input.upcoming
+    ? { kind: "stay", ...input.stay, href: unit.href }
+    : open
+      ? { kind: "apartment", ...unit }
+      : {
+          kind: "time",
+          which: input.timeTile.kind,
+          today: input.timeTile.kind === "check-out" && input.timeTile.today,
+          ...pickLocalTime(input.timeTile),
+        };
+  const accent: AccentTileView = open
+    ? open.state === "in-progress"
+      ? {
+          kind: "check-in",
+          state: "in-progress",
+          stepsRemaining: open.stepsRemaining,
+          steps: open.steps,
+          href: open.href,
+        }
+      : {
+          kind: "check-in",
+          state: "not-started",
+          stepsRemaining: open.steps.length,
+          steps: open.steps.map((id) => ({ id, done: false })),
+          href: open.href,
+        }
+    : checkIn?.state === "completed"
+      ? {
+          kind: "check-in-completed",
+          ...(checkIn.guestRegistration ? { guestRegistration: checkIn.guestRegistration } : {}),
+          ...(checkIn.occupancyChanged ? { occupancyChanged: true } : {}),
+        }
+      : { kind: "apartment", ...unit };
+  return { start, accent };
+}
+
+function pickLocalTime(value: LocalTime): LocalTime {
+  return { time: value.time, date: value.date, dateTime: value.dateTime };
 }
 
 /** The check-in card: open (not started / in progress) until departure day, completed before arrival. */

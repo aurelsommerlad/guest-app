@@ -45,7 +45,7 @@ const defaultCards: readonly StayCardSource[] = [
   {
     id: "explore",
     href: "/explore",
-    title: { de: "Allgäu entdecken", en: "Discover the Allgäu" },
+    title: { de: "Das Allgäu entdecken", en: "Discover the Allgäu" },
     subtitle: { de: "Unsere Lieblingsplätze für Dich", en: "Our favourite places for you" },
     image: {
       src: landscape,
@@ -55,8 +55,16 @@ const defaultCards: readonly StayCardSource[] = [
   },
 ];
 
+/** Same cards, EXPLORE named after the property's region (photos: tenant default for now). */
+function withRegion(title: StayCardSource["title"]): readonly StayCardSource[] {
+  return defaultCards.map((card) => (card.id === "explore" ? { ...card, title } : card));
+}
+
 const cardsByProperty: Readonly<Record<string, readonly StayCardSource[]>> = {
   hov: defaultCards,
+  laeke: withRegion({ de: "Den Bodensee entdecken", en: "Discover Lake Constance" }),
+  huesle: withRegion({ de: "Vorarlberg entdecken", en: "Discover Vorarlberg" }),
+  alpila: withRegion({ de: "Das Montafon entdecken", en: "Discover the Montafon" }),
 };
 
 /** Cards for a property, falling back to the tenant default until property content exists. */

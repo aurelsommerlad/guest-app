@@ -52,6 +52,30 @@ describe("InfoTile", () => {
     );
     expect(markup).toContain("type-title");
   });
+
+  it("can be one link over the whole tile, with a footer and a statement value", () => {
+    const markup = renderToStaticMarkup(
+      <dl>
+        <InfoTile
+          icon="id-card"
+          label="Online-Check-in"
+          value="Fast geschafft."
+          valueStyle="statement"
+          meta="Noch 1 Schritt offen"
+          footer={<span data-testid="progress" />}
+          href="/de/check-in"
+          linkLabel="Check-in fortsetzen"
+          tone="accent"
+        />
+      </dl>,
+    );
+    expect(markup).toContain("type-statement");
+    // The link sits inside the <dd> (valid description list) and covers the tile.
+    expect(markup).toMatch(
+      /<dd[^>]*>.*<a href="\/de\/check-in" class="absolute inset-0[^"]*">.*Check-in fortsetzen.*<\/a><\/dd>/,
+    );
+    expect(markup).toContain('data-testid="progress"');
+  });
 });
 
 describe("EditorialImageCard", () => {

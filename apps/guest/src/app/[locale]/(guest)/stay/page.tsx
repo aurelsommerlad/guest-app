@@ -6,12 +6,9 @@ import { notFound } from "next/navigation";
 
 import { BrandHeader } from "../../../../components/GuestHeader";
 import { AccessPanel } from "../../../../features/stay/components/AccessPanel";
-import { CheckInCard } from "../../../../features/stay/components/CheckInCard";
 import { Greeting } from "../../../../features/stay/components/Greeting";
 import { StayCards } from "../../../../features/stay/components/StayCards";
-import { StayInfoGrid } from "../../../../features/stay/components/StayInfoGrid";
-import { StayLinks } from "../../../../features/stay/components/StayLinks";
-import { StaySummaryCard } from "../../../../features/stay/components/StaySummaryCard";
+import { StayTiles } from "../../../../features/stay/components/StayTiles";
 import { getStay } from "../../../../features/stay/get-stay";
 import { routing } from "../../../../i18n/routing";
 
@@ -30,16 +27,17 @@ export default async function StayPage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
 
-  const [stay, t] = await Promise.all([getStay(locale), getTranslations("stay")]);
-  const accessCard = stay.access ? (
-    <AccessPanel access={stay.access} />
-  ) : stay.accessPreview ? (
-    <AccessPanel preview={stay.accessPreview} />
-  ) : undefined;
+  const stay = await getStay(locale);
+  const accessFirst = stay.journeyPhase === "arrival-day";
+  const accessPanel = stay.access && (
+    <div className="mt-2 lg:mt-8 lg:max-w-reading">
+      <AccessPanel access={stay.access} />
+    </div>
+  );
 
   return (
     <div className="safe-top">
-      {/* Tablet keeps the phone composition in a calm centered column; desktop gets its own grid. */}
+      {/* Phones: the original composition; desktop: greeting and tiles side by side. */}
       <Container width="content" className="md:max-w-reading lg:max-w-content lg:pt-10">
         <BrandHeader property={stay.property} />
 
@@ -49,30 +47,19 @@ export default async function StayPage({ params }: Props) {
               <Greeting firstName={stay.guest.firstName} upcoming={stay.upcoming} />
             </div>
             <div className="lg:col-span-5">
-              {stay.upcoming ? (
-                <StaySummaryCard summary={stay.summary} />
-              ) : (
-                <StayInfoGrid status={stay.timeTile} unit={stay.unit} />
-              )}
+              <StayTiles start={stay.tiles.start} accent={stay.tiles.accent} />
             </div>
           </div>
 
-          {(stay.checkIn ?? accessCard) && (
-            <div className="mt-3 grid items-start gap-3 lg:mt-8 lg:grid-cols-2">
-              {stay.checkIn && <CheckInCard card={stay.checkIn} />}
-              {accessCard}
-            </div>
-          )}
+          {/* Arrival day: how to get in comes first. Afterwards it moves below the photo cards,
+              so the screen keeps the original composition (tiles, then photos). */}
+          {accessFirst && accessPanel}
 
-          <div className="mt-6 lg:mt-12">
-            {/* Phones: compact cards; desktop: the three photo cards side by side. */}
-            <div className="lg:hidden">
-              <StayLinks cards={stay.cards} heading={t("linksHeading")} />
-            </div>
-            <div className="hidden lg:block">
-              <StayCards cards={stay.cards} />
-            </div>
+          <div className="mt-2 lg:mt-12">
+            <StayCards cards={stay.cards} />
           </div>
+
+          {!accessFirst && accessPanel}
         </main>
       </Container>
     </div>

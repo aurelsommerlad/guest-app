@@ -31,7 +31,7 @@ export type MigrationStatus = {
 async function rowsOf<T>(db: Database, query: SQL): Promise<T[]> {
   const result: unknown = await db.execute(query);
   if (Array.isArray(result)) return result as T[];
-  return ((result as { rows?: T[] }).rows ?? []);
+  return (result as { rows?: T[] }).rows ?? [];
 }
 
 /** Read-only: compares the database's migration table with the journal. */

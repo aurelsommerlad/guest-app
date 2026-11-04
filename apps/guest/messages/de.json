@@ -92,7 +92,15 @@
       },
       "occupancyChanged": "Die Personenzahl Deiner Buchung hat sich nach dem Check-in geändert. Bitte melde Dich kurz bei uns."
     },
-    "linksHeading": "Für Deinen Aufenthalt"
+    "linksHeading": "Für Deinen Aufenthalt",
+    "tiles": {
+      "stay": "Dein Aufenthalt",
+      "notStarted": "Jetzt starten.",
+      "inProgress": "Weiter geht's.",
+      "almostDone": "Fast geschafft.",
+      "completed": "Erledigt.",
+      "completedMeta": "Bis bald!"
+    }
   },
   "stayError": {
     "title": "Dein Aufenthalt ist gerade nicht erreichbar.",

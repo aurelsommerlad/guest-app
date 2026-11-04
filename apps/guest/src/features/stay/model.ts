@@ -80,6 +80,8 @@ export type StayViewModel = {
   timeTile: Extract<StayStatus, { kind: "check-in" | "check-out" }>;
   /** Online check-in card (not started / in progress / completed); undefined if not used. */
   checkIn?: CheckInCardView;
+  /** The two tiles under the greeting (left: stay / time / apartment, right: check-in / apartment). */
+  tiles: { start: StartTileView; accent: AccentTileView };
   cards: readonly StayCard[];
 };
 
@@ -94,6 +96,37 @@ export type StaySummary = {
 };
 
 export type CheckInStepId = CheckInStep;
+
+/** Left tile: the stay before arrival, the next time (check-in / check-out) during it. */
+export type StartTileView =
+  | {
+      kind: "stay";
+      /** "12.–14. Jan. 2027" */
+      dates: string;
+      /** "HØV · ROS" */
+      title: string;
+      href: string;
+    }
+  | ({ kind: "time"; which: "check-in" | "check-out"; today: boolean } & LocalTime)
+  /** During the stay while the check-in is still open: the apartment moves left. */
+  | { kind: "apartment"; name: string; href: string };
+
+/** Right (sage) tile: the open online check-in, its completion, or the apartment. */
+export type AccentTileView =
+  | {
+      kind: "check-in";
+      state: "not-started" | "in-progress";
+      stepsRemaining: number;
+      /** One segment per visible step (trip, guests, address, review). */
+      steps: readonly { id: CheckInStepId; done: boolean }[];
+      href: string;
+    }
+  | {
+      kind: "check-in-completed";
+      guestRegistration?: "pending" | "submitted";
+      occupancyChanged?: boolean;
+    }
+  | { kind: "apartment"; name: string; href: string };
 
 export type CheckInCardView =
   | { state: "not-started"; href: string; steps: readonly CheckInStepId[] }

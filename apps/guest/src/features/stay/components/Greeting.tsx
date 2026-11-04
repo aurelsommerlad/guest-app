@@ -13,8 +13,8 @@ export async function Greeting({
   const t = await getTranslations("stay");
   const br = () => <br />;
   return (
-    <div className="flex flex-col gap-3">
-      <Heading level={1}>
+    <div className="flex flex-col gap-2">
+      <Heading level={1} variant={upcoming ? "display-compact" : "display"}>
         {upcoming
           ? firstName
             ? t.rich("greetingUpcoming", { firstName, br })

@@ -58,8 +58,8 @@
       "previewDate": "You will find your access details here on your arrival day, {date}.",
       "codeHint": "For your security, the code is only shown when you ask for it."
     },
-    "greetingUpcoming": "Hello {firstName},<br></br>we look forward to welcoming you.",
-    "greetingUpcomingWithoutName": "Hello,<br></br>we look forward to welcoming you.",
+    "greetingUpcoming": "Hello {firstName},<br></br>so glad you're coming.",
+    "greetingUpcomingWithoutName": "Hello,<br></br>so glad you're coming.",
     "summary": {
       "label": "Your reservation",
       "travellers": "{adults, plural, one {# adult} other {# adults}}{children, plural, =0 {} one {, # child} other {, # children}}",
@@ -92,7 +92,15 @@
       },
       "occupancyChanged": "The number of people in your booking changed after your check-in. Please get in touch with us."
     },
-    "linksHeading": "For your stay"
+    "linksHeading": "For your stay",
+    "tiles": {
+      "stay": "Your stay",
+      "notStarted": "Start now.",
+      "inProgress": "Keep going.",
+      "almostDone": "Almost done.",
+      "completed": "All done.",
+      "completedMeta": "See you soon!"
+    }
   },
   "stayError": {
     "title": "Your stay is not available right now.",

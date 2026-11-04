@@ -5,6 +5,7 @@ import { textTones, type TextTone } from "./Text";
 
 export const headingVariants = {
   display: "type-display",
+  "display-compact": "type-display-compact",
   "title-lg": "type-title-lg",
   title: "type-title",
 } as const;

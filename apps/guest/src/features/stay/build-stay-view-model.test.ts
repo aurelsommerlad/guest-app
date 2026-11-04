@@ -313,3 +313,117 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
     ).toBeUndefined();
   });
 });
+
+describe("STAY tiles (original two-tile design)", () => {
+  const before = new Date("2026-08-20T09:00:00+02:00");
+  const partly = {
+    trip: "complete",
+    guests: "complete",
+    address: "complete",
+    review: "incomplete",
+  } as const;
+  const done = {
+    trip: "complete",
+    guests: "complete",
+    address: "complete",
+    review: "complete",
+  } as const;
+
+  it("before arrival with an open check-in: stay left, check-in with four segments right", () => {
+    const model = buildStayViewModel(
+      source,
+      "de",
+      before,
+      journeyAt(before, "not-started", notReleased),
+    );
+    expect(model.tiles.start).toEqual({
+      kind: "stay",
+      dates: "27.–31. Aug. 2026",
+      title: "HØV · ROS",
+      href: "/guide",
+    });
+    expect(model.tiles.accent).toEqual({
+      kind: "check-in",
+      state: "not-started",
+      stepsRemaining: 4,
+      steps: [
+        { id: "trip", done: false },
+        { id: "guests", done: false },
+        { id: "address", done: false },
+        { id: "review", done: false },
+      ],
+      href: "/check-in",
+    });
+  });
+
+  it("shows the real progress while in progress (e.g. one step left)", () => {
+    const model = buildStayViewModel(source, "de", before, {
+      ...journeyAt(before, "in-progress", notReleased),
+      assessment: { stepsRemaining: 1, steps: partly },
+    });
+    expect(model.tiles.accent).toMatchObject({
+      kind: "check-in",
+      state: "in-progress",
+      stepsRemaining: 1,
+      steps: [{ done: true }, { done: true }, { done: true }, { done: false }],
+    });
+  });
+
+  it("shows the completion before arrival – and nothing invented about the guest registration", () => {
+    const model = buildStayViewModel(source, "de", before, {
+      ...journeyAt(before, "completed", notReleased),
+      assessment: { stepsRemaining: 0, steps: done },
+    });
+    expect(model.tiles.start.kind).toBe("stay");
+    expect(model.tiles.accent).toEqual({ kind: "check-in-completed" });
+  });
+
+  it("during the stay: check-out left, apartment right (as in the original design)", () => {
+    const model = buildStayViewModel(
+      source,
+      "de",
+      inHouse,
+      journeyAt(inHouse, "completed", keybox),
+    );
+    expect(model.tiles.start).toEqual({
+      kind: "time",
+      which: "check-out",
+      today: false,
+      time: "10:00",
+      date: "31. August 2026",
+      dateTime: "2026-08-31T10:00:00+02:00",
+    });
+    expect(model.tiles.accent).toEqual({ kind: "apartment", name: "ROS", href: "/guide" });
+  });
+
+  it("during the stay with an open check-in: the apartment moves left and stays reachable", () => {
+    const model = buildStayViewModel(
+      source,
+      "de",
+      inHouse,
+      journeyAt(inHouse, "in-progress", keybox, 2),
+    );
+    expect(model.tiles.start).toEqual({ kind: "apartment", name: "ROS", href: "/guide" });
+    expect(model.tiles.accent).toMatchObject({ kind: "check-in", state: "in-progress" });
+  });
+
+  it("without journey data or online check-in: check-out and apartment", () => {
+    const model = buildStayViewModel(source, "en", inHouse);
+    expect(model.tiles.start).toMatchObject({ kind: "time", which: "check-out", time: "10:00 AM" });
+    expect(model.tiles.accent).toEqual({ kind: "apartment", name: "ROS", href: "/guide" });
+  });
+
+  it("formats the short stay range per locale", () => {
+    const model = buildStayViewModel(
+      source,
+      "en",
+      before,
+      journeyAt(before, "not-started", notReleased),
+    );
+    expect(model.tiles.start).toMatchObject({ kind: "stay" });
+    // Intl uses thin spaces around the en dash.
+    expect(model.tiles.start.kind === "stay" && model.tiles.start.dates.replace(/\s/g, " ")).toBe(
+      "Aug 27 – 31, 2026",
+    );
+  });
+});
