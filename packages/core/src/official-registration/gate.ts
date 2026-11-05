@@ -9,23 +9,11 @@
 import { z } from "zod";
 
 import { type CompletenessBlocker } from "../check-in-status/check-in-status";
+import { type OfficialRegistrationSettings } from "./settings";
 
 /** Global switch (env OFFICIAL_REGISTRATION_MODE). F4 adds "test", production needs approval. */
 export const officialRegistrationModeSchema = z.enum(["disabled", "simulated"]);
 export type OfficialRegistrationMode = z.infer<typeof officialRegistrationModeSchema>;
-
-/** Per property (providerSettings / journey settings in F2). */
-export const officialRegistrationPropertySchema = z.strictObject({
-  enabled: z.boolean(),
-  environment: z.literal("simulated"),
-  /** Guest cards are issued by the destination for this property. */
-  guestCards: z.boolean(),
-  /** Travellers younger than this count as children (tax / card category). */
-  childUnderAge: z.number().int().min(1).max(18),
-});
-export type OfficialRegistrationPropertySettings = z.infer<
-  typeof officialRegistrationPropertySchema
->;
 
 export const OFFICIAL_GATE_REASONS = [
   "mode-disabled",
@@ -39,7 +27,8 @@ export type OfficialGateReason = (typeof OFFICIAL_GATE_REASONS)[number];
 
 export type OfficialGateInput = {
   mode: OfficialRegistrationMode;
-  property: OfficialRegistrationPropertySettings | undefined;
+  /** Stored settings of the property for this target (settings.ts). */
+  property: Pick<OfficialRegistrationSettings, "enabled" | "environment"> | undefined;
   /** Only test properties may use the simulated target. */
   propertyIsTestOnly: boolean;
   registrationSubmitted: boolean;

@@ -10,7 +10,17 @@
  *   roles (`anon`, `authenticated`) see nothing. The app connects as the table owner.
  */
 import {
+  BINDING_REGISTRATION_RULES,
   CONTENT_LOCALES,
+  CREATING_OPERATIONS,
+  GUEST_CARD_STATUSES,
+  MANUAL_REASONS,
+  OFFICIAL_ENVIRONMENTS,
+  OFFICIAL_ERROR_CODES,
+  OFFICIAL_OPERATIONS,
+  OFFICIAL_REGISTRATION_TARGETS,
+  REMOTE_STAGES,
+  TRANSMISSION_STATUSES,
   type ContentImage,
   ENTITY_KEY_PATTERN,
   EXPLORE_CATEGORIES,
@@ -1045,6 +1055,381 @@ export const paymentAuditEvents = pgTable(
   ],
 ).enableRLS();
 
+/* ------------------------------------------------------------------------------------------
+ * Official guest registration (Meldewesen, Feratel) – ADR 0022, phase F2
+ *
+ * Four tables, all without personal data:
+ * - official_registration_settings: per tenant, property and target (timing, confirmed
+ *   operations, retention). Enabled only with the simulated environment (CHECK) until approved.
+ * - official_registrations: state per check-in / reservation and target – the duplicate guard
+ *   (one row per registration and per reservation, unique references, unresolved calls).
+ * - official_guest_cards: guest card status, separate from the registration status.
+ * - official_registration_events: append-only protocol (triggers in migration 0014).
+ * ---------------------------------------------------------------------------------------- */
+
+export const OFFICIAL_EVENT_OPERATIONS = [
+  ...OFFICIAL_OPERATIONS,
+  "handover-to-staff",
+  "admin-retry",
+  "admin-resolve",
+  "guest-card-update",
+] as const;
+export const OFFICIAL_EVENT_RESULTS = [
+  "ok",
+  "rejected",
+  "temporary",
+  "ambiguous",
+  "not-supported",
+  "manual",
+  "skipped",
+] as const;
+export const OFFICIAL_EVENT_ACTORS = ["system", "admin"] as const;
+export const GUEST_CARD_DELIVERY_CHANNELS = ["target-email", "app", "print"] as const;
+
+function sqlList(values: Iterable<string>): SQL {
+  return sql.raw([...values].map((value) => `'${value}'`).join(", "));
+}
+
+function retentionDays(column: AnyPgColumn): SQL {
+  return sql`${column} IS NULL OR ${column} BETWEEN 1 AND 3650`;
+}
+
+export const officialRegistrationSettings = pgTable(
+  "official_registration_settings",
+  {
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    target: text("target", { enum: OFFICIAL_REGISTRATION_TARGETS }).notNull(),
+    enabled: boolean("enabled").notNull().default(false),
+    environment: text("environment", { enum: OFFICIAL_ENVIRONMENTS })
+      .notNull()
+      .default("simulated"),
+    /** When the binding registration form is due (per destination). */
+    bindingRegistrationRule: text("binding_registration_rule", { enum: BINDING_REGISTRATION_RULES })
+      .notNull()
+      .default("arrival-day"),
+    bindingRegistrationDays: integer("binding_registration_days"),
+    preRegistrationLeadDays: integer("pre_registration_lead_days"),
+    /** Operations confirmed for this destination – effective = documented ∩ allowed. */
+    allowedOperations: text("allowed_operations")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    guestCards: boolean("guest_cards").notNull().default(false),
+    childUnderAge: integer("child_under_age").notNull(),
+    /** Non-secret values (e.g. mapping code). Credentials never live in the database. */
+    providerSettings: jsonb("provider_settings")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    stateRetentionDays: integer("state_retention_days"),
+    eventRetentionDays: integer("event_retention_days"),
+    version: integer("version").notNull().default(1),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({
+      name: "official_registration_settings_pkey",
+      columns: [t.tenantId, t.propertyId, t.target],
+    }),
+    foreignKey({
+      name: "official_registration_settings_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    check(
+      "official_registration_settings_target_valid",
+      oneOf(t.target, OFFICIAL_REGISTRATION_TARGETS),
+    ),
+    check(
+      "official_registration_settings_environment_valid",
+      oneOf(t.environment, OFFICIAL_ENVIRONMENTS),
+    ),
+    // Guard until explicit approval: only the simulated environment can be switched on.
+    check(
+      "official_registration_settings_live_guard",
+      sql`NOT ${t.enabled} OR ${t.environment} = 'simulated'`,
+    ),
+    check(
+      "official_registration_settings_rule_valid",
+      oneOf(t.bindingRegistrationRule, BINDING_REGISTRATION_RULES),
+    ),
+    check(
+      "official_registration_settings_rule_days",
+      sql`(${t.bindingRegistrationRule} = 'days-before-arrival') = (${t.bindingRegistrationDays} IS NOT NULL) AND (${t.bindingRegistrationDays} IS NULL OR ${t.bindingRegistrationDays} BETWEEN 1 AND 30)`,
+    ),
+    check(
+      "official_registration_settings_lead_days",
+      sql`${t.preRegistrationLeadDays} IS NULL OR ${t.preRegistrationLeadDays} BETWEEN 1 AND 365`,
+    ),
+    check(
+      "official_registration_settings_operations_known",
+      sql`${t.allowedOperations} <@ ARRAY[${sqlList(OFFICIAL_OPERATIONS)}]::text[]`,
+    ),
+    check("official_registration_settings_child_age", sql`${t.childUnderAge} BETWEEN 1 AND 18`),
+    check(
+      "official_registration_settings_provider_settings_object",
+      sql`jsonb_typeof(${t.providerSettings}) = 'object' AND octet_length(${t.providerSettings}::text) <= 4096`,
+    ),
+    check("official_registration_settings_state_retention", retentionDays(t.stateRetentionDays)),
+    check("official_registration_settings_event_retention", retentionDays(t.eventRetentionDays)),
+    check("official_registration_settings_version_positive", sql`${t.version} > 0`),
+  ],
+).enableRLS();
+
+export const officialRegistrations = pgTable(
+  "official_registrations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    target: text("target", { enum: OFFICIAL_REGISTRATION_TARGETS }).notNull(),
+    /** The canonical check-in (guest_registrations) this state belongs to. */
+    registrationId: uuid("registration_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    /** Our non-personal reference at the target: 'up-' || registration_id. */
+    ourReference: text("our_reference").notNull(),
+    stage: text("stage", { enum: REMOTE_STAGES }).notNull().default("none"),
+    transmission: text("transmission", { enum: TRANSMISSION_STATUSES })
+      .notNull()
+      .default("pending"),
+    externalReference: text("external_reference"),
+    acceptedFingerprint: text("accepted_fingerprint"),
+    acceptedGuestFingerprint: text("accepted_guest_fingerprint"),
+    acceptedArrivalDate: date("accepted_arrival_date", { mode: "string" }),
+    acceptedDepartureDate: date("accepted_departure_date", { mode: "string" }),
+    attempts: integer("attempts").notNull().default(0),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+    /** Worker lease – a second worker cannot process the same row meanwhile. */
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
+    lastErrorCode: text("last_error_code", { enum: OFFICIAL_ERROR_CODES }),
+    manualReason: text("manual_reason", { enum: MANUAL_REASONS }),
+    /** A creating call with unknown outcome – reconciled before anything else is sent. */
+    unresolvedOperation: text("unresolved_operation", { enum: OFFICIAL_OPERATIONS }),
+    unresolvedIdempotencyKey: text("unresolved_idempotency_key"),
+    unresolvedFingerprint: text("unresolved_fingerprint"),
+    unresolvedGuestFingerprint: text("unresolved_guest_fingerprint"),
+    unresolvedArrivalDate: date("unresolved_arrival_date", { mode: "string" }),
+    unresolvedDepartureDate: date("unresolved_departure_date", { mode: "string" }),
+    unresolvedAt: timestamp("unresolved_at", { withTimezone: true }),
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    version: integer("version").notNull().default(1),
+    ...timestamps,
+  },
+  (t) => [
+    unique("official_registrations_tenant_id_id_key").on(t.tenantId, t.id),
+    // Duplicate guards: one state per check-in and target, and per reservation and target.
+    unique("official_registrations_registration_key").on(t.tenantId, t.registrationId, t.target),
+    unique("official_registrations_reservation_key").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+      t.target,
+    ),
+    unique("official_registrations_our_reference_key").on(t.target, t.ourReference),
+    uniqueIndex("official_registrations_external_reference_key")
+      .on(t.target, t.externalReference)
+      .where(sql`${t.externalReference} IS NOT NULL`),
+    index("official_registrations_due_idx").on(t.transmission, t.nextAttemptAt),
+    index("official_registrations_property_idx").on(t.tenantId, t.propertyId, t.transmission),
+    foreignKey({
+      name: "official_registrations_registration_fkey",
+      columns: [t.tenantId, t.registrationId],
+      foreignColumns: [guestRegistrations.tenantId, guestRegistrations.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "official_registrations_settings_fkey",
+      columns: [t.tenantId, t.propertyId, t.target],
+      foreignColumns: [
+        officialRegistrationSettings.tenantId,
+        officialRegistrationSettings.propertyId,
+        officialRegistrationSettings.target,
+      ],
+    }).onDelete("restrict"),
+    check("official_registrations_target_valid", oneOf(t.target, OFFICIAL_REGISTRATION_TARGETS)),
+    check(
+      "official_registrations_reservation_provider_valid",
+      oneOf(t.reservationProvider, RESERVATION_PROVIDERS),
+    ),
+    check(
+      "official_registrations_external_reservation_id_not_blank",
+      notBlank(t.externalReservationId, 255),
+    ),
+    check(
+      "official_registrations_our_reference_format",
+      sql`${t.ourReference} = 'up-' || ${t.registrationId}::text`,
+    ),
+    check("official_registrations_stage_valid", oneOf(t.stage, REMOTE_STAGES)),
+    check(
+      "official_registrations_transmission_valid",
+      oneOf(t.transmission, TRANSMISSION_STATUSES),
+    ),
+    check("official_registrations_external_reference_length", maxLength(t.externalReference, 255)),
+    check(
+      "official_registrations_confirmed_has_reference",
+      sql`${t.transmission} <> 'confirmed' OR ${t.externalReference} IS NOT NULL`,
+    ),
+    check(
+      "official_registrations_staff_reason",
+      sql`(${t.transmission} IN ('manual', 'failed')) = (${t.manualReason} IS NOT NULL)`,
+    ),
+    check(
+      "official_registrations_error_code_valid",
+      sql`${t.lastErrorCode} IS NULL OR ${oneOf(t.lastErrorCode, OFFICIAL_ERROR_CODES)}`,
+    ),
+    check(
+      "official_registrations_manual_reason_valid",
+      sql`${t.manualReason} IS NULL OR ${oneOf(t.manualReason, MANUAL_REASONS)}`,
+    ),
+    check(
+      "official_registrations_accepted_consistent",
+      sql`(${t.acceptedFingerprint} IS NULL AND ${t.acceptedGuestFingerprint} IS NULL AND ${t.acceptedArrivalDate} IS NULL AND ${t.acceptedDepartureDate} IS NULL)
+        OR (${isSha256Hex(t.acceptedFingerprint)} AND ${isSha256Hex(t.acceptedGuestFingerprint)} AND ${t.acceptedDepartureDate} > ${t.acceptedArrivalDate})`,
+    ),
+    check(
+      "official_registrations_unresolved_consistent",
+      sql`(${t.unresolvedOperation} IS NULL AND ${t.unresolvedIdempotencyKey} IS NULL AND ${t.unresolvedFingerprint} IS NULL AND ${t.unresolvedGuestFingerprint} IS NULL AND ${t.unresolvedArrivalDate} IS NULL AND ${t.unresolvedDepartureDate} IS NULL AND ${t.unresolvedAt} IS NULL)
+        OR (${t.unresolvedOperation} IN (${sqlList(CREATING_OPERATIONS)}) AND ${isSha256Hex(t.unresolvedIdempotencyKey)} AND ${isSha256Hex(t.unresolvedFingerprint)} AND ${isSha256Hex(t.unresolvedGuestFingerprint)} AND ${t.unresolvedDepartureDate} > ${t.unresolvedArrivalDate} AND ${t.unresolvedAt} IS NOT NULL)`,
+    ),
+    check("official_registrations_attempts_range", sql`${t.attempts} >= 0`),
+    check("official_registrations_version_positive", sql`${t.version} > 0`),
+  ],
+).enableRLS();
+
+export const officialGuestCards = pgTable(
+  "official_guest_cards",
+  {
+    tenantId: text("tenant_id").notNull(),
+    officialRegistrationId: uuid("official_registration_id").notNull(),
+    status: text("status", { enum: GUEST_CARD_STATUSES }).notNull(),
+    deliveryChannel: text("delivery_channel", { enum: GUEST_CARD_DELIVERY_CHANNELS }),
+    /** Reference of the card at the target, if it reports one (no link, no code). */
+    externalCardReference: text("external_card_reference"),
+    cardCount: integer("card_count"),
+    lastErrorCode: text("last_error_code", { enum: OFFICIAL_ERROR_CODES }),
+    statusChangedAt: timestamp("status_changed_at", { withTimezone: true }).notNull(),
+    version: integer("version").notNull().default(1),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({
+      name: "official_guest_cards_pkey",
+      columns: [t.tenantId, t.officialRegistrationId],
+    }),
+    foreignKey({
+      name: "official_guest_cards_registration_fkey",
+      columns: [t.tenantId, t.officialRegistrationId],
+      foreignColumns: [officialRegistrations.tenantId, officialRegistrations.id],
+    }).onDelete("restrict"),
+    check("official_guest_cards_status_valid", oneOf(t.status, GUEST_CARD_STATUSES)),
+    check(
+      "official_guest_cards_channel_valid",
+      sql`${t.deliveryChannel} IS NULL OR ${oneOf(t.deliveryChannel, GUEST_CARD_DELIVERY_CHANNELS)}`,
+    ),
+    check("official_guest_cards_reference_length", maxLength(t.externalCardReference, 255)),
+    check(
+      "official_guest_cards_card_count",
+      sql`${t.cardCount} IS NULL OR ${t.cardCount} BETWEEN 1 AND ${sql.raw(String(MAX_TRAVELLERS))}`,
+    ),
+    check(
+      "official_guest_cards_error_code_valid",
+      sql`${t.lastErrorCode} IS NULL OR ${oneOf(t.lastErrorCode, OFFICIAL_ERROR_CODES)}`,
+    ),
+    check("official_guest_cards_version_positive", sql`${t.version} > 0`),
+  ],
+).enableRLS();
+
+export const officialRegistrationEvents = pgTable(
+  "official_registration_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    target: text("target", { enum: OFFICIAL_REGISTRATION_TARGETS }).notNull(),
+    officialRegistrationId: uuid("official_registration_id").notNull(),
+    operation: text("operation", { enum: OFFICIAL_EVENT_OPERATIONS }).notNull(),
+    result: text("result", { enum: OFFICIAL_EVENT_RESULTS }).notNull(),
+    code: text("code", { enum: OFFICIAL_ERROR_CODES }),
+    attempt: integer("attempt"),
+    idempotencyKey: text("idempotency_key"),
+    manualReason: text("manual_reason", { enum: MANUAL_REASONS }),
+    actor: text("actor", { enum: OFFICIAL_EVENT_ACTORS }).notNull(),
+    adminUserId: uuid("admin_user_id"),
+    stageAfter: text("stage_after", { enum: REMOTE_STAGES }).notNull(),
+    transmissionAfter: text("transmission_after", { enum: TRANSMISSION_STATUSES }).notNull(),
+    guestCardAfter: text("guest_card_after", { enum: GUEST_CARD_STATUSES }),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    /** Retention: may be purged after this instant (only by the purge job, see 0014). */
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: "official_registration_events_registration_fkey",
+      columns: [t.tenantId, t.officialRegistrationId],
+      foreignColumns: [officialRegistrations.tenantId, officialRegistrations.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "official_registration_events_admin_fkey",
+      columns: [t.tenantId, t.adminUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("restrict"),
+    index("official_registration_events_registration_idx").on(
+      t.tenantId,
+      t.officialRegistrationId,
+      t.occurredAt,
+    ),
+    index("official_registration_events_purge_idx").on(t.purgeAfter),
+    // A creating operation with the same content succeeds at most once per registration.
+    uniqueIndex("official_registration_events_one_successful_create")
+      .on(t.officialRegistrationId, t.idempotencyKey)
+      .where(
+        sql`${t.result} = 'ok' AND ${t.idempotencyKey} IS NOT NULL AND ${t.operation} IN (${sqlList(CREATING_OPERATIONS)})`,
+      ),
+    check(
+      "official_registration_events_target_valid",
+      oneOf(t.target, OFFICIAL_REGISTRATION_TARGETS),
+    ),
+    check(
+      "official_registration_events_operation_valid",
+      oneOf(t.operation, OFFICIAL_EVENT_OPERATIONS),
+    ),
+    check("official_registration_events_result_valid", oneOf(t.result, OFFICIAL_EVENT_RESULTS)),
+    check(
+      "official_registration_events_code_valid",
+      sql`${t.code} IS NULL OR ${oneOf(t.code, OFFICIAL_ERROR_CODES)}`,
+    ),
+    check(
+      "official_registration_events_manual_reason_valid",
+      sql`${t.manualReason} IS NULL OR ${oneOf(t.manualReason, MANUAL_REASONS)}`,
+    ),
+    check("official_registration_events_actor_valid", oneOf(t.actor, OFFICIAL_EVENT_ACTORS)),
+    check(
+      "official_registration_events_admin_consistent",
+      sql`(${t.actor} = 'admin') = (${t.adminUserId} IS NOT NULL)`,
+    ),
+    check(
+      "official_registration_events_idempotency_key_format",
+      sql`${t.idempotencyKey} IS NULL OR ${isSha256Hex(t.idempotencyKey)}`,
+    ),
+    check(
+      "official_registration_events_attempt_range",
+      sql`${t.attempt} IS NULL OR ${t.attempt} >= 1`,
+    ),
+    check("official_registration_events_stage_valid", oneOf(t.stageAfter, REMOTE_STAGES)),
+    check(
+      "official_registration_events_transmission_valid",
+      oneOf(t.transmissionAfter, TRANSMISSION_STATUSES),
+    ),
+    check(
+      "official_registration_events_guest_card_valid",
+      sql`${t.guestCardAfter} IS NULL OR ${oneOf(t.guestCardAfter, GUEST_CARD_STATUSES)}`,
+    ),
+  ],
+).enableRLS();
+
 export const schema = {
   tenants,
   properties,
@@ -1066,4 +1451,8 @@ export const schema = {
   paymentRequests,
   reservationPaymentStates,
   paymentAuditEvents,
+  officialRegistrationSettings,
+  officialRegistrations,
+  officialGuestCards,
+  officialRegistrationEvents,
 };

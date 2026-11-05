@@ -26,6 +26,9 @@ export type RunInput = {
   stay: StayFacts;
   gate: OfficialGateResult;
   today: string;
+  /** From the property settings (bindingRegistrationDate / preRegistrationOpensOn). */
+  registrationDay: string;
+  preRegistrationFrom?: string;
 };
 
 export type RunResult = {
@@ -49,6 +52,8 @@ export async function runOfficialRegistration(
     fingerprint,
     guestFingerprint,
     today: input.today,
+    registrationDay: input.registrationDay,
+    ...(input.preRegistrationFrom ? { preRegistrationFrom: input.preRegistrationFrom } : {}),
     now,
   });
 

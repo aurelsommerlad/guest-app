@@ -92,6 +92,20 @@
       "when": 1793869039634,
       "tag": "0012_lock_and_audit_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793876480499,
+      "tag": "0013_official_registrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793876481748,
+      "tag": "0014_lock_and_audit_official_registrations",
+      "breakpoints": true
     }
   ]
 }

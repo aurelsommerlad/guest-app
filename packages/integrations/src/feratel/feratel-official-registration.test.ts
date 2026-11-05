@@ -101,7 +101,7 @@ function setup(
     });
     const result = await runOfficialRegistration(
       { provider, now: () => now, logger },
-      { state, payload, stay, gate: { open: true }, today },
+      { state, payload, stay, gate: { open: true }, today, registrationDay: stay.arrivalDate },
     );
     state = result.state;
     return result;

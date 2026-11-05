@@ -1,6 +1,10 @@
 # 0022 – Direkte Feratel-Anbindung: elektronische Gästemeldung und digitale Gästekarten
 
-**Status:** Akzeptiert für die Umsetzung in Phasen (2026-11-05). **F0 und F1 sind umgesetzt.** F1 läuft nur mit simulierten Antworten. F2 und alle weiteren Phasen brauchen eine eigene Freigabe.
+**Status:** Akzeptiert für die Umsetzung in Phasen (2026-11-05).
+
+- **F0 und F1 sind umgesetzt.** F1 läuft nur mit simulierten Antworten.
+- **F2 ist umgesetzt** (Datenbank, nur Staging).
+- F3 und alle weiteren Phasen brauchen eine eigene Freigabe.
 
 Ergänzt [ADR 0016](0016-guest-journey-and-online-check-in.md) (Registrierungs-Sync) und [ADR 0021](0021-check-in-validation-and-billing-address.md) (Bestätigungen, Meldevorlagen). Recherche und Fragen: [docs/integrations/feratel-guest-registration.md](../integrations/feratel-guest-registration.md) und [Anfrage an feratel](../integrations/feratel-anfrage-visitor-registration-interface.md).
 
@@ -111,6 +115,41 @@ HØV braucht keine Übertragung.
   - `simulated-feratel-transport.ts`: In-Memory-Simulation mit steuerbaren Fehlern
 
   Diese Teile sind nicht an Apps, Cron oder Datenbank angebunden.
+
+## Umsetzung F2 (2026-11-05, Staging)
+
+- **Migrationen:**
+  - `0013_official_registrations` (generiert).
+  - `0014_lock_and_audit_official_registrations` (eigene Migration mit Revoke und Triggern).
+  - Getestet lokal mit PGlite und Postgres 16, sowohl frisch als auch als Upgrade von 13 Migrationen. Danach nur auf Staging angewendet (`docs/staging/P-migration-0013-0014.sql`).
+- **`official_registration_settings`** (je Mandant, Objekt und Ziel):
+  - Felder: `enabled`, `environment`, Zeitpunkt der verbindlichen Meldung (`binding_registration_rule` mit Anreisetag oder N Tage vorher), Vorlauf der Voranmeldung, `allowed_operations`, Gästekarte, Kinderalter, nicht geheime Provider-Werte, Aufbewahrungsfristen.
+  - CHECK: `enabled` ⇒ `environment = 'simulated'`.
+  - Ein Trigger lehnt geheimnisartige Schlüssel ab.
+- **`official_registrations`** (je Check-in und Ziel):
+  - Eindeutig je Check-in und Ziel und je Reservierung und Ziel.
+  - `our_reference = 'up-' || registration_id`; die Feratel-Referenz ist eindeutig und nur einmal setzbar.
+  - Unklare Anlage-Aufrufe werden gespeichert, dazu die Worker-Lease und die optimistische Versionierung.
+  - Ein Trigger bindet die Zeile an Mandant, Objekt und Apaleo-Reservierung des Check-ins. Diese Identität ist unveränderlich.
+- **`official_guest_cards`**: eigener Gästekartenstatus mit Kanal, Referenz und Anzahl.
+- **`official_registration_events`**:
+  - Nur Anhängen, ohne Freitext und ohne personenbezogene Daten.
+  - Akteur ist das System oder ein Admin (mit Admin-ID).
+  - Pro Check-in hat eine Anlage-Operation mit demselben Idempotenzschlüssel höchstens einmal Erfolg (partieller Unique-Index).
+- **Aufbewahrung:** Gelöscht wird nur durch `purgeOfficialRegistrationData` mit `SET LOCAL up.official_retention_purge = 'on'`, und nur Zeilen mit abgelaufenem `purge_after`. Die Fristen kommen aus den Einstellungen; ohne Frist wird nichts gelöscht.
+- **Bestehende Check-ins:** Sie lassen sich nicht löschen, solange ein Meldestatus existiert (`ON DELETE RESTRICT`), damit der Dublettenschutz nicht verloren geht. Bestehende Tabellen und Abläufe sind unverändert.
+- **Core:**
+  - `settings.ts` mit `bindingRegistrationDate`, `preRegistrationOpensOn` und `effectiveCapabilities` (dokumentiert ∩ für den Standort bestätigt).
+  - Der Planer nutzt den konfigurierten Meldetag statt fest den Anreisetag.
+- **Repository** `official-registration-repository.ts`:
+  - Einstellungen lesen und speichern;
+  - Meldestatus genau einmal anlegen;
+  - Zustand und Protokoll atomar speichern;
+  - fällige Zeilen nur aktivierter Objekte per Lease abholen;
+  - Listen lesen;
+  - Purge.
+
+  Es ist an keine App und keinen Cron angebunden.
 
 ## Konsequenzen
 

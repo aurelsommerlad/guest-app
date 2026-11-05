@@ -43,5 +43,24 @@ Erwartet am Ende (L): `applied_migrations` = 11, `test_property_mapped` = true,
   Data-API und setzt die Trigger: Prüfprotokoll nur anfügbar, `cleared_at` nur einmal setzbar.
   Rein additiv, keine bestehenden Daten werden geändert. Danach `applied_migrations` = 13.
 
+## Feratel-Meldewesen (ADR 0022, F2)
+
+| Schritt | Skript                      | Wann                                                  |
+| ------- | --------------------------- | ----------------------------------------------------- |
+| 1       | `P-migration-0013-0014.sql` | nur wenn `applied_migrations` = 13 (Voraussetzung: O) |
+
+- **P** legt `official_registration_settings`, `official_registrations`, `official_guest_cards`
+  und `official_registration_events` an. Die Tabellen enthalten nur IDs, Referenzen, Status,
+  Codes, Fingerprints und Zeitpunkte, keine Gästedaten. Das Skript sperrt die Data-API und setzt
+  die Trigger:
+  - das Protokoll kann nur ergänzt werden;
+  - die Feratel-Referenz ist nur einmal setzbar;
+  - jede Meldung ist an ihren Check-in gebunden;
+  - Löschen ist nur per Aufbewahrungs-Purge möglich;
+  - in den Einstellungen sind keine Geheimnisse erlaubt.
+- Rein additiv, keine Einstellungen und keine Zeilen. Kein Objekt wird aktiviert; eine Aktivierung
+  ist ohnehin nur mit `environment = 'simulated'` möglich (CHECK).
+- Angewendet am 2026-11-05. Danach `applied_migrations` = 15.
+
 Neu erzeugen (nach neuen Migrationen) mit denselben Regeln: Inhalt der Migrationsdateien
 unverändert, Hash = SHA-256 der Datei, `created_at` = `when` aus `meta/_journal.json`.

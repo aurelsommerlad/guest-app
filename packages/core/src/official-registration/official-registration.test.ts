@@ -10,11 +10,7 @@ import {
   resolveManually,
   updateGuestCard,
 } from "./admin-actions";
-import {
-  evaluateOfficialGate,
-  officialRegistrationModeSchema,
-  officialRegistrationPropertySchema,
-} from "./gate";
+import { evaluateOfficialGate, officialRegistrationModeSchema } from "./gate";
 import {
   initialOfficialRegistrationState,
   NO_CAPABILITIES,
@@ -24,6 +20,12 @@ import {
   type ProviderCapabilities,
 } from "./model";
 import { applyOutcome, type ProviderOutcome } from "./outcome";
+import {
+  bindingRegistrationDate,
+  effectiveCapabilities,
+  officialRegistrationSettingsSchema,
+  preRegistrationOpensOn,
+} from "./settings";
 import {
   buildOfficialPayload,
   guestDataFingerprint,
@@ -105,6 +107,17 @@ function state(over: Partial<OfficialRegistrationState> = {}): OfficialRegistrat
 
 const NOW = new Date("2026-12-01T10:00:00Z");
 
+const SETTINGS = {
+  target: "feratel",
+  enabled: true,
+  environment: "simulated",
+  bindingRegistration: { rule: "arrival-day" },
+  allowedOperations: [...OFFICIAL_OPERATIONS],
+  guestCards: true,
+  childUnderAge: 15,
+  providerSettings: { mappingCode: "SIM" },
+} as const;
+
 function plan(over: Partial<PlanInput> & { payload?: ReturnType<typeof payloadFor> } = {}) {
   const payload = over.payload ?? payloadFor(over.stay ?? stay);
   return planOfficialRegistration({
@@ -115,6 +128,7 @@ function plan(over: Partial<PlanInput> & { payload?: ReturnType<typeof payloadFo
     fingerprint: payloadFingerprint(payload),
     guestFingerprint: guestDataFingerprint(payload),
     today: "2026-12-01",
+    registrationDay: (over.stay ?? stay).arrivalDate,
     now: NOW,
     ...over,
   });
@@ -205,12 +219,7 @@ describe("payload", () => {
 });
 
 describe("gate", () => {
-  const property = officialRegistrationPropertySchema.parse({
-    enabled: true,
-    environment: "simulated",
-    guestCards: true,
-    childUnderAge: 15,
-  });
+  const property = officialRegistrationSettingsSchema.parse(SETTINGS);
   const input = {
     mode: "simulated" as const,
     property,
@@ -245,9 +254,79 @@ describe("gate", () => {
     expect(officialRegistrationModeSchema.safeParse("test").success).toBe(false);
     expect(officialRegistrationModeSchema.safeParse("production").success).toBe(false);
     expect(
-      officialRegistrationPropertySchema.safeParse({ ...property, environment: "production" })
+      officialRegistrationSettingsSchema.safeParse({ ...property, environment: "production" })
         .success,
     ).toBe(false);
+    // Prepared but switched off is fine.
+    expect(
+      officialRegistrationSettingsSchema.safeParse({
+        ...property,
+        enabled: false,
+        environment: "production",
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe("settings", () => {
+  it("binding registration day: arrival day or N days before", () => {
+    expect(bindingRegistrationDate(stay, { rule: "arrival-day" })).toBe("2026-12-20");
+    expect(bindingRegistrationDate(stay, { rule: "days-before-arrival", days: 14 })).toBe(
+      "2026-12-06",
+    );
+    expect(
+      bindingRegistrationDate(
+        { arrivalDate: "2027-03-01", departureDate: "2027-03-05" },
+        { rule: "days-before-arrival", days: 1 },
+      ),
+    ).toBe("2027-02-28");
+  });
+
+  it("pre-registration window", () => {
+    expect(preRegistrationOpensOn(stay, undefined)).toBeUndefined();
+    expect(preRegistrationOpensOn(stay, 14)).toBe("2026-12-06");
+  });
+
+  it("effective capabilities = documented ∩ confirmed for the destination", () => {
+    const effective = effectiveCapabilities(ALL, ["create-registration", "check-out"]);
+    expect(effective["create-registration"]).toBe(true);
+    expect(effective["update-departure"]).toBe(false);
+    expect(effectiveCapabilities(NO_CAPABILITIES, ["update-departure"])["update-departure"]).toBe(
+      false,
+    );
+  });
+
+  it("validates the stored document", () => {
+    expect(officialRegistrationSettingsSchema.safeParse(SETTINGS).success).toBe(true);
+    for (const broken of [
+      { ...SETTINGS, allowedOperations: ["create-registration", "create-registration"] },
+      { ...SETTINGS, allowedOperations: ["delete-everything"] },
+      { ...SETTINGS, bindingRegistration: { rule: "days-before-arrival", days: 0 } },
+      { ...SETTINGS, providerSettings: { "bad key": "x" } },
+      { ...SETTINGS, eventRetentionDays: 0 },
+    ]) {
+      expect(officialRegistrationSettingsSchema.safeParse(broken).success).toBe(false);
+    }
+  });
+});
+
+describe("planner timing from settings", () => {
+  it("binding registration N days before arrival", () => {
+    expect(plan({ today: "2026-12-06", registrationDay: "2026-12-06" })).toEqual({
+      kind: "execute",
+      operation: "create-registration",
+    });
+  });
+
+  it("pre-registration not before its window opens", () => {
+    expect(plan({ today: "2026-12-01", preRegistrationFrom: "2026-12-06" })).toEqual({
+      kind: "wait",
+      reason: "before-registration-day",
+    });
+    expect(plan({ today: "2026-12-06", preRegistrationFrom: "2026-12-06" })).toEqual({
+      kind: "execute",
+      operation: "create-pre-registration",
+    });
   });
 });
 
@@ -662,6 +741,7 @@ describe("runOfficialRegistration", () => {
         stay: over.stay ?? stay,
         gate: openGate,
         today: over.today ?? "2026-12-01",
+        registrationDay: (over.stay ?? stay).arrivalDate,
       },
     );
 

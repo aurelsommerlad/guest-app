@@ -165,3 +165,18 @@ export {
   type ReservationPaymentStateRecord,
   updatePaymentRequestStatus,
 } from "./repositories/payment-repository";
+export {
+  claimDueOfficialRegistrations,
+  type EnsureResult,
+  ensureOfficialRegistration,
+  getOfficialRegistration,
+  getOfficialRegistrationSettings,
+  listOfficialRegistrationEvents,
+  listOfficialRegistrations,
+  type OfficialRegistrationEventRecord,
+  type OfficialRegistrationRecord,
+  purgeOfficialRegistrationData,
+  saveOfficialRegistrationSettings,
+  saveOfficialRegistrationState,
+  type SaveResult,
+} from "./repositories/official-registration-repository";

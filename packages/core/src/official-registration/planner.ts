@@ -3,7 +3,7 @@
  *
  * Lifecycle (where the interface supports it):
  *   none ─► pre-registered (Voranmeldung, changeable) ─► registered (Meldeschein, binding,
- *   on the arrival day) ─► checked-out (after departure)
+ *   on the configured registration day) ─► checked-out (after departure)
  *   cancellation: pre-registration deleted; a binding registration goes to staff unless the
  *   interface documents a cancellation.
  *
@@ -34,6 +34,10 @@ export type PlanInput = {
   guestFingerprint: string;
   /** Local date (YYYY-MM-DD) in the property's time zone. */
   today: string;
+  /** Local date of the binding registration (settings: bindingRegistrationDate). */
+  registrationDay: string;
+  /** First local date for a pre-registration (settings: preRegistrationOpensOn). */
+  preRegistrationFrom?: string;
   now: Date;
 };
 
@@ -83,8 +87,10 @@ export function planOfficialRegistration(input: PlanInput): OfficialPlan {
   switch (state.stage) {
     case "none": {
       if (!input.gate.open) return { kind: "wait", reason: "gate-closed" };
-      const registrationDay = input.today >= stay.arrivalDate;
-      if (!registrationDay && capabilities["create-pre-registration"]) {
+      const registrationDay = input.today >= input.registrationDay;
+      const preRegistrationOpen =
+        input.preRegistrationFrom === undefined || input.today >= input.preRegistrationFrom;
+      if (!registrationDay && preRegistrationOpen && capabilities["create-pre-registration"]) {
         return { kind: "execute", operation: "create-pre-registration" };
       }
       if (!registrationDay) return { kind: "wait", reason: "before-registration-day" };
@@ -95,7 +101,7 @@ export function planOfficialRegistration(input: PlanInput): OfficialPlan {
         if (!input.gate.open) return { kind: "wait", reason: "gate-closed" };
         return can(capabilities, "update-pre-registration");
       }
-      if (input.today >= stay.arrivalDate) return can(capabilities, "convert-to-registration");
+      if (input.today >= input.registrationDay) return can(capabilities, "convert-to-registration");
       return { kind: "wait", reason: "before-registration-day" };
     }
     case "registered": {

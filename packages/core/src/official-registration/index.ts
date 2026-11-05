@@ -2,6 +2,7 @@ export * from "./model";
 export * from "./stay-facts";
 export * from "./payload";
 export * from "./gate";
+export * from "./settings";
 export * from "./planner";
 export * from "./outcome";
 export * from "./provider";
