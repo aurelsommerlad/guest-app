@@ -279,3 +279,161 @@ export type {
   PaymentSummary,
 } from "./payment/payment-summary";
 export { type PaymentProvider } from "./payment/payment-provider";
+
+// Check-in validation and verification (ADR 0021, phase C1 – not wired into the apps yet).
+export {
+  ADDRESS_GRANULARITIES,
+  ADDRESS_STATUSES,
+  type AddressAssessment,
+  type AddressEvidence,
+  type AddressFieldIssue,
+  type AddressGranularity,
+  type AddressInputMode,
+  addressIssues,
+  type AddressStatus,
+  assessAddress,
+  type PostalAddress,
+  sameAddress,
+} from "./address/address-check";
+export {
+  type AddressLookupFailure,
+  type AddressProvider,
+  type AddressSuggestion,
+} from "./address/address-provider";
+export {
+  checkPostalCode,
+  normalizePostalCode,
+  POSTAL_CODE_NOT_USED,
+  POSTAL_CODE_PATTERNS,
+  type PostalCodeCheck,
+} from "./address/postal-codes";
+export {
+  attemptOtp,
+  canIssueOtp,
+  contactTargetHash,
+  generateOtpCode,
+  hashOtpCode,
+  maskEmail,
+  maskPhone,
+  newOtpChallenge,
+  normalizeOtpInput,
+  OTP_CHALLENGE_STATUSES,
+  OTP_CHANNELS,
+  OTP_CODE_LENGTH,
+  OTP_POLICIES,
+  type OtpAttemptOutcome,
+  type OtpChallenge,
+  type OtpChallengeStatus,
+  type OtpChannel,
+  type OtpIssueDecision,
+  type OtpPolicy,
+  type OtpSend,
+  supersede,
+} from "./verification/otp";
+export {
+  CONTACT_VERIFICATION_STATUSES,
+  type ContactVerificationRecord,
+  type ContactVerificationStatus,
+  contactVerificationStatus,
+  type ContactWaiver,
+  contactWaiverSchema,
+  DEFAULT_SMS_VERIFICATION,
+  satisfiesRequiredVerification,
+  type SmsAvailability,
+  smsAvailability,
+  type SmsVerificationConfig,
+  smsVerificationConfigSchema,
+  WAIVER_REASONS,
+  type WaiverReason,
+} from "./verification/contact-verification";
+export {
+  type MessageSendResult,
+  type VerificationEmailSender,
+  type VerificationMessage,
+  type VerificationSmsSender,
+} from "./verification/message-ports";
+export {
+  AGE_DECLARATION_STATUSES,
+  type AgeDeclarationStatus,
+  DEFAULT_RESPONSIBLE_ADULT_MIN_AGE,
+  MAX_PLAUSIBLE_AGE,
+  responsibleAdultStatus,
+} from "./registration/responsible-adult";
+export {
+  CONTACT_FIELDS,
+  DATA_CLASSES,
+  type DataClass,
+  FIELD_DATA_CLASS,
+  LEGAL_FIELDS,
+  splitGuestData,
+} from "./registration/data-classification";
+export {
+  type AddressSource,
+  resolveSharedAddresses,
+  SHARED_ADDRESS_POLICIES,
+  type SharedAddressGuest,
+  type SharedAddressPolicy,
+  type SharedAddressResult,
+} from "./registration/shared-address";
+export {
+  configFromTemplate,
+  DE_BMG_TEMPLATE,
+  LEGAL_REGISTRATION_TEMPLATES,
+  type LegalRegistrationTemplate,
+  legalRequiredFields,
+  registrationFormRequired,
+} from "./registration/legal-templates";
+export {
+  checkVatIdFormat,
+  normalizeVatId,
+  VAT_ID_STATUSES,
+  type VatIdChecker,
+  type VatIdFormat,
+  type VatIdStatus,
+  vatIdStatus,
+  VIES_PREFIXES,
+} from "./billing/vat-id";
+export {
+  BILLING_KINDS,
+  type BillingChoice,
+  type BillingFieldIssue,
+  type BillingKind,
+  type CompanyBillingAddress,
+  DEFAULT_BILLING_CHOICE,
+  normalizeBillingInput,
+} from "./billing/billing-address";
+export {
+  BILLING_DEBITOR_KINDS,
+  BILLING_FOLIO_KINDS,
+  BILLING_PLAN_ACTIONS,
+  type BillingDebitorKind,
+  billingFingerprint,
+  type BillingFolioFacts,
+  type BillingFolioKind,
+  type BillingFolioPlan,
+  type BillingPlanAction,
+  type BillingTransferPlan,
+  planBillingTransfer,
+} from "./billing/billing-transfer";
+export {
+  type CheckInValidationPolicy,
+  checkInValidationPolicySchema,
+  DEFAULT_CHECK_IN_VALIDATION_POLICY,
+} from "./check-in-status/validation-policy";
+export {
+  BILLING_STATUSES,
+  type BillingStatus,
+  billingStatus,
+  type CheckInStatus,
+  type CheckInStatusInput,
+  COMPLETENESS_BLOCKERS,
+  type CompletenessBlocker,
+  deriveCheckInStatus,
+  IDENTITY_CHECK_STATUSES,
+  type IdentityCheckRecord,
+  type IdentityCheckStatus,
+  identityCheckStatus,
+  LEGAL_REGISTRATION_STATUSES,
+  type LegalRegistrationStatus,
+  legalRegistrationStatus,
+} from "./check-in-status/check-in-status";
