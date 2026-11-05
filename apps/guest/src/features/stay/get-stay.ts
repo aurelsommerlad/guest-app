@@ -4,6 +4,7 @@ import { type Locale } from "../../i18n/routing";
 import { requireGuestContext } from "../guest-context/server";
 import { getStayJourney } from "../journey/server";
 import { guestRegistrationStatus } from "../journey/stay-journey";
+import { getPayment } from "../payment/server";
 import { buildStayViewModel } from "./build-stay-view-model";
 import { type StayViewModel } from "./model";
 
@@ -22,7 +23,7 @@ export class StayUnavailableError extends Error {
 export async function getStay(locale: Locale): Promise<StayViewModel> {
   const context = await requireGuestContext(locale);
   if (context.reservation.status !== "loaded") throw new StayUnavailableError();
-  const journey = await getStayJourney(context);
+  const [journey, payment] = await Promise.all([getStayJourney(context), getPayment(context)]);
   const guestRegistration = journey ? guestRegistrationStatus(journey) : undefined;
   // A submitted check-in is immutable for the guest; a later occupancy change is shown.
   const booked = context.reservation.source.reservation.guestCount;
@@ -39,6 +40,15 @@ export async function getStay(locale: Locale): Promise<StayViewModel> {
           ...journey,
           ...(guestRegistration ? { guestRegistration } : {}),
           ...(occupancyChanged ? { occupancyChanged } : {}),
+          // Phase 12 A: read-only payment state (only where payments are switched on).
+          ...(payment
+            ? {
+                payment: {
+                  state: payment.evaluation.state === "credit" ? "paid" : payment.evaluation.state,
+                  href: "/v2/payment",
+                },
+              }
+            : {}),
         }
       : undefined,
   );

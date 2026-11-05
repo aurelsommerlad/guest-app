@@ -5,6 +5,8 @@ import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
+import { requireGuestContext } from "../../../../../features/guest-context/server";
+import { getPayment } from "../../../../../features/payment/server";
 import { getStay } from "../../../../../features/stay/get-stay";
 import { Link } from "../../../../../i18n/navigation";
 import { routing } from "../../../../../i18n/routing";
@@ -30,6 +32,15 @@ export default async function V2ApartmentPage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   const stay = await getStay(locale);
+  const payment = await getPayment(await requireGuestContext(locale));
+  const paymentState = payment?.evaluation.state;
+  // Phase 12 A: inform only – the access itself is not gated by payments yet.
+  const paymentNotice =
+    paymentState === "due" ||
+    paymentState === "pending" ||
+    paymentState === "review" ||
+    paymentState === "unknown";
+  const p = await getTranslations("v2.payment");
   const t = await getTranslations("v2.apartment");
   const a = await getTranslations("stay.access");
   const s = await getTranslations("stay");
@@ -110,6 +121,14 @@ export default async function V2ApartmentPage({ params }: Props) {
             </h2>
           </div>
           <div className="v2-stack v2-stack-6" style={{ paddingTop: 22 }}>
+            {paymentNotice && (
+              <Link href="/v2/payment" className="v2-notice v2-link" style={{ minHeight: 0 }}>
+                <span>
+                  {paymentState === "due" ? p("accessNotice") : p(`status.${paymentState}`)}
+                </span>
+                <V2Arrow />
+              </Link>
+            )}
             {access?.kind === "available" && (
               <>
                 <div className="v2-stack v2-stack-2">
@@ -165,6 +184,12 @@ export default async function V2ApartmentPage({ params }: Props) {
             ) : (
               <p className="v2-link v2-text v2-muted">{t("checkInDone")}</p>
             ))}
+          {payment && (
+            <Link href="/v2/payment" className="v2-link v2-text">
+              <span>{p("link")}</span>
+              <V2Arrow />
+            </Link>
+          )}
           <Link href="/guide" className="v2-link v2-text">
             <span>{t("guide")}</span>
             <V2Arrow />

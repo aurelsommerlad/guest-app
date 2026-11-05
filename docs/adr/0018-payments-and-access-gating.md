@@ -1,6 +1,6 @@
 # 0018 – Zahlungsübersicht und zahlungsabhängige Zugangsfreigabe
 
-**Status:** Vorschlag (2026-11-04). Noch nicht umgesetzt. Ergänzt [ADR 0008](0008-pms-provider-apaleo.md), [ADR 0016](0016-guest-journey-and-online-check-in.md) und [ADR 0017](0017-provider-neutral-access.md). Die verifizierte Apaleo-Grundlage steht in [docs/integrations/apaleo-payments.md](../integrations/apaleo-payments.md).
+**Status:** Vorschlag (2026-11-04). **Phase A umgesetzt (2026-11-05, nur TEST, nur lesend)**, Phase B/C offen. Ergänzt [ADR 0008](0008-pms-provider-apaleo.md), [ADR 0016](0016-guest-journey-and-online-check-in.md) und [ADR 0017](0017-provider-neutral-access.md). Die verifizierte Apaleo-Grundlage steht in [docs/integrations/apaleo-payments.md](../integrations/apaleo-payments.md).
 
 ## Kontext
 
@@ -187,3 +187,28 @@ Die reinen Tests laufen für `evaluatePayment` und das Gate. Integrationstests n
 ## Offene Fragen
 
 Siehe [Integrationsdoku, Abschnitt „Offen“](../integrations/apaleo-payments.md#offen-im-apaleo-testsystem-zu-klären-vor-phase-b): Testkonto, Link-Host, echte OTA-Beispiele, Bedeutung von `payableAmount.guest`, Zusammenspiel mit der Apaleo-Zahlungsautomatik.
+
+## Umsetzungsstand Phase A (2026-11-05)
+
+**Geschäftsregeln** (festgelegt am 2026-11-05):
+
+1. Nach Ablauf der kostenfreien Stornierung ist der **gesamte offene Betrag** fällig, nicht nur die Stornogebühr. Die Fälligkeitsregel ist pro Objekt und optional pro Rate konfigurierbar (`ratePlans`).
+2. Eine bestätigte Zahlung (`cleared_at`, Phase B/C) wird durch spätere Extras nicht wieder zur Sperre.
+3. Ein Apaleo-Ausfall sperrt einen freigegebenen Zugang nicht wieder. Unverifizierte Zahlungen geben nie frei.
+4. Firmen- und Drittzahler, Guthaben und noch nicht fällige Leistungen werden gesondert behandelt.
+
+**Code:**
+
+| Teil             | Ort                                                                                                                                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bewertung (rein) | `packages/core/src/payment/` mit `evaluatePayment`, `paymentAccessCondition` (Regeln 2 und 3, noch nicht verdrahtet) und `confirmsPayment`                                                                                 |
+| Apaleo lesend    | `ApaleoPaymentProvider`: Reservierung, Folios der Reservierung und Buchungsfolios, Zahlungen, Erstattungen. Nur `GET`, Scope `folios.read`. Personendaten werden nicht übernommen. Unvollständige Seiten werden verworfen. |
+| Konfiguration    | übergangsweise in der Registry (`payment`), wirksam **nur für Testobjekte**, `enforce` wird auf `inform` begrenzt (`config/payment.ts`)                                                                                    |
+| Gastansicht      | `/v2/payment` (Leistungen, Zahlungen, Erstattungen, Übersicht, Status, DE/EN), Hinweis im Zugangsbereich der Apartmentseite, Kachel „Zahlung“ bei `due`                                                                    |
+
+**Nicht enthalten:** Zahlungslinks, Speicherung, Webhooks und Sperre. Das folgt in B/C nach gesonderter Freigabe.
+
+**Ergänzende Fakten (2026-11-05, nur lesend geprüft):**
+
+- Jede Buchung hat ein eigenes Buchungsfolio (`type = Booking`) für Anzahlungen. Ist es leer, wird es ignoriert. Ist es gefüllt, geht es in die Prüfung.
+- Das TEST-Folio erlaubt vor Anreise `AddPayment` mit `allowedPayment` 337, obwohl alle Charges ungebucht sind.

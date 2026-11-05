@@ -89,6 +89,43 @@ export class ApaleoClient {
   }
 
   /**
+   * GET a JSON list resource. Apaleo answers an empty list with 204 No Content – that is
+   * returned as `undefined` (not an error). Everything else as `get`.
+   */
+  async getList<T extends z.ZodType>(
+    path: string,
+    schema: T,
+    operation: string,
+  ): Promise<z.infer<T> | undefined> {
+    const response = await this.#authorizedGet(path, operation);
+    if (response.status === 204) return undefined;
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw this.#fail(
+        "invalid-response",
+        operation,
+        "Response is not valid JSON",
+        response.status,
+      );
+    }
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      this.#log.error("apaleo response validation failed", {
+        operation,
+        issues: parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.code}`),
+      });
+      throw this.#fail(
+        "invalid-response",
+        operation,
+        "Response does not match the expected schema",
+      );
+    }
+    return parsed.data;
+  }
+
+  /**
    * JSON Patch (RFC 6902) against a resource. Only "replace"/"add" operations are sent,
    * which are idempotent – so the single retry on network/5xx/429 is safe.
    */

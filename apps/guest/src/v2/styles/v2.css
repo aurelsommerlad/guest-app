@@ -828,3 +828,53 @@ select.v2-input {
     padding-top: 72px;
   }
 }
+
+/* ── Payment overview (Phase 12 A) ────────────────────────────── */
+
+/* Line item: name (+ date) left, amount right, hairline below */
+.v2-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--v2-line);
+}
+
+.v2-item-amount {
+  font-size: 15.5px;
+  font-weight: 300;
+  font-variant-numeric: lining-nums tabular-nums;
+  white-space: nowrap;
+}
+
+.v2-item--total {
+  border-bottom-color: var(--v2-ink);
+}
+
+.v2-item--total .v2-item-amount,
+.v2-item--total .v2-text {
+  font-weight: 400;
+}
+
+/* The one figure that matters: open amount */
+.v2-figure {
+  font-size: 44px;
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.v2-status {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px 0 26px;
+  border-top: 1px solid var(--v2-ink);
+  border-bottom: 1px solid var(--v2-line);
+}
+
+.v2-item dd {
+  margin: 0;
+}

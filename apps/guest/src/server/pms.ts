@@ -1,13 +1,14 @@
 import "server-only";
 
-import { type PmsProvider, type ReservationProvider } from "@up/core";
-import { createApaleoProvider } from "@up/integrations";
+import { type PaymentProvider, type PmsProvider, type ReservationProvider } from "@up/core";
+import { createApaleoPaymentProvider, createApaleoProvider } from "@up/integrations";
 
 import { serverEnv } from "../env/server";
 import { createMockPms } from "../mocks/stay/mock-pms";
 import { logger } from "./logger";
 
 let apaleoProvider: PmsProvider | undefined;
+let apaleoPayments: PaymentProvider | undefined;
 
 /** Shared Apaleo provider (one per server process, so the access token is reused). */
 export function getApaleoProvider(): PmsProvider | undefined {
@@ -18,6 +19,17 @@ export function getApaleoProvider(): PmsProvider | undefined {
     logger,
   });
   return apaleoProvider;
+}
+
+/** Read-only Apaleo payment data (Phase 12 A, scope folios.read) – one per server process. */
+export function getApaleoPaymentProvider(): PaymentProvider | undefined {
+  if (!serverEnv.APALEO_CLIENT_ID || !serverEnv.APALEO_CLIENT_SECRET) return undefined;
+  apaleoPayments ??= createApaleoPaymentProvider({
+    clientId: serverEnv.APALEO_CLIENT_ID,
+    clientSecret: serverEnv.APALEO_CLIENT_SECRET,
+    logger,
+  });
+  return apaleoPayments;
 }
 
 /** The mock PMS never runs in production. */

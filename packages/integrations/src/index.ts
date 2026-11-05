@@ -1,6 +1,10 @@
 export { ApaleoClient, type ApaleoClientOptions } from "./apaleo/apaleo-client";
 export { ApaleoProvider, createApaleoProvider } from "./apaleo/apaleo-provider";
 export {
+  ApaleoPaymentProvider,
+  createApaleoPaymentProvider,
+} from "./apaleo/apaleo-payment-provider";
+export {
   mapApaleoGuest,
   mapApaleoReservation,
   mapApaleoReservationGuests,

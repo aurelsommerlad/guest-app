@@ -344,6 +344,43 @@
       "back": "Back",
       "doneEyebrow": "Online check-in",
       "toStay": "To your guest folder"
+    },
+    "payment": {
+      "eyebrow": "Booking & payment",
+      "title": "Your booking.",
+      "services": "Services",
+      "payments": "Payments",
+      "refunds": "Refunds",
+      "summary": "Summary",
+      "charged": "Total",
+      "paid": "Already paid",
+      "pending": "Processing",
+      "refunded": "Refunded",
+      "open": "Open",
+      "credit": "Credit",
+      "inProgress": "processing",
+      "payment": "Payment",
+      "refund": "Refund",
+      "status": {
+        "not-due": "Due from {date}.",
+        "due": "Due now.",
+        "pending": "Your payment is being confirmed.",
+        "paid": "All paid. Thank you!",
+        "credit": "You have a credit. We'll be in touch.",
+        "not-applicable": "Nothing to pay through the app.",
+        "review": "We're looking at your booking personally.",
+        "unknown": "Payment details are not available right now."
+      },
+      "help": {
+        "review": "Nothing to do for you. If you have questions, just get in touch.",
+        "unknown": "Please try again later. If you have questions, we're here for you."
+      },
+      "freeCancellation": "Free cancellation until {date}.",
+      "payNote": "We're setting up online payment. Nothing to do right now – we'll let you know in good time.",
+      "thirdParty": "Part of your stay is billed directly to your company or another payer.",
+      "link": "Booking & payment",
+      "accessNotice": "An amount is still open for your stay.",
+      "privacy": "Card details are never stored in the app."
     }
   }
 }

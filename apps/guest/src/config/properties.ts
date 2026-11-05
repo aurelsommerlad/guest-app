@@ -13,6 +13,8 @@
  * Apaleo ids verified against the UNIQUE PLACES Apaleo account (Phase 4).
  */
 
+import { type PaymentConfig } from "@up/core";
+
 export type RegisteredUnit = {
   /** Internal id, e.g. "ros" – used for content scopes. */
   id: string;
@@ -49,6 +51,11 @@ export type RegisteredProperty = {
    * ADR 0020). Real properties always use the current design (see design.ts).
    */
   design?: "v2";
+  /**
+   * Test properties only (Phase 12 A): payment settings until they live in the database /
+   * Admin (C5). Real properties are always "off" – see payment.ts.
+   */
+  payment?: PaymentConfig;
   units: readonly RegisteredUnit[];
 };
 
@@ -118,6 +125,12 @@ export const propertyRegistry: readonly RegisteredProperty[] = [
     contentSource: { propertyId: "hov", units: { "test-ap-1": "ros" } },
     // Design V2 is active for the test property (and only there) until it is approved.
     design: "v2",
+    // Phase 12 A: read-only payment overview (no links, no locking) for TEST only.
+    payment: {
+      mode: "inform",
+      due: { rule: "at-free-cancellation-end" },
+      otaWithoutSignal: "review",
+    },
     units: [
       { id: "test-ap-1", name: "Ap. 1", externalId: "TEST-ZHF" },
       { id: "test-ap-2", name: "Ap. 2", externalId: "TEST-WEZ" },

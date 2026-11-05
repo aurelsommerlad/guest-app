@@ -344,6 +344,43 @@
       "back": "Zurück",
       "doneEyebrow": "Online-Check-in",
       "toStay": "Zur Gästemappe"
+    },
+    "payment": {
+      "eyebrow": "Buchung & Zahlung",
+      "title": "Deine Buchung.",
+      "services": "Leistungen",
+      "payments": "Zahlungen",
+      "refunds": "Erstattungen",
+      "summary": "Übersicht",
+      "charged": "Gesamt",
+      "paid": "Bereits bezahlt",
+      "pending": "In Bearbeitung",
+      "refunded": "Erstattet",
+      "open": "Offen",
+      "credit": "Guthaben",
+      "inProgress": "in Bearbeitung",
+      "payment": "Zahlung",
+      "refund": "Erstattung",
+      "status": {
+        "not-due": "Fällig ab {date}.",
+        "due": "Jetzt fällig.",
+        "pending": "Deine Zahlung wird gerade bestätigt.",
+        "paid": "Alles bezahlt. Vielen Dank!",
+        "credit": "Du hast ein Guthaben. Wir melden uns bei Dir.",
+        "not-applicable": "Über die App ist nichts zu bezahlen.",
+        "review": "Wir sehen uns Deine Buchung gerade persönlich an.",
+        "unknown": "Die Zahlungsdetails sind gerade nicht abrufbar."
+      },
+      "help": {
+        "review": "Du musst nichts tun. Bei Fragen melde Dich gerne bei uns.",
+        "unknown": "Bitte versuche es später noch einmal. Bei Fragen sind wir für Dich da."
+      },
+      "freeCancellation": "Kostenfrei stornierbar bis {date}.",
+      "payNote": "Die Online-Zahlung richten wir gerade ein. Du musst jetzt nichts tun – wir informieren Dich rechtzeitig.",
+      "thirdParty": "Ein Teil Deines Aufenthalts wird direkt mit Deinem Unternehmen bzw. Kostenträger abgerechnet.",
+      "link": "Buchung & Zahlung",
+      "accessNotice": "Für Deinen Aufenthalt ist noch ein Betrag offen.",
+      "privacy": "Kartendaten werden nie in der App gespeichert."
     }
   }
 }
