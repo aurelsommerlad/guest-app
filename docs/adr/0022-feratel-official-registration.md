@@ -158,14 +158,52 @@ HØV braucht keine Übertragung.
 - Wenn Lindau AVS nutzt, kommt ein zweiter Adapter hinter denselben Port.
 - Persistenz (Tabellen für Zustand, Protokoll und Gästekarte) folgt in F2. Bis dahin entsteht keine Meldung, auch nicht simuliert, in Staging oder Produktion.
 
+## Abgleich mit den VT PMS Web Services (2026-11-05)
+
+Grundlage: [Analyse](../integrations/feratel-vt-pms-web-services-analyse.md). Sie stützt sich auf die öffentliche Doku v1.0.4 (2018), den Abnahmetest und die aktuelle Live-WSDL/XSD. Diese wurden nur lesend abgerufen, ohne Aufruf einer Methode.
+
+- **Eine Schreiboperation** (`ImportPMS`, SOAP 1.1) bildet alle Vorgänge über Attribute ab:
+  - `reservierung=1`/`mblattnr=-1`: Voranmeldung, liefert eine `guid`;
+  - mit `guid`: Änderung bzw. Umwandlung;
+  - gleiche `mblattnr`: Update;
+  - `abreise`: Abmeldung, danach endgültig;
+  - `ankunft = abreise`: Storno.
+- Unsere Operationen bleiben Planungsbegriffe, der Adapter übersetzt sie. Nicht dokumentiert und deshalb weiter **aus**: Storno einer Voranmeldung und Abfrage nach Referenz.
+- **Meldescheinnummern** stammen aus Blöcken, die feratel je Betrieb zuteilt (eventuell je Jahr). Wir vergeben sie selbst per Write-ahead. Erneutes Senden derselben Nummer ist ein Update, also kein Duplikat.
+- **Authentifizierung:** `companyCode` je Softwarehersteller (geheim), dazu `oestat` und `betriebnr` je Betrieb (nicht geheim, Mapping durch feratel).
+- **Live-Zugang erst nach dem Abnahmetest** in der Testumgebung (`visitortaxtest`, derzeit 401).
+- **Gästekarte:** Deskline gibt die Daten selbst an das Kartensystem weiter. Voraussetzungen:
+  - Vor- und Nachname und Geburtsdatum je Gast;
+  - `zustimmungkartenprod` (DSGVO-Einwilligung) je Gast.
+
+  Ein Kartenstatus kommt nicht zurück.
+
+- **Rückmeldung:** `answer/error` mit Code; `0` ist Erfolg. Die Abbildung aller Codes steht in der Analyse.
+
+**Folgerungen für das Modell (F3):**
+
+1. Zwei write-once-Referenzen: `pre_registration_guid` und `sheet_number` (+ Jahr), eindeutig je Objekt und Ziel. Dazu eine Nummernvergabe aus Blöcken.
+2. Neuer Übergabegrund `rejected-after-arrival` für die Codes 16, 41 und 70.
+3. Einwilligung zur Gästekarte je Reisendem im Check-in.
+4. Pro Gast: Wohnsitzland und PLZ.
+5. Personengruppe (`gastart`) und Kind (`KI`) nach der `gastartlist` der Gemeinde.
+6. Abbildung der Dokumentart.
+7. Geschlecht und Unterschrift (`signatur`) erst nach Klärung mit feratel.
+
+`FERATEL_DOCUMENTED_CAPABILITIES` werden erst nach Bestätigung durch feratel und bestandenem Abnahmetest gesetzt, **nicht** auf Basis der Doku von 2018.
+
 ## Nächste Phasen (jeweils mit Freigabe)
 
-| Phase | Inhalt                                                                                                                                                                       |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F2    | Staging-Tabellen `official_registrations` (Zustand, eindeutig je Registrierung und Ziel), `official_registration_events` (nur Anhängen), Konfiguration je Objekt, RLS/Revoke |
-| F3    | Fehlende Meldefelder nach der Feldliste von feratel; Vorlagen AT (Gaschurn, Bludenz) und DE (Lindau)                                                                         |
-| F4    | Echter Transport nach Doku, nur gegen die feratel-Testumgebung; Fähigkeiten aus der Doku                                                                                     |
-| F5    | Worker und Cron: Apaleo-Abgleich für offene Aufenthalte                                                                                                                      |
-| F6    | Admin: Status je Reservierung, erneut übertragen, manuell, Protokoll, Filter je Objekt                                                                                       |
-| F7    | Gästekarte: Status aus der Schnittstelle, Hinweis in der App                                                                                                                 |
-| F8    | Abnahme durch feratel, Pilot ΛLPILΛ, dann HŪSLE, dann LÆKE                                                                                                                   |
+| Phase | Inhalt                                                                                                                                                                                                                                                                                                                                                                     | Voraussetzung                         |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| F3a   | Modell und Migration (Staging): `pre_registration_guid`, `sheet_number`/`sheet_year` (write-once, eindeutig); Tabelle der Nummernblöcke mit Reservierung je Registrierung (Write-ahead); Grund `rejected-after-arrival`; Felder für Feratel-Stammdaten in den Einstellungen (`oestat`, `betriebnr`, `bearbeiter`, zwischengespeicherte `gastartlist`, `lschlnr`-Abbildung) | Freigabe F3                           |
+| F3b   | Check-in-Erweiterungen hinter Konfiguration: Einwilligung zur Gästekarte je Reisendem, Wohnsitzland/PLZ je Gast, Dokumentart „Führerschein“; Vorlagen AT (Gaschurn, Bludenz) und Kartenregion                                                                                                                                                                              | Freigabe F3, offene Fragen 19, 22, 24 |
+| F4a   | **XML-Builder und Antwort-Parser** (rein, ohne Netz): `gemeinde`/`betrieb`/`meldeblatt`/`landschl`/`gastart`/`gast`, Reihenfolge HG→MP→KI, Summenprüfung, Längen nach XSD (Text30/50/100/300), XML-Escaping; Parser für `answer`/`error`/`warnung` und SOAP-Fault; Abbildung der Fehlercodes; Validierung gegen die heruntergeladene XSD in Tests                          | keine                                 |
+| F4b   | SOAP-Transport `DesklineVtTransport`: `fetch`, Timeout, `companyCode` aus Env; **Host-Allowlist nur `visitortaxtest.deskline.net`**; keine Bodies im Log; Antwort nur als Code/Referenz gespeichert                                                                                                                                                                        | Testzugang                            |
+| F4c   | Lesende Verwaltungsaufrufe: `GetVTInfo` (Nummernblöcke, `gastartlist`, Karteninfo) und `GetVTCountryList` als Admin-Aktion mit Zwischenspeicher; `PMSAutoAssignVTBlock` nur als Admin-Aktion                                                                                                                                                                               | Testzugang                            |
+| F4d   | **Abnahmetest** in der Testumgebung automatisiert: Szenarien 1–7 (neuer Meldeschein, Abreise, Verlängerung, Reisegruppe, Storno, Fehlerfälle, Voranmeldung → Umwandlung → Abreise); Ergebnis an feratel                                                                                                                                                                    | Testzugang                            |
+| F4e   | Fähigkeiten aus der bestätigten Doku setzen; `allowed_operations` je Standort pflegen                                                                                                                                                                                                                                                                                      | Bestätigung feratel                   |
+| F5    | Worker und Cron: Apaleo-Abgleich, fällige Meldungen, Wiederholungen, Purge                                                                                                                                                                                                                                                                                                 | Freigabe                              |
+| F6    | Admin: Status je Reservierung, erneut übertragen, manuell erledigen, Protokoll, Filter je Objekt, Nummernblöcke                                                                                                                                                                                                                                                            | Freigabe                              |
+| F7    | Gästekarte: Status und Hinweis in der App; ohne Kartenlink, solange feratel keinen freigibt                                                                                                                                                                                                                                                                                | Antwort feratel                       |
+| F8    | Live-Zugang nach Abnahme; Pilot ΛLPILΛ, dann HŪSLE, dann LÆKE (falls Deskline)                                                                                                                                                                                                                                                                                             | ausdrückliche Freigabe                |
