@@ -437,3 +437,6 @@ export {
   type LegalRegistrationStatus,
   legalRegistrationStatus,
 } from "./check-in-status/check-in-status";
+
+// Official guest registration (Meldewesen, ADR 0022, phase F1 – simulated targets only).
+export * from "./official-registration";

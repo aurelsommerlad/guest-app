@@ -1,6 +1,22 @@
 # Feratel-Gästemeldung – Architektur und offene Anforderungen
 
-Stand: Phase 11. **Keine Feratel-Integration implementiert, keine Aufrufe.** Architektur: [ADR 0016](../adr/0016-guest-journey-and-online-check-in.md).
+Stand: 2026-11-05 (F0/F1, [ADR 0022](../adr/0022-feratel-official-registration.md)). **Keine Aufrufe an feratel.** Eigene Meldelogik und ein eigener Adapter existieren, laufen aber nur gegen eine Simulation. Die dokumentierten Fähigkeiten des echten Interfaces sind leer, bis die offizielle Dokumentation vorliegt. Die versandfertige Anfrage steht in [feratel-anfrage-visitor-registration-interface.md](feratel-anfrage-visitor-registration-interface.md). Die ursprüngliche Architektur beschreibt [ADR 0016](../adr/0016-guest-journey-and-online-check-in.md).
+
+## Recherche 2026-11 (öffentliche Quellen, belegt)
+
+- Vorarlberg (Bodensee-Vorarlberg Tourismus, FAQ Meldewesen 2025):
+  - Mit Hotelsoftware schickt der Betrieb den von der Gemeinde vergebenen „Mapping Code“ an den Softwareanbieter; ohne Hotelsoftware nutzt er den Webclient.
+  - Voranmeldung = änderbar und löschbar, noch nicht an die Gemeinde übermittelt. Meldeschein = verbindlich, „nicht mehr änderbar“.
+  - Alle Gäste einer Meldung haben dieselben Reisedaten.
+  - Wird keine Abreise eingetragen, läuft die Gästetaxe weiter.
+  - Gästekarte nur für pflichtige Gäste und Kinder.
+- Digitale Gästekarte (Bodensee-Vorarlberg): Mit Gast-E-Mail in Voranmeldung oder Meldeschein wird der Link automatisch versendet, 14 Tage vor Anreise oder innerhalb von 10 Minuten. Das gilt auch bei Anbindung über Hotelsoftware.
+- Montafon: Die digitale Gästekarte kommt per E-Mail von feratel, nachdem der Aufenthalt gemeldet ist.
+- Bludenz: Die Alpenregion nutzt feratel und ein flächendeckendes elektronisches Meldewesen.
+- Lindau:
+  - Elektronischer Meldeschein seit der Kurbeitragssatzung 2020; Gästekarte ist die ECHT BODENSEE CARD. Kontakt: kurbeitrag@lindau.de.
+  - In der EBC-Region laufen feratel **und** AVS; welches System Lindau nutzt, ist offen.
+  - Lindau tritt der neuen EBC (VDV-Code) erst später bei.
 
 ## Was öffentlich sichtbar ist (nicht verifiziert)
 

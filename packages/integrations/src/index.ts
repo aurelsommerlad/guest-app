@@ -21,3 +21,14 @@ export {
   KeyboxAccessProvider,
   type KeyboxAccessProviderOptions,
 } from "./access/keybox-access-provider";
+export { FERATEL_DOCUMENTED_CAPABILITIES } from "./feratel/feratel-capabilities";
+export { FeratelOfficialRegistrationProvider } from "./feratel/feratel-official-registration-provider";
+export {
+  type FeratelTransport,
+  type FeratelTransportRequest,
+  type FeratelTransportResult,
+} from "./feratel/feratel-transport";
+export {
+  type SimulatedFailure,
+  SimulatedFeratelTransport,
+} from "./feratel/simulated-feratel-transport";
