@@ -44,6 +44,11 @@ export type RegisteredProperty = {
    * See content-source.ts for the guards.
    */
   contentSource?: { propertyId: string; units?: Readonly<Record<string, string>> };
+  /**
+   * Test properties only: the guest design shown by default ("v2" = Design V2 "Editorial",
+   * ADR 0020). Real properties always use the current design (see design.ts).
+   */
+  design?: "v2";
   units: readonly RegisteredUnit[];
 };
 
@@ -111,6 +116,8 @@ export const propertyRegistry: readonly RegisteredProperty[] = [
     testOnly: true,
     // Preview HØV's real, Admin-managed content with the TEST reservation (Ap. 1 as ROS).
     contentSource: { propertyId: "hov", units: { "test-ap-1": "ros" } },
+    // Design V2 is active for the test property (and only there) until it is approved.
+    design: "v2",
     units: [
       { id: "test-ap-1", name: "Ap. 1", externalId: "TEST-ZHF" },
       { id: "test-ap-2", name: "Ap. 2", externalId: "TEST-WEZ" },

@@ -3,6 +3,7 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { designOf } from "../../../../config/design";
 import { checkInAvailability } from "../../../../features/check-in/check-in-service";
 import { CheckInShell } from "../../../../features/check-in/components/CheckInShell";
 import {
@@ -31,6 +32,7 @@ export default async function CheckInPage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   const context = await requireGuestContext(locale);
+  if (designOf(context.property) === "v2") return redirect({ href: "/v2/check-in", locale });
   const availability = await checkInAvailability(checkInDeps(), context);
   if (!availability.available) {
     return (

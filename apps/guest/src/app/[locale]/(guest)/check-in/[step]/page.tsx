@@ -6,6 +6,7 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { designOf } from "../../../../../config/design";
 import {
   saveStepAction,
   submitCheckInAction,
@@ -47,6 +48,9 @@ export default async function CheckInStepPage({ params }: Props) {
   if (legacy) return redirect({ href: `/check-in/${legacy}`, locale });
   if (!isCheckInStep(step)) notFound();
   const context = await requireGuestContext(locale);
+  if (designOf(context.property) === "v2") {
+    return redirect({ href: `/v2/check-in/${step}`, locale });
+  }
   const availability = await checkInAvailability(checkInDeps(), context);
   if (!availability.available) return redirect({ href: "/check-in", locale });
   const { journey } = availability;

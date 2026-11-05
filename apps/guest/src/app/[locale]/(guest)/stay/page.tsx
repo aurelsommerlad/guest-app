@@ -9,7 +9,10 @@ import { AccessPanel } from "../../../../features/stay/components/AccessPanel";
 import { Greeting } from "../../../../features/stay/components/Greeting";
 import { StayCards } from "../../../../features/stay/components/StayCards";
 import { StayTiles } from "../../../../features/stay/components/StayTiles";
+import { designOf } from "../../../../config/design";
+import { requireGuestContext } from "../../../../features/guest-context/server";
 import { getStay } from "../../../../features/stay/get-stay";
+import { redirect } from "../../../../i18n/navigation";
 import { routing } from "../../../../i18n/routing";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -27,6 +30,9 @@ export default async function StayPage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
 
+  // Design V2 is active for test properties (ADR 0020): STAY then lives under /v2.
+  const context = await requireGuestContext(locale);
+  if (designOf(context.property) === "v2") return redirect({ href: "/v2", locale });
   const stay = await getStay(locale);
   const accessFirst = stay.journeyPhase === "arrival-day";
   const accessPanel = stay.access && (
