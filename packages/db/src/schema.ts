@@ -807,6 +807,244 @@ export const adminSessions = pgTable(
   ],
 ).enableRLS();
 
+/*
+ * ── Payments (Phase 12 B1, ADR 0018) ───────────────────────────────────────────────────
+ * IDs, amounts (minor units) and states only – never card data, payment-link URLs or raw
+ * provider responses. Every row is tenant/property-bound (composite FKs); RLS on, no
+ * policies, Data API privileges revoked (migration 0012).
+ */
+export const PAYMENT_PROVIDERS = ["apaleo"] as const;
+/** preparing: row reserved, link not created yet (Phase B2) · pending: link live at the provider */
+export const PAYMENT_REQUEST_STATUSES = [
+  "preparing",
+  "pending",
+  "succeeded",
+  "failed",
+  "canceled",
+  "expired",
+] as const;
+export const OPEN_PAYMENT_REQUEST_STATUSES = ["preparing", "pending"] as const;
+/** Mirrors @up/core PaymentState. */
+export const PAYMENT_STATES = [
+  "not-applicable",
+  "not-due",
+  "due",
+  "pending",
+  "paid",
+  "credit",
+  "review",
+  "unknown",
+] as const;
+export const PAYMENT_AUDIT_KINDS = [
+  "state-observed",
+  "payment-confirmed",
+  "request-created",
+  "request-status-changed",
+] as const;
+export const PAYMENT_AUDIT_ACTORS = ["system", "guest", "admin"] as const;
+
+function isCurrency(column: AnyPgColumn): SQL {
+  return sql`${column} ~ '^[A-Z]{3}$'`;
+}
+
+/**
+ * One payment request (a hosted payment link, Phase B2) for ONE folio of ONE reservation.
+ * At most one open request (preparing/pending) per folio – enforced by a partial unique
+ * index, so double clicks, parallel tabs or retries can never create a second one.
+ */
+export const paymentRequests = pgTable(
+  "payment_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    /** Booking of the reservation (several reservations can share it). */
+    externalBookingId: text("external_booking_id"),
+    paymentProvider: text("payment_provider", { enum: PAYMENT_PROVIDERS }).notNull(),
+    /** The provider's folio id – a booking can have several folios per reservation. */
+    folioId: text("folio_id").notNull(),
+    /** The provider's payment id once the link exists. */
+    providerPaymentId: text("provider_payment_id"),
+    amountMinor: integer("amount_minor").notNull(),
+    currency: text("currency").notNull(),
+    status: text("status", { enum: PAYMENT_REQUEST_STATUSES }).notNull().default("preparing"),
+    /** SHA-256 hex – sent as the provider's Idempotency-Key. */
+    idempotencyKey: text("idempotency_key").notNull(),
+    /** Random, opaque reference in the return URL (never an id or amount). */
+    returnRef: text("return_ref").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    settledAt: timestamp("settled_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "payment_requests_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    unique("payment_requests_tenant_id_id_key").on(t.tenantId, t.id),
+    unique("payment_requests_idempotency_key_key").on(t.paymentProvider, t.idempotencyKey),
+    unique("payment_requests_return_ref_key").on(t.returnRef),
+    uniqueIndex("payment_requests_provider_payment_key")
+      .on(t.paymentProvider, t.providerPaymentId)
+      .where(sql`${t.providerPaymentId} IS NOT NULL`),
+    // The duplicate guard: one open request per folio.
+    uniqueIndex("payment_requests_one_open_per_folio")
+      .on(t.tenantId, t.paymentProvider, t.folioId)
+      .where(sql`${t.status} IN ('preparing', 'pending')`),
+    index("payment_requests_reservation_idx").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+    ),
+    index("payment_requests_open_due_idx").on(t.status, t.expiresAt),
+    check(
+      "payment_requests_reservation_provider_valid",
+      oneOf(t.reservationProvider, RESERVATION_PROVIDERS),
+    ),
+    check("payment_requests_payment_provider_valid", oneOf(t.paymentProvider, PAYMENT_PROVIDERS)),
+    check("payment_requests_status_valid", oneOf(t.status, PAYMENT_REQUEST_STATUSES)),
+    check(
+      "payment_requests_external_reservation_id_not_blank",
+      notBlank(t.externalReservationId, 255),
+    ),
+    check("payment_requests_external_booking_id_length", maxLength(t.externalBookingId, 255)),
+    check("payment_requests_folio_id_not_blank", notBlank(t.folioId, 255)),
+    check("payment_requests_provider_payment_id_length", maxLength(t.providerPaymentId, 255)),
+    check("payment_requests_amount_positive", sql`${t.amountMinor} > 0`),
+    check("payment_requests_currency_format", isCurrency(t.currency)),
+    check("payment_requests_idempotency_key_format", isSha256Hex(t.idempotencyKey)),
+    check("payment_requests_return_ref_format", sql`${t.returnRef} ~ '^[A-Za-z0-9_-]{32,64}$'`),
+    // A live or paid link always has the provider's payment id.
+    check(
+      "payment_requests_provider_payment_id_required",
+      sql`${t.status} NOT IN ('pending', 'succeeded') OR ${t.providerPaymentId} IS NOT NULL`,
+    ),
+    // Final states carry the instant they were settled – and only they do.
+    check(
+      "payment_requests_settled_consistent",
+      sql`(${t.status} IN ('succeeded', 'failed', 'canceled', 'expired')) = (${t.settledAt} IS NOT NULL)`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Current payment state per reservation: last evaluation and – write-once – when the
+ * guest's amount was first confirmed by the provider (`cleared_at`). A confirmed payment
+ * stays confirmed: later extras or an outage never lock access again (rules 2 and 3).
+ */
+export const reservationPaymentStates = pgTable(
+  "reservation_payment_states",
+  {
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    externalBookingId: text("external_booking_id"),
+    lastState: text("last_state", { enum: PAYMENT_STATES }).notNull(),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }).notNull(),
+    clearedAt: timestamp("cleared_at", { withTimezone: true }),
+    clearedAmountMinor: integer("cleared_amount_minor"),
+    clearedCurrency: text("cleared_currency"),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({
+      name: "reservation_payment_states_pkey",
+      columns: [t.tenantId, t.reservationProvider, t.externalReservationId],
+    }),
+    foreignKey({
+      name: "reservation_payment_states_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    check(
+      "reservation_payment_states_reservation_provider_valid",
+      oneOf(t.reservationProvider, RESERVATION_PROVIDERS),
+    ),
+    check("reservation_payment_states_last_state_valid", oneOf(t.lastState, PAYMENT_STATES)),
+    check(
+      "reservation_payment_states_external_reservation_id_not_blank",
+      notBlank(t.externalReservationId, 255),
+    ),
+    check(
+      "reservation_payment_states_external_booking_id_length",
+      maxLength(t.externalBookingId, 255),
+    ),
+    check(
+      "reservation_payment_states_cleared_consistent",
+      sql`(${t.clearedAt} IS NULL AND ${t.clearedAmountMinor} IS NULL AND ${t.clearedCurrency} IS NULL) OR (${t.clearedAt} IS NOT NULL AND ${t.clearedAmountMinor} > 0 AND ${isCurrency(t.clearedCurrency)})`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Append-only audit trail of payment observations and requests (revision-safe: UPDATE,
+ * DELETE and TRUNCATE are rejected by triggers, migration 0012). IDs, amounts, states and
+ * instants only – no personal or card data.
+ */
+export const paymentAuditEvents = pgTable(
+  "payment_audit_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    folioId: text("folio_id"),
+    paymentRequestId: uuid("payment_request_id"),
+    kind: text("kind", { enum: PAYMENT_AUDIT_KINDS }).notNull(),
+    state: text("state"),
+    amountMinor: integer("amount_minor"),
+    currency: text("currency"),
+    /** The provider payments this event is based on (e.g. the confirmed ones). */
+    providerPaymentIds: text("provider_payment_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** When the provider data was read (the "Prüfzeitpunkt"). */
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    actor: text("actor", { enum: PAYMENT_AUDIT_ACTORS }).notNull().default("system"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: "payment_audit_events_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "payment_audit_events_request_fkey",
+      columns: [t.tenantId, t.paymentRequestId],
+      foreignColumns: [paymentRequests.tenantId, paymentRequests.id],
+    }).onDelete("restrict"),
+    index("payment_audit_events_reservation_idx").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+      t.observedAt,
+    ),
+    check("payment_audit_events_kind_valid", oneOf(t.kind, PAYMENT_AUDIT_KINDS)),
+    check("payment_audit_events_actor_valid", oneOf(t.actor, PAYMENT_AUDIT_ACTORS)),
+    check(
+      "payment_audit_events_reservation_provider_valid",
+      oneOf(t.reservationProvider, RESERVATION_PROVIDERS),
+    ),
+    check(
+      "payment_audit_events_state_valid",
+      sql`${t.state} IS NULL OR ${t.state} IN (${sql.raw([...new Set([...PAYMENT_STATES, ...PAYMENT_REQUEST_STATUSES])].map((v) => `'${v}'`).join(", "))})`,
+    ),
+    check(
+      "payment_audit_events_amount_currency",
+      sql`(${t.amountMinor} IS NULL) = (${t.currency} IS NULL) AND (${t.currency} IS NULL OR ${isCurrency(t.currency)})`,
+    ),
+    check("payment_audit_events_folio_id_length", maxLength(t.folioId, 255)),
+  ],
+).enableRLS();
+
 export const schema = {
   tenants,
   properties,
@@ -825,4 +1063,7 @@ export const schema = {
   guestRegistrationGuests,
   guestRegistrationSyncs,
   unitAccessCodes,
+  paymentRequests,
+  reservationPaymentStates,
+  paymentAuditEvents,
 };

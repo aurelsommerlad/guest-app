@@ -212,3 +212,53 @@ Siehe [Integrationsdoku, Abschnitt „Offen“](../integrations/apaleo-payments.
 
 - Jede Buchung hat ein eigenes Buchungsfolio (`type = Booking`) für Anzahlungen. Ist es leer, wird es ignoriert. Ist es gefüllt, geht es in die Prüfung.
 - Das TEST-Folio erlaubt vor Anreise `AddPayment` mit `allowedPayment` 337, obwohl alle Charges ungebucht sind.
+
+## Umsetzungsstand Phase B1 (2026-11-05)
+
+**Migrationen `0011_payments` und `0012_lock_and_audit_payments`** (auf Staging eingespielt mit `docs/staging/O-migration-0011-0012.sql`, Production unberührt):
+
+| Tabelle                      | Zweck                                                                                                                                             | Schutz                                                                                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payment_requests`           | eine Zahlungsanforderung je Folio einer Reservierung (Tenant, Property, Reservierung, Buchung, Folio)                                             | partieller Unique-Index **eine offene Anforderung je Folio**; Idempotency-Key (SHA-256) und Return-Ref (zufällig) eindeutig; Statusübergänge nur vorwärts; `pending`/`succeeded` nur mit Provider-Zahlungs-ID; Endzustände mit `settled_at` |
+| `reservation_payment_states` | letzter Zustand und Prüfzeitpunkt je Reservierung, `cleared_at` mit Betrag                                                                        | `cleared_at` per Trigger **nur einmal setzbar**; Zeilen nicht löschbar                                                                                                                                                                      |
+| `payment_audit_events`       | Prüfprotokoll: beobachtete Zustandswechsel, erste Bestätigung (mit bestätigenden Zahlungs-IDs und Prüfzeitpunkt), Anforderungen und Statuswechsel | **nur anfügbar** (UPDATE, DELETE und TRUNCATE per Trigger abgewiesen)                                                                                                                                                                       |
+
+- Alle drei Tabellen:
+  - zusammengesetzte Fremdschlüssel auf (Tenant, Property)
+  - RLS ohne Policies, Data-API-Rechte entzogen
+  - keine Spalten für Karten-, Link- oder Rohdaten
+- **Repository** (`packages/db/src/repositories/payment-repository.ts`):
+  - Jede Abfrage ist tenant-scoped, Eingaben werden validiert.
+  - `recordPaymentObservation` serialisiert pro Reservierung (Zeilensperre).
+  - `openPaymentRequest` gibt bei Doppelklick oder parallelen Anfragen die bestehende Anforderung zurück.
+  - Return-Refs werden nur innerhalb von Tenant und Reservierung der Session aufgelöst.
+- **Guest App:**
+  - Jede Bewertung (nur Objekte mit `inform`, also TEST) wird mit Prüfzeitpunkt erfasst.
+  - Fehler beim Speichern brechen die Seite nicht ab und ändern den Zustand nie.
+- **Nicht enthalten:** Provider-Aufrufe zum Anlegen von Links, Webhooks und Sperren.
+
+**Revisionssicherheit:** Die Trigger schützen gegen Änderungen über die Anwendung und reguläre Datenbankrollen. Ein Superuser kann Trigger abschalten. Für externe Revisionsprüfungen wäre später eine Hash-Kette oder ein Export in einen WORM-Speicher möglich.
+
+## Voraussetzungen B2–B4 (geprüft 2026-11-05)
+
+- **Apaleo Pay testen:**
+  - Laut apaleo.dev ist Apaleo Pay auf jedem **Developer-Account** vorkonfiguriert (Sandbox, Testkarten z. B. 4111 1111 1111 1111 / 737 / 03/2030).
+  - Registrierung kostenlos unter identity.apaleo.com/account/register-dev-account (mit Testobjekt und optional Beispieldaten).
+  - Für Live-Accounts beschreibt die Dokumentation keinen Testmodus. Live-Zugangsdaten gibt es pro Objekt über den Apaleo-Support.
+  - **Folge:** B2–B4 nur gegen einen Developer-Account, mit eigenen Client-Zugangsdaten und einem eigenen Testobjekt in der Registry. Nie gegen TEST im Live-Account, solange Apaleo nicht schriftlich bestätigt, dass dort nur Testzahlungen möglich sind.
+- **Links für ungebuchte Leistungen:**
+  - Die OpenAPI-Beschreibung von `by-link` nennt **keine** Voraussetzung gebuchter Charges (nur `amount` ≤ `allowedPayment`, `paidCharges` für Rechnungskauf).
+  - Der Leitfaden „Payment links“ verlangt dagegen gebuchte Charges.
+  - Am TEST-Folio sind vor Anreise `AddPayment` und `allowedPayment` 337 möglich.
+  - **Ungeklärt:** Erster Test im Developer-Account mit ungebuchten Charges und ohne `paidCharges`; parallel Rückfrage beim Apaleo-Support.
+- **Rechte:**
+  - `folios.manage`, bei Fine-grained Clients `core.folio_payments.create`
+  - Webhooks: `notifications:admin`
+- **Webhook-Sicherheitskonzept (bestätigt):**
+  - Apaleo signiert nicht. Empfohlen sind HTTPS, ein Token in der URL und die IP-Allowlist (34.240.36.71, 52.212.76.75, 63.33.249.221).
+  - Zustellung mindestens einmal, ungeordnet, bis zu 24 h Wiederholungen. Beim Anlegen der Subscription sendet Apaleo einen Ping, ohne 2xx wird sie nicht aktiv.
+  - **Umsetzung:** Der Webhook darf nur einen **Neuabruf** bei Apaleo auslösen. Payload-Werte (Beträge, Status) werden nie übernommen.
+  - Das Payload wird eng validiert: `accountId` = unser Account, `propertyId` aus der Registry (zunächst nur Sandbox/TEST), ID-Muster, Größenlimit.
+  - Rate-Limit, Dedup über Event-ID, Antwort sofort 2xx, Logs ohne Payload.
+  - Ein geleakter Token erlaubt höchstens zusätzliche, rate-limitierte Abfragen, keine Zustandsänderung.
+  - **Hinweis:** Vercel-Preview-Deployments sind geschützt. Für B4 braucht es eine öffentlich erreichbare Staging-Domain für genau diesen Pfad oder den Vercel „Protection Bypass for Automation“.

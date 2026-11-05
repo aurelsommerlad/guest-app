@@ -78,6 +78,20 @@
       "when": 1791320712081,
       "tag": "0010_guest_contact_prefill",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793869038519,
+      "tag": "0011_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793869039634,
+      "tag": "0012_lock_and_audit_payments",
+      "breakpoints": true
     }
   ]
 }

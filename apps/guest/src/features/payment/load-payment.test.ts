@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import { findPropertyById } from "../../config/properties";
 import { type GuestContext } from "../guest-context/guest-context";
 import { loadPayment } from "./load-payment";
+import { paymentObservationOf } from "./payment-observation";
 
 const property = findPropertyById("test-run");
 if (!property) throw new Error("test-run missing");
@@ -129,5 +130,99 @@ describe("loadPayment", () => {
       context,
     );
     expect(result?.evaluation.state).toBe("unknown");
+  });
+});
+
+describe("recording the check (Phase 12 B1)", () => {
+  const paidSummary: PaymentSummary = {
+    ...summary,
+    folios: summary.folios.map((folio) => ({
+      ...folio,
+      balance: { amount: 0, currency: "EUR" },
+      payments: [
+        {
+          id: "P-1",
+          status: "success",
+          amount: { amount: 337, currency: "EUR" },
+          elsewhere: false,
+        },
+        {
+          id: "P-2",
+          status: "failure",
+          amount: { amount: 337, currency: "EUR" },
+          elsewhere: false,
+        },
+      ],
+    })),
+  };
+
+  it("records state and real check instant; a confirmed payment with its payment ids", async () => {
+    const { logger } = logs();
+    const recorded: { state: string; at: string; confirmed?: unknown }[] = [];
+    const result = await loadPayment(
+      {
+        config: inform,
+        provider: () => provider(() => Promise.resolve(paidSummary)),
+        record: (guest, evaluation, observedAt) => {
+          const observation = paymentObservationOf(guest, evaluation, observedAt);
+          recorded.push({
+            state: observation.state,
+            at: observedAt.toISOString(),
+            confirmed: observation.confirmed,
+          });
+          return Promise.resolve({ clearedAt: observedAt.toISOString() });
+        },
+        clock: () => new Date("2026-12-30T10:05:00Z"),
+        logger,
+      },
+      context,
+    );
+    expect(recorded).toEqual([
+      {
+        state: "paid",
+        at: "2026-12-30T10:05:00.000Z",
+        confirmed: { amountMinor: 33700, currency: "EUR", providerPaymentIds: ["P-1"] },
+      },
+    ]);
+    expect(result?.clearedAt).toBe("2026-12-30T10:05:00.000Z");
+  });
+
+  it("unknown, due or pending are recorded – never as confirmed", async () => {
+    const { logger } = logs();
+    for (const impl of [
+      () => Promise.reject(new PmsError("timeout", "t", { provider: "apaleo" })),
+      () => Promise.resolve(summary),
+    ]) {
+      let confirmed: unknown = "not called";
+      await loadPayment(
+        {
+          config: inform,
+          provider: () => provider(impl),
+          record: (guest, evaluation, observedAt) => {
+            confirmed = paymentObservationOf(guest, evaluation, observedAt).confirmed;
+            return Promise.resolve({});
+          },
+          logger,
+        },
+        context,
+      );
+      expect(confirmed).toBeUndefined();
+    }
+  });
+
+  it("a database error while recording never breaks the page or changes the state", async () => {
+    const { logger, lines } = logs();
+    const result = await loadPayment(
+      {
+        config: inform,
+        provider: () => provider(() => Promise.resolve(summary)),
+        record: () => Promise.reject(new Error("db down")),
+        logger,
+      },
+      context,
+    );
+    expect(result?.evaluation.state).toBe("due");
+    expect(result?.clearedAt).toBeUndefined();
+    expect(lines.join("\n")).toContain("payment state could not be recorded");
   });
 });

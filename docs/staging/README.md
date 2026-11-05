@@ -32,5 +32,16 @@ Erwartet am Ende (L): `applied_migrations` = 11, `test_property_mapped` = true,
 - **M** schaltet den Online-Check-in nur für `test-run` ein, **ohne Sync-Ziele**: Beim
   Absenden entstehen keine Sync-Zeilen, nichts geht an Apaleo oder Feratel.
 
+## Zahlungen (Phase 12 B1)
+
+| Schritt | Skript                      | Wann                                                  |
+| ------- | --------------------------- | ----------------------------------------------------- |
+| 1       | `O-migration-0011-0012.sql` | nur wenn `applied_migrations` = 11 (Voraussetzung: J) |
+
+- **O** legt `payment_requests`, `reservation_payment_states` und `payment_audit_events` an
+  (IDs, Beträge in Cent, Status, Zeitpunkte – keine Karten- oder Linkdaten), sperrt die
+  Data-API und setzt die Trigger: Prüfprotokoll nur anfügbar, `cleared_at` nur einmal setzbar.
+  Rein additiv, keine bestehenden Daten werden geändert. Danach `applied_migrations` = 13.
+
 Neu erzeugen (nach neuen Migrationen) mit denselben Regeln: Inhalt der Migrationsdateien
 unverändert, Hash = SHA-256 der Datei, `created_at` = `when` aus `meta/_journal.json`.
