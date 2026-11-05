@@ -134,6 +134,10 @@ export function buildStayViewModel(
         : {}),
       href: "/guide",
     },
+    times: {
+      checkIn: localTime(reservation.checkInAt),
+      checkOut: localTime(reservation.checkOutAt),
+    },
     timeTile,
     ...(checkIn ? { checkIn } : {}),
     tiles: selectTiles({

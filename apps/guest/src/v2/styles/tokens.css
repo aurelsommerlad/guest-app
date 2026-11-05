@@ -1,0 +1,38 @@
+/*
+ * UNIQUE PLACES – Design V2 "Editorial" tokens (ADR 0020).
+ *
+ * The ONLY place raw design values of V2 live. Scoped to `.v2` – nothing here touches the
+ * current app. Measured on the V2 reference (iPhone, 390 pt).
+ */
+
+.v2 {
+  /* Colours – warm off-white, ink, one olive accent */
+  --v2-paper: #f5efe9; /* page */
+  --v2-paper-raised: #f8f3ee; /* navigation, inputs */
+  --v2-paper-deep: #ece4db; /* image placeholder, pressed */
+  --v2-ink: #1d1c19; /* text, icons, active navigation */
+  --v2-ink-soft: #4a4843; /* secondary text */
+  --v2-ink-muted: #807b74; /* hints, captions */
+  --v2-line: #cfc8bf; /* hairlines */
+  --v2-line-strong: #958f89; /* vertical divider in the info row */
+  --v2-olive: #5b5a36; /* status mark (check) */
+  --v2-on-ink: #f8f3ee; /* text on ink */
+  --v2-on-photo: #fbf8f4; /* text on photography */
+  --v2-error: #8a3b2e; /* field errors (muted brick, AA on paper) */
+  --v2-photo-shade: rgb(20 17 12 / 0.5); /* bottom gradient on photos */
+
+  /* Typography */
+  --v2-font: var(--font-v2, "Nunito Sans"), ui-sans-serif, system-ui, sans-serif;
+  --v2-font-mark: var(--font-josefin, "Josefin Sans"), ui-sans-serif, system-ui, sans-serif;
+
+  /* Layout */
+  --v2-margin: 31px; /* text margin */
+  --v2-inset: 16px; /* photo margin */
+  --v2-gap: 7px; /* gap between photos */
+  --v2-column: 560px; /* max column width on larger screens */
+  --v2-nav-height: 68px;
+  --v2-nav-active: 46px;
+
+  /* Motion */
+  --v2-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}

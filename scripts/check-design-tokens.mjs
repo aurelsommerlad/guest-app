@@ -14,7 +14,11 @@ import { join, relative, sep } from "node:path";
 const root = new URL("..", import.meta.url).pathname;
 const scanRoots = ["apps", "packages"];
 const extensions = [".ts", ".tsx", ".css"];
-const allowedFiles = new Set([join("packages", "ui", "src", "styles", "tokens.css")]);
+const allowedFiles = new Set([
+  join("packages", "ui", "src", "styles", "tokens.css"),
+  // Design V2 (editorial) keeps its own, separate token file (docs/adr/0020).
+  join("apps", "guest", "src", "v2", "styles", "tokens.css"),
+]);
 const ignoredDirs = new Set(["node_modules", ".next", ".turbo", "coverage", "dist"]);
 
 const HEX = /#[0-9a-fA-F]{3,8}\b/g;

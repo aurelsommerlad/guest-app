@@ -23,5 +23,6 @@ Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue
 | 0017 | [Provider-neutraler Zugang (Access)](0017-provider-neutral-access.md)                               | Akzeptiert |
 | 0018 | [Zahlungsübersicht und zahlungsabhängige Zugangsfreigabe](0018-payments-and-access-gating.md)       | Vorschlag  |
 | 0019 | [Inhaltsquelle für Testobjekte](0019-content-source-for-test-properties.md)                         | Akzeptiert |
+| 0020 | [Design V2 „Editorial“ als getrennte Designversion](0020-design-v2-editorial.md)                    | Entwurf    |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.

@@ -1,0 +1,291 @@
+"use client";
+
+import { type CallingCodeOption, Icon, type SelectOption } from "@up/ui";
+import { useTranslations } from "next-intl";
+import { useActionState } from "react";
+
+import type { CheckInFormState } from "../../features/check-in/action-handlers";
+import type { FormFieldDef, GuestFieldset } from "../../features/check-in/form-model";
+import { V2Arrow } from "../components/glyphs";
+import { V2PhoneField, V2SelectField, V2TextField } from "./V2Fields";
+
+type Action = (previous: CheckInFormState, formData: FormData) => Promise<CheckInFormState>;
+
+function SubmitButton({ pending, label, busy }: { pending: boolean; label: string; busy: string }) {
+  return (
+    <button type="submit" className="v2-button" disabled={pending}>
+      <span>{pending ? busy : label}</span>
+      <V2Arrow />
+    </button>
+  );
+}
+
+function Notice({ text }: { text?: string }) {
+  return (
+    <div role="status" className="empty:hidden">
+      {text && <p className="v2-notice">{text}</p>}
+    </div>
+  );
+}
+
+/** Trip: confirm the stay – the travellers come from the reservation, nothing is asked. */
+export function V2TripForm({ action }: { action: Action }) {
+  const t = useTranslations("checkIn");
+  const [state, formAction, pending] = useActionState(action, { status: "idle" });
+  const notice =
+    state.status === "rate-limited"
+      ? t("errors.rateLimited")
+      : state.status === "idle"
+        ? undefined
+        : t("errors.unavailable");
+  return (
+    <form action={formAction} className="v2-form">
+      <Notice {...(notice ? { text: notice } : {})} />
+      <SubmitButton pending={pending} label={t("next")} busy={t("saving")} />
+    </form>
+  );
+}
+
+const SPANS: Record<FormFieldDef["field"], string> = {
+  firstName: "v2-span-3",
+  lastName: "v2-span-3",
+  email: "v2-span-6",
+  phone: "v2-span-6",
+  birthDate: "v2-span-3",
+  nationality: "v2-span-3",
+  street: "v2-span-6",
+  postalCode: "v2-span-2",
+  city: "v2-span-4",
+  country: "v2-span-6",
+  documentType: "v2-span-3",
+  documentNumber: "v2-span-3",
+};
+
+const DOCUMENT_FIELDS = new Set<FormFieldDef["field"]>(["documentType", "documentNumber"]);
+
+/**
+ * Guests / address. Same field names, validation and saving as the current app (form-model,
+ * server-side checks); only the presentation is editorial: numbered persons separated by
+ * hairlines, underline inputs. Works without JavaScript.
+ */
+export function V2GuestStepForm({
+  action,
+  step,
+  fieldsets,
+  version,
+  countries,
+  callingCodes,
+  documentTypes,
+  maxBirthDate,
+  occupancyChangedTo,
+}: {
+  action: Action;
+  step: "guests" | "address";
+  fieldsets: readonly GuestFieldset[];
+  version: number;
+  countries: readonly SelectOption[];
+  callingCodes: readonly CallingCodeOption[];
+  documentTypes: readonly SelectOption[];
+  maxBirthDate: string;
+  occupancyChangedTo?: number;
+}) {
+  const t = useTranslations("checkIn");
+  const [state, formAction, pending] = useActionState(action, { status: "idle" });
+  const errors = state.status === "idle" ? undefined : state.errors;
+  const values = state.status === "idle" ? undefined : state.values;
+  const currentVersion = (state.status !== "idle" && state.version) || version;
+
+  const label = (def: FormFieldDef) =>
+    def.required ? t(`fields.${def.field}`) : `${t(`fields.${def.field}`)} (${t("optional")})`;
+
+  const field = (position: number, def: FormFieldDef) => {
+    const code = errors?.[position]?.find((item) => item.field === def.field)?.code ?? def.error;
+    const error = code ? t(`errors.${code}`) : undefined;
+    const common = {
+      id: def.name,
+      name: def.name,
+      label: label(def),
+      required: def.required,
+      autoComplete: def.autoComplete,
+      defaultValue: values?.[def.name] ?? def.value,
+      className: SPANS[def.field],
+      ...(error ? { error } : {}),
+    };
+    if (def.kind === "phone") {
+      return (
+        <V2PhoneField
+          key={`${def.name}-${values?.[`${def.name}Country`] ?? def.phoneCountry ?? ""}`}
+          {...common}
+          countryName={`${def.name}Country`}
+          countryLabel={t("fields.phoneCountry")}
+          options={callingCodes}
+          defaultCountry={values?.[`${def.name}Country`] ?? def.phoneCountry ?? "DE"}
+          hint={t("hints.phone")}
+        />
+      );
+    }
+    if (def.kind === "country" || def.kind === "document-type") {
+      return (
+        <V2SelectField
+          key={def.name}
+          {...common}
+          options={def.kind === "country" ? countries : documentTypes}
+          placeholder={t("choose")}
+        />
+      );
+    }
+    return (
+      <V2TextField
+        key={def.name}
+        {...common}
+        type={def.kind === "date" ? "date" : def.kind === "email" ? "email" : "text"}
+        {...(def.kind === "date"
+          ? { min: "1900-01-01", max: maxBirthDate }
+          : def.kind === "email"
+            ? { maxLength: 254, inputMode: "email" as const, hint: t("hints.email") }
+            : { maxLength: 100 })}
+      />
+    );
+  };
+  const grid = (position: number, defs: readonly FormFieldDef[]) => (
+    <div className="v2-fields">{defs.map((def) => field(position, def))}</div>
+  );
+
+  const notice =
+    state.status === "invalid"
+      ? t("errors.summary")
+      : state.status === "conflict"
+        ? t("errors.conflict")
+        : state.status === "rate-limited"
+          ? t("errors.rateLimited")
+          : state.status === "unavailable"
+            ? t("errors.unavailable")
+            : undefined;
+  const firstIncomplete = fieldsets.find((set) => !set.complete)?.position;
+  const [primary] = fieldsets;
+  const prefilled = (show: boolean) =>
+    show && (
+      <p className="v2-caption" style={{ marginBottom: 20 }}>
+        {t("prefilledHint")}
+      </p>
+    );
+
+  return (
+    <form action={formAction} className="v2-form" noValidate>
+      <input type="hidden" name="version" value={currentVersion} />
+      {occupancyChangedTo !== undefined && state.status === "idle" && (
+        <p className="v2-notice">{t("occupancyChanged", { count: occupancyChangedTo })}</p>
+      )}
+      <Notice {...(notice ? { text: notice } : {})} />
+
+      {step === "address" && primary && (
+        <div className="v2-stack" style={{ gap: 44 }}>
+          {primary.fields.some((def) => !DOCUMENT_FIELDS.has(def.field)) && (
+            <section className="v2-stack v2-stack-4">
+              <h2 className="v2-section-head v2-eyebrow">{t("addressCard")}</h2>
+              <div style={{ paddingTop: 8 }}>
+                {prefilled(primary.prefilled)}
+                {grid(
+                  primary.position,
+                  primary.fields.filter((def) => !DOCUMENT_FIELDS.has(def.field)),
+                )}
+              </div>
+            </section>
+          )}
+          {primary.fields.some((def) => DOCUMENT_FIELDS.has(def.field)) && (
+            <section className="v2-stack v2-stack-4">
+              <h2 className="v2-section-head v2-eyebrow">{t("document.title")}</h2>
+              <p className="v2-body v2-muted">{t("document.body")}</p>
+              {grid(
+                primary.position,
+                primary.fields.filter((def) => DOCUMENT_FIELDS.has(def.field)),
+              )}
+            </section>
+          )}
+        </div>
+      )}
+
+      {step === "guests" && (
+        <div>
+          {fieldsets.map((set) => {
+            const hasErrors = (errors?.[set.position]?.length ?? 0) > 0;
+            const done = set.complete && !hasErrors;
+            const open = hasErrors || (!set.complete && set.position === firstIncomplete);
+            const status = done
+              ? t("companionComplete")
+              : set.missing.length > 0 && set.displayName
+                ? t("personMissing", {
+                    fields: set.missing.map((missing) => t(`fields.${missing}`)).join(", "),
+                  })
+                : set.displayName
+                  ? t("companionIncomplete")
+                  : t("personEmpty");
+            return (
+              <details key={set.position} open={open} className="v2-person">
+                <summary>
+                  <span aria-hidden className="v2-person-number">
+                    {String(set.position + 1).padStart(2, "0")}
+                  </span>
+                  <span className="v2-stack" style={{ gap: 3, minWidth: 0 }}>
+                    <span className="v2-eyebrow">
+                      {set.position === 0
+                        ? t("primaryGuest")
+                        : t("companion", { number: set.position + 1 })}
+                    </span>
+                    <span
+                      className="v2-small v2-muted"
+                      style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
+                      {set.displayName ? `${set.displayName} · ${status}` : status}
+                    </span>
+                  </span>
+                  {done ? (
+                    <span className="v2-mark" aria-hidden>
+                      <Icon name="check" />
+                    </span>
+                  ) : (
+                    <Icon name="chevron-down" className="v2-person-chevron" />
+                  )}
+                </summary>
+                <div className="v2-person-body">
+                  {prefilled(set.prefilled)}
+                  {grid(set.position, set.fields)}
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      )}
+
+      <SubmitButton pending={pending} label={t("next")} busy={t("saving")} />
+    </form>
+  );
+}
+
+/** Confirmation and the one submit (idempotent on the server). */
+export function V2SubmitForm({ action, version }: { action: Action; version: number }) {
+  const t = useTranslations("checkIn");
+  const [state, formAction, pending] = useActionState(action, { status: "idle" });
+  const message =
+    state.status === "not-confirmed"
+      ? t("errors.notConfirmed")
+      : state.status === "conflict"
+        ? t("errors.conflict")
+        : state.status === "rate-limited"
+          ? t("errors.rateLimited")
+          : state.status === "unavailable"
+            ? t("errors.unavailable")
+            : undefined;
+  return (
+    <form action={formAction} className="v2-form" noValidate>
+      <input type="hidden" name="version" value={version} />
+      <label className="v2-check">
+        <input type="checkbox" name="confirm" value="yes" required />
+        <span className="v2-body">{t("confirm")}</span>
+      </label>
+      <Notice {...(message ? { text: message } : {})} />
+      <SubmitButton pending={pending} label={t("submit")} busy={t("submitting")} />
+      <p className="v2-caption">{t("privacy")}</p>
+    </form>
+  );
+}

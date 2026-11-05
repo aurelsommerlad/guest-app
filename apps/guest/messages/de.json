@@ -312,5 +312,38 @@
     "body": "Zusätzliche Leistungen für Deinen Aufenthalt buchst Du bequem in unserer Extras-App.",
     "open": "Zu den Extras",
     "external": "öffnet eine eigene Seite"
+  },
+  "v2": {
+    "eyebrow": "Deine Gästemappe",
+    "apartmentName": "Apartment {name}",
+    "facts": {
+      "stay": "Dein Aufenthalt"
+    },
+    "cards": {
+      "guide": "Guide",
+      "extras": "Extras",
+      "explore": "Explore",
+      "extrasTitle": "Mach’s besonders."
+    },
+    "apartment": {
+      "eyebrow": "Dein Apartment",
+      "arrival": "Anreise",
+      "departure": "Abreise",
+      "travellers": "Reisende",
+      "access": "Zugang",
+      "checkInFrom": "Check-in ab {time} Uhr",
+      "checkOutUntil": "Check-out bis {time} Uhr",
+      "more": "Für Deinen Aufenthalt",
+      "guide": "Guide: WLAN, Geräte, Haus & Apartment",
+      "checkIn": "Online-Check-in",
+      "checkInDone": "Online-Check-in abgeschlossen"
+    },
+    "checkIn": {
+      "eyebrow": "Online-Check-in",
+      "step": "Schritt {current} von {total}",
+      "back": "Zurück",
+      "doneEyebrow": "Online-Check-in",
+      "toStay": "Zur Gästemappe"
+    }
   }
 }

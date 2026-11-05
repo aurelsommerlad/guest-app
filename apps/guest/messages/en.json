@@ -312,5 +312,38 @@
     "body": "Book additional services for your stay conveniently in our Extras app.",
     "open": "Go to Extras",
     "external": "opens a separate page"
+  },
+  "v2": {
+    "eyebrow": "Your guest folder",
+    "apartmentName": "Apartment {name}",
+    "facts": {
+      "stay": "Your stay"
+    },
+    "cards": {
+      "guide": "Guide",
+      "extras": "Extras",
+      "explore": "Explore",
+      "extrasTitle": "Make it special."
+    },
+    "apartment": {
+      "eyebrow": "Your apartment",
+      "arrival": "Arrival",
+      "departure": "Departure",
+      "travellers": "Travellers",
+      "access": "Access",
+      "checkInFrom": "Check-in from {time}",
+      "checkOutUntil": "Check-out until {time}",
+      "more": "For your stay",
+      "guide": "Guide: Wi-Fi, appliances, house & apartment",
+      "checkIn": "Online check-in",
+      "checkInDone": "Online check-in completed"
+    },
+    "checkIn": {
+      "eyebrow": "Online check-in",
+      "step": "Step {current} of {total}",
+      "back": "Back",
+      "doneEyebrow": "Online check-in",
+      "toStay": "To your guest folder"
+    }
   }
 }

@@ -76,6 +76,8 @@ export type StayViewModel = {
   upcoming: boolean;
   /** Compact reservation card: property · unit, dates, travellers. */
   summary: StaySummary;
+  /** Check-in and check-out in the property's time zone (e.g. for an apartment page). */
+  times: { checkIn: LocalTime; checkOut: LocalTime };
   /** Time tile next to the apartment: check-in before arrival, otherwise check-out. */
   timeTile: Extract<StayStatus, { kind: "check-in" | "check-out" }>;
   /** Online check-in card (not started / in progress / completed); undefined if not used. */
