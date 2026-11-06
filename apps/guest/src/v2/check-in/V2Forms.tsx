@@ -133,7 +133,9 @@ export function V2GuestStepForm({
     if (def.kind === "country" || def.kind === "document-type") {
       return (
         <V2SelectField
-          key={def.name}
+          // Keyed by value: a native select keeps its first default, so it remounts to show
+          // the value echoed after a server-side validation error.
+          key={`${def.name}-${common.defaultValue}`}
           {...common}
           options={def.kind === "country" ? countries : documentTypes}
           placeholder={t("choose")}
@@ -332,7 +334,7 @@ export function V2BillingForm({
   const kind = (values?.["billingKind"] ?? form.kind) === "company" ? "company" : "private";
   const notice =
     state.status === "invalid"
-      ? t("errors.summary")
+      ? t("errors.billingSummary")
       : state.status === "conflict"
         ? t("errors.conflict")
         : state.status === "rate-limited"
@@ -363,7 +365,12 @@ export function V2BillingForm({
     };
     if (def.kind === "country") {
       return (
-        <V2SelectField key={def.name} {...common} options={countries} placeholder={t("choose")} />
+        <V2SelectField
+          key={`${def.name}-${common.defaultValue}`}
+          {...common}
+          options={countries}
+          placeholder={t("choose")}
+        />
       );
     }
     return (

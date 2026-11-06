@@ -38,7 +38,7 @@ export function BillingForm({ action, form, version, countries }: Props) {
   const kind = (values?.["billingKind"] ?? form.kind) === "company" ? "company" : "private";
   const notice =
     state.status === "invalid"
-      ? t("errors.summary")
+      ? t("errors.billingSummary")
       : state.status === "conflict"
         ? t("errors.conflict")
         : state.status === "rate-limited"
@@ -69,7 +69,12 @@ export function BillingForm({ action, form, version, countries }: Props) {
     };
     if (def.kind === "country") {
       return (
-        <SelectField key={def.name} {...common} options={countries} placeholder={t("choose")} />
+        <SelectField
+          key={`${def.name}-${common.defaultValue}`}
+          {...common}
+          options={countries}
+          placeholder={t("choose")}
+        />
       );
     }
     return (

@@ -246,7 +246,8 @@
       "not-mobile": "Bitte gib eine Mobilnummer an.",
       "invalid-postal-code": "Diese Postleitzahl passt nicht zum gewählten Land.",
       "responsible-under-age": "Die Person, die den Check-in verantwortet, muss am Anreisetag mindestens 18 Jahre alt sein.",
-      "invalid-format": "Bitte prüfe das Format dieser Angabe."
+      "invalid-format": "Bitte prüfe das Format dieser Angabe.",
+      "billingSummary": "Bitte prüfe die markierten Felder. Die Rechnungsangaben wurden noch nicht gespeichert."
     },
     "next": "Speichern & weiter",
     "saving": "Wird gespeichert …",

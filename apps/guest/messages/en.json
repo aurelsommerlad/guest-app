@@ -246,7 +246,8 @@
       "not-mobile": "Please enter a mobile number.",
       "invalid-postal-code": "This postcode does not match the selected country.",
       "responsible-under-age": "The person responsible for the check-in must be at least 18 years old on the day of arrival.",
-      "invalid-format": "Please check the format of this entry."
+      "invalid-format": "Please check the format of this entry.",
+      "billingSummary": "Please check the highlighted fields. The invoice details have not been saved yet."
     },
     "next": "Save & continue",
     "saving": "Saving …",

@@ -132,12 +132,23 @@ export function GuestStepForm({
     };
     if (def.kind === "country") {
       return (
-        <SelectField key={def.name} {...common} options={countries} placeholder={t("choose")} />
+        <SelectField
+          // Keyed by value so the select shows the value echoed after a validation error.
+          key={`${def.name}-${common.defaultValue}`}
+          {...common}
+          options={countries}
+          placeholder={t("choose")}
+        />
       );
     }
     if (def.kind === "document-type") {
       return (
-        <SelectField key={def.name} {...common} options={documentTypes} placeholder={t("choose")} />
+        <SelectField
+          key={`${def.name}-${common.defaultValue}`}
+          {...common}
+          options={documentTypes}
+          placeholder={t("choose")}
+        />
       );
     }
     return (
