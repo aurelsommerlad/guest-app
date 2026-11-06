@@ -1,6 +1,6 @@
 import "server-only";
 
-import { type BillingFieldIssue, type FieldError } from "@up/core";
+import { type BillingFieldIssue, type FieldError, type FieldRequirement } from "@up/core";
 import { after } from "next/server";
 
 import { redirect } from "../../i18n/navigation";
@@ -20,7 +20,7 @@ import {
   stepPositions,
   submitCheckIn,
 } from "./check-in-service";
-import { BILLING_FORM_FIELDS, parseStepValues } from "./form-model";
+import { BILLING_FORM_FIELDS, buildStepForm, parseStepValues } from "./form-model";
 import {
   confirmVerificationCode,
   type ConfirmCodeResult,
@@ -55,6 +55,8 @@ export type CheckInFormState =
       values?: Record<string, string>;
       /** Invalid only: whether the step's valid values were saved (only fields missing). */
       saved?: boolean;
+      /** Field labels recomputed from the echoed answers (e.g. nationality now known). */
+      requirements?: Record<string, FieldRequirement>;
       version?: number;
     };
 
@@ -131,10 +133,15 @@ export async function handleSaveStep(
   }
   if (result.ok || result.reason === "submitted") return redirect({ href: base, locale });
   if (result.reason === "invalid") {
+    const requirements: Record<string, FieldRequirement> = {};
+    for (const set of buildStepForm(journey, step, { values: echo })) {
+      for (const def of set.fields) requirements[def.name] = def.requirement;
+    }
     return {
       status: "invalid",
       errors: result.errors,
       values: echo,
+      requirements,
       saved: result.version !== undefined,
       ...(result.version ? { version: result.version } : {}),
     };

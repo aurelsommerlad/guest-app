@@ -104,7 +104,13 @@ export function V2EmailVerification({
       {locked && <p className="v2-notice">{t("errors.locked")}</p>}
 
       {pending && !locked && (
-        <form action={confirm} className="v2-form" noValidate style={{ gap: 18 }}>
+        <form
+          action={confirm}
+          data-verify="confirm"
+          className="v2-form"
+          noValidate
+          style={{ gap: 18 }}
+        >
           <V2TextField
             id="verify-code"
             name="code"
@@ -123,7 +129,7 @@ export function V2EmailVerification({
         </form>
       )}
 
-      <form action={send} className="v2-stack" style={{ gap: 8 }}>
+      <form action={send} data-verify="send" className="v2-stack" style={{ gap: 8 }}>
         {pending && !locked ? (
           <button type="submit" className="v2-small v2-text-link v2-link-button" disabled={sending}>
             {sending ? t("sending") : t("resend")}

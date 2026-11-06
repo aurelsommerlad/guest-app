@@ -94,7 +94,7 @@ export function EmailVerification({
       {pending?.simulated && <p className="type-caption text-text-muted">{t("simulatedHint")}</p>}
       {locked && <Callout icon="info">{t("errors.locked")}</Callout>}
       {pending && !locked && (
-        <form action={confirm} className="flex flex-col gap-3" noValidate>
+        <form action={confirm} data-verify="confirm" className="flex flex-col gap-3" noValidate>
           <TextField
             id="verify-code"
             name="code"
@@ -116,7 +116,7 @@ export function EmailVerification({
           </Button>
         </form>
       )}
-      <form action={send} className="flex flex-col gap-2">
+      <form action={send} data-verify="send" className="flex flex-col gap-2">
         <Button
           type="submit"
           variant={pending && !locked ? "secondary" : "primary"}

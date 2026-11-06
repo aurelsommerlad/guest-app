@@ -111,8 +111,11 @@ export function V2GuestStepForm({
   const values = state.status === "idle" ? undefined : state.values;
   const currentVersion = (state.status !== "idle" && state.version) || version;
 
+  // After an error the server recomputes the labels from the echoed answers.
+  const requirementOf = (def: FormFieldDef) =>
+    (state.status === "idle" ? undefined : state.requirements?.[def.name]) ?? def.requirement;
   const label = (def: FormFieldDef) =>
-    def.requirement === "optional"
+    requirementOf(def) === "optional"
       ? `${t(`fields.${def.field}`)} (${t("optional")})`
       : t(`fields.${def.field}`);
 
@@ -123,9 +126,9 @@ export function V2GuestStepForm({
       id: def.name,
       name: def.name,
       label: label(def),
-      required: def.required,
+      required: requirementOf(def) === "required",
       // May become required by an answer still missing (age, nationality) – say so.
-      ...(def.requirement === "conditional" ? { hint: t("hints.conditional") } : {}),
+      ...(requirementOf(def) === "conditional" ? { hint: t("hints.conditional") } : {}),
       autoComplete: def.autoComplete,
       defaultValue: values?.[def.name] ?? def.value,
       className: SPANS[def.field],
