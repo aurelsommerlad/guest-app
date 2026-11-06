@@ -16,6 +16,7 @@ import {
   saveBillingStep,
   saveGuestStep,
   sharedAddressOffered,
+  stepFields,
   stepPositions,
   submitCheckIn,
 } from "./check-in-service";
@@ -39,6 +40,8 @@ export type CheckInFormState =
       /** Billing step only. */
       billingErrors?: BillingFieldIssue[];
       values?: Record<string, string>;
+      /** Invalid only: whether the step's valid values were saved (only fields missing). */
+      saved?: boolean;
       version?: number;
     };
 
@@ -83,9 +86,22 @@ export async function handleSaveStep(
     const shared = formData.get(`g${String(position)}.addressSource`) === "same-as-primary";
     addressSources[position] = shared ? "same-as-primary" : "own";
   }
-  const { values, echo } = parseStepValues(formData, positions, (position) =>
-    effectiveStepFields(journey, step, position, addressSources[position] ?? "own"),
+  // Everything typed is echoed (also hidden address fields), so nothing is lost on an error;
+  // only the fields that apply are passed on for saving.
+  const { values: parsed, echo } = parseStepValues(formData, positions, (position) =>
+    stepFields(journey, step, position),
   );
+  const values: Record<number, Record<string, string>> = {};
+  for (const position of positions) {
+    const applies = new Set<string>(
+      effectiveStepFields(journey, step, position, addressSources[position] ?? "own"),
+    );
+    values[position] = Object.fromEntries(
+      Object.entries(parsed[position] ?? {}).filter(
+        ([key]) => applies.has(key) || (key === "phoneCountry" && applies.has("phone")),
+      ),
+    );
+  }
   for (const [position, source] of Object.entries(addressSources)) {
     echo[`g${position}.addressSource`] = source;
   }
@@ -101,6 +117,7 @@ export async function handleSaveStep(
       status: "invalid",
       errors: result.errors,
       values: echo,
+      saved: result.version !== undefined,
       ...(result.version ? { version: result.version } : {}),
     };
   }
@@ -125,7 +142,7 @@ export async function handleSaveBilling(
   });
   if (result.ok || result.reason === "submitted") return redirect({ href: base, locale });
   if (result.reason === "invalid") {
-    return { status: "invalid", billingErrors: result.issues, values };
+    return { status: "invalid", billingErrors: result.issues, values, saved: false };
   }
   return { status: result.reason, values };
 }

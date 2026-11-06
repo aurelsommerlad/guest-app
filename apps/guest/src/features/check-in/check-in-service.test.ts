@@ -362,34 +362,35 @@ describe("check-in flow", () => {
     });
   });
 
-  it("cannot be completed while a fellow traveller's phone is missing (case 9)", async () => {
+  it("needs the main guest's mobile number only – fellow travellers may skip it", async () => {
     const context = guestContext({ guestCount: { adults: 2, children: 1 } });
     await confirmTrip(deps, context);
     const { phone: _phone, ...miaWithoutPhone } = mia;
-    const saved = await saveGuestStep(deps, context, {
-      step: "guests",
-      version: 1,
-      values: { 0: laura, 1: tom, 2: miaWithoutPhone },
-    });
-    expect(saved).toMatchObject({
-      ok: false,
-      errors: { 2: [{ field: "phone", code: "required" }] },
-    });
-    await saveGuestStep(deps, context, { step: "address", version: 2, values: { 0: address } });
-    expect(await submitCheckIn(deps, context, { version: 3, confirmed: true })).toEqual({
-      ok: false,
-      reason: "incomplete",
-    });
+    const { phone: _tomPhone, ...tomWithoutPhone } = tom;
     expect(
       await saveGuestStep(deps, context, {
         step: "guests",
-        version: 3,
-        values: { 0: laura, 1: tom, 2: mia },
+        version: 1,
+        values: { 0: laura, 1: tomWithoutPhone, 2: miaWithoutPhone },
       }),
-    ).toEqual({
-      ok: true,
+    ).toEqual({ ok: true });
+    const { phone: _lauraPhone, ...lauraWithoutPhone } = laura;
+    const missing = await saveGuestStep(deps, context, {
+      step: "guests",
+      version: 2,
+      values: { 0: lauraWithoutPhone, 1: tomWithoutPhone, 2: miaWithoutPhone },
     });
-    expect(await submitCheckIn(deps, context, { version: 4, confirmed: true })).toMatchObject({
+    expect(missing).toMatchObject({
+      ok: false,
+      errors: { 0: [{ field: "phone", code: "required" }] },
+    });
+    await saveGuestStep(deps, context, {
+      step: "guests",
+      version: 3,
+      values: { 0: laura, 1: tomWithoutPhone, 2: miaWithoutPhone },
+    });
+    await saveGuestStep(deps, context, { step: "address", version: 4, values: { 0: address } });
+    expect(await submitCheckIn(deps, context, { version: 5, confirmed: true })).toMatchObject({
       ok: true,
     });
   });
@@ -406,7 +407,7 @@ describe("check-in flow", () => {
     const errors = !saved.ok && saved.reason === "invalid" ? (saved.errors[1] ?? []) : [];
     const fields = errors.map((error) => error.field);
     // Nationality depends on the age (child rules); the birth date is asked first.
-    expect(fields.sort()).toEqual(["birthDate", "lastName", "phone"]);
+    expect(fields.sort()).toEqual(["birthDate", "lastName"]);
   });
 
   it("reads the phone with its calling code and refuses landlines", async () => {

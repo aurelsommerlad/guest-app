@@ -237,7 +237,7 @@
     "errors": {
       "required": "Please fill in.",
       "invalid": "Please check this entry.",
-      "summary": "Please check the highlighted fields. Your other details have been saved.",
+      "summary": "Your details are saved. Please complete the highlighted fields.",
       "conflict": "Your details were changed elsewhere in the meantime. Please reload the page.",
       "rateLimited": "Too many attempts in a short time. Please wait a few minutes.",
       "unavailable": "That did not work just now. Please try again later.",
@@ -247,7 +247,8 @@
       "invalid-postal-code": "This postcode does not match the selected country.",
       "responsible-under-age": "The person responsible for the check-in must be at least 18 years old on the day of arrival.",
       "invalid-format": "Please check the format of this entry.",
-      "billingSummary": "Please check the highlighted fields. The invoice details have not been saved yet."
+      "billingSummary": "Please check the highlighted fields. The invoice details have not been saved yet.",
+      "summaryNotSaved": "Please check the highlighted fields. The changes on this step have not been saved yet."
     },
     "next": "Save & continue",
     "saving": "Saving …",
@@ -316,7 +317,8 @@
     "occupancyChanged": "The number of travellers in your booking has changed: now {count, plural, one {# person} other {# people}}. Please check the details.",
     "hints": {
       "email": "For your booking information – please use your personal address.",
-      "phone": "For questions during your stay."
+      "phone": "For questions during your stay.",
+      "conditional": "Required depending on age or nationality."
     },
     "sharedAddress": "Same address as main guest",
     "sharedAddressHint": "The main guest’s address is used.",

@@ -370,3 +370,27 @@ describe("submission, retention and status", () => {
     });
   });
 });
+
+describe("form labels follow the current answers", () => {
+  it("never labels a field optional that the answers so far make or may make mandatory", async () => {
+    const [primary, companion] = buildStepForm(await journey(), "guests");
+    const of = (set: typeof primary, field: string) =>
+      set?.fields.find((def) => def.field === field);
+    expect(of(primary, "phone")).toMatchObject({ required: true, requirement: "required" });
+    expect(of(companion, "phone")).toMatchObject({ required: false, requirement: "optional" });
+    // Unknown age and nationality: the document may become mandatory.
+    expect(of(companion, "documentType")).toMatchObject({
+      required: false,
+      requirement: "conditional",
+    });
+    // Echoed answers after an error count: adult non-Austrian → required.
+    const [, adult] = buildStepForm(await journey(), "guests", {
+      values: { "g1.nationality": "DE", "g1.birthDate": "1980-01-01" },
+    });
+    expect(of(adult, "documentType")).toMatchObject({ required: true, requirement: "required" });
+    const [, austrian] = buildStepForm(await journey(), "guests", {
+      values: { "g1.nationality": "AT", "g1.birthDate": "1980-01-01" },
+    });
+    expect(of(austrian, "documentType")).toMatchObject({ requirement: "optional" });
+  });
+});

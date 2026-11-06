@@ -102,7 +102,9 @@ export function V2GuestStepForm({
   const currentVersion = (state.status !== "idle" && state.version) || version;
 
   const label = (def: FormFieldDef) =>
-    def.required ? t(`fields.${def.field}`) : `${t(`fields.${def.field}`)} (${t("optional")})`;
+    def.requirement === "optional"
+      ? `${t(`fields.${def.field}`)} (${t("optional")})`
+      : t(`fields.${def.field}`);
 
   const field = (position: number, def: FormFieldDef) => {
     const code = errors?.[position]?.find((item) => item.field === def.field)?.code ?? def.error;
@@ -112,6 +114,8 @@ export function V2GuestStepForm({
       name: def.name,
       label: label(def),
       required: def.required,
+      // May become required by an answer still missing (age, nationality) – say so.
+      ...(def.requirement === "conditional" ? { hint: t("hints.conditional") } : {}),
       autoComplete: def.autoComplete,
       defaultValue: values?.[def.name] ?? def.value,
       className: SPANS[def.field],
@@ -161,7 +165,9 @@ export function V2GuestStepForm({
 
   const notice =
     state.status === "invalid"
-      ? t("errors.summary")
+      ? state.saved
+        ? t("errors.summary")
+        : t("errors.summaryNotSaved")
       : state.status === "conflict"
         ? t("errors.conflict")
         : state.status === "rate-limited"

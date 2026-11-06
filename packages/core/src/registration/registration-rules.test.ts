@@ -124,17 +124,15 @@ describe("children rules", () => {
   it("applies children rules by age at arrival", () => {
     expect(ageOn("2008-08-27", arrival)).toBe(18);
     expect(ageOn("2008-08-28", arrival)).toBe(17);
-    // Children rules (+ the mobile number every traveller needs).
+    // Children rules (a mobile number is optional for fellow travellers).
     expect(rulesFor(config, "companion", { birthDate: "2015-01-01" }, arrival).required).toEqual([
       "firstName",
       "lastName",
-      "phone",
       "birthDate",
     ]);
     expect(rulesFor(config, "companion", { birthDate: "1980-01-01" }, arrival).required).toEqual([
       "firstName",
       "lastName",
-      "phone",
       "birthDate",
       "nationality",
     ]);
@@ -154,7 +152,7 @@ describe("children rules", () => {
           birthDate: "2015-01-01",
         },
       ),
-    ).toEqual(["phone"]);
+    ).toEqual([]);
   });
 });
 
@@ -215,7 +213,7 @@ describe("registration progress", () => {
     expect(guestMissingFields(config, 0, noPhone.data, arrival)).toEqual(["phone"]);
   });
 
-  it("requires every traveller up to the guest count, each with a mobile number", () => {
+  it("requires every traveller up to the guest count; only the main guest needs a mobile number", () => {
     const withAddress = { ...primary, data: { ...primary.data, ...address } };
     const mia = {
       position: 1,
@@ -227,19 +225,18 @@ describe("registration progress", () => {
       role: "companion" as const,
       data: { firstName: "Tom", lastName: "M", birthDate: "1985-01-01", nationality: "AT" },
     };
+    // A missing traveller blocks completion …
+    const missing = { status: "draft" as const, guestCount: 3, guests: [withAddress, mia] };
+    expect(assessRegistration(config, missing, arrival).steps.guests).toBe("incomplete");
+    // … a missing mobile number of a fellow traveller does not.
     const draft = { status: "draft" as const, guestCount: 3, guests: [withAddress, mia, tom] };
-    // A fellow traveller without a mobile number blocks completion.
-    expect(assessRegistration(config, draft, arrival).steps.guests).toBe("incomplete");
-    expect(assessRegistration(config, draft, arrival).readyToSubmit).toBe(false);
-    const full = {
-      ...draft,
-      guests: [
-        withAddress,
-        { ...mia, data: { ...mia.data, phone: "+436641234567" } },
-        { ...tom, data: { ...tom.data, phone: "+491709876543" } },
-      ],
-    };
-    expect(assessRegistration(config, full, arrival).readyToSubmit).toBe(true);
+    expect(assessRegistration(config, draft, arrival).readyToSubmit).toBe(true);
+    expect(guestStepFields(config, 1)).toContain("phone");
+    expect(rulesFor(config, "companion", tom.data, arrival).optional).toContain("phone");
+    // The main guest's mobile number stays mandatory.
+    const { phone: _phone, ...withoutPhone } = withAddress.data;
+    const noPhone = { ...draft, guests: [{ ...withAddress, data: withoutPhone }, mia, tom] };
+    expect(assessRegistration(config, noPhone, arrival).readyToSubmit).toBe(false);
     // No e-mail required for fellow travellers.
     expect(guestStepFields(config, 1)).not.toContain("email");
     expect(guestStepFields(config, 0)).toContain("email");

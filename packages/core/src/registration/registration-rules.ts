@@ -28,6 +28,7 @@ import {
   REGISTRATION_FIELDS,
   REGISTRATION_TARGETS,
   ROLE_MANDATORY_FIELDS,
+  ROLE_OPTIONAL_FIELDS,
   type RegistrationField,
   type RegistrationGuest,
   type RegistrationGuestData,
@@ -178,6 +179,7 @@ export function fieldsForRole(
       : [config.companions, ...(config.children ? [config.children] : [])];
   return unique([
     ...ROLE_MANDATORY_FIELDS[role],
+    ...ROLE_OPTIONAL_FIELDS[role],
     ...sets.flatMap((rules) => [...rules.required, ...rules.optional]),
     ...(config.legalTemplate ? templateFields(legalTemplate(config.legalTemplate), role) : []),
     ...(role === "primary" && config.validation ? (["birthDate"] as const) : []),
@@ -220,10 +222,72 @@ export function rulesFor(
 /** Contact data UNIQUE PLACES needs for every stay is always required (ROLE_MANDATORY_FIELDS). */
 function withMandatory(rules: GuestFieldRules, role: GuestRole): GuestFieldRules {
   const mandatory = ROLE_MANDATORY_FIELDS[role];
+  const required = unique([...mandatory, ...rules.required]);
   return {
-    required: unique([...mandatory, ...rules.required]),
-    optional: rules.optional.filter((field) => !mandatory.includes(field)),
+    required,
+    optional: unique([...rules.optional, ...ROLE_OPTIONAL_FIELDS[role]]).filter(
+      (field) => !required.includes(field),
+    ),
   };
+}
+
+export type FieldRequirement = "required" | "conditional" | "optional";
+
+const NON_EXEMPT_PROBES = ["DE", "AT", "CH", "US"] as const;
+
+function shiftYears(isoDate: string, years: number): string {
+  const [year, rest] = [Number(isoDate.slice(0, 4)), isoDate.slice(4)];
+  // 29 Feb never matters here; keep it a valid date.
+  return `${String(year - years).padStart(4, "0")}${rest === "-02-29" ? "-02-28" : rest}`;
+}
+
+/**
+ * How each field is to be presented for the data entered so far (ADR 0021):
+ * - "required": required now, whatever is still missing;
+ * - "conditional": may become required depending on a value not entered yet (age decides
+ *   between adult and child rules, nationality between exempt and non-exempt registration);
+ * - "optional": never required for this traveller.
+ * The server validation stays `rulesFor` with the actual data; this only keeps the form from
+ * labelling a field "optional" that the current or a still open answer makes mandatory.
+ */
+export function fieldRequirements(
+  config: PropertyRegistrationConfig,
+  role: GuestRole,
+  data: RegistrationGuestData,
+  arrivalDate: string,
+  fields: readonly RegistrationField[],
+): Record<RegistrationField, FieldRequirement> {
+  const birthKnown = data.birthDate !== undefined && isValidIsoDate(data.birthDate);
+  // The main guest must be of age; a fellow traveller may be a child.
+  const birthDates = birthKnown
+    ? [data.birthDate]
+    : role === "primary"
+      ? [shiftYears(arrivalDate, 40)]
+      : [shiftYears(arrivalDate, 40), shiftYears(arrivalDate, 5)];
+  const template = config.legalTemplate ? legalTemplate(config.legalTemplate) : undefined;
+  const nationalities =
+    data.nationality !== undefined || !template
+      ? [data.nationality]
+      : [
+          template.exemptNationalities[0],
+          NON_EXEMPT_PROBES.find((code) => !template.exemptNationalities.includes(code)),
+        ];
+  const variants = birthDates.flatMap((birthDate) =>
+    nationalities.map((nationality) => {
+      const probe: RegistrationGuestData = { ...data };
+      if (birthDate === undefined) delete probe.birthDate;
+      else probe.birthDate = birthDate;
+      if (nationality === undefined) delete probe.nationality;
+      else probe.nationality = nationality;
+      return new Set(rulesFor(config, role, probe, arrivalDate).required);
+    }),
+  );
+  const result = {} as Record<RegistrationField, FieldRequirement>;
+  for (const field of fields) {
+    const hits = variants.filter((required) => required.has(field)).length;
+    result[field] = hits === variants.length ? "required" : hits > 0 ? "conditional" : "optional";
+  }
+  return result;
 }
 
 function baseRulesFor(

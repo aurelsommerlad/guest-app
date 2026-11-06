@@ -5,6 +5,7 @@ import { AT_MELDEG_TEMPLATE, configFromTemplate, DE_BMG_TEMPLATE } from "./legal
 import { type PropertyRegistrationConfig, type RegistrationGuest } from "./registration-model";
 import {
   assessRegistration,
+  fieldRequirements,
   fieldsForRole,
   guestMissingFields,
   normalizeGuestInput,
@@ -247,5 +248,45 @@ describe("billing step", () => {
     );
     expect(chosen.steps.billing).toBe("complete");
     expect(chosen.readyToSubmit).toBe(true);
+  });
+});
+
+describe("fieldRequirements (labels in the form)", () => {
+  const at: PropertyRegistrationConfig = {
+    ...base,
+    legalTemplate: "at-meldeg",
+    children: { underAge: 16, required: ["firstName", "lastName", "birthDate"], optional: [] },
+  };
+  const arrival = "2027-01-12";
+  const fields = fieldsForRole(at, "companion");
+
+  it("marks fields that a still open answer may require as conditional, never optional", () => {
+    const empty = fieldRequirements(at, "companion", {}, arrival, fields);
+    expect(empty.firstName).toBe("required");
+    expect(empty.phone).toBe("optional");
+    // Adults need the nationality, children (by the property's rule) do not – but the AT
+    // template asks it of everyone, so it is required either way.
+    expect(empty.nationality).toBe("required");
+    // Document only for adult non-Austrians: conditional until nationality and age are known.
+    expect(empty.documentType).toBe("conditional");
+    expect(
+      fieldRequirements(
+        at,
+        "companion",
+        { nationality: "DE", birthDate: "1980-01-01" },
+        arrival,
+        fields,
+      ).documentType,
+    ).toBe("required");
+    expect(
+      fieldRequirements(at, "companion", { nationality: "AT" }, arrival, fields).documentType,
+    ).toBe("optional");
+  });
+
+  it("treats the main guest as an adult and keeps the mobile number mandatory there", () => {
+    const primary = fieldRequirements(at, "primary", {}, arrival, fieldsForRole(at, "primary"));
+    expect(primary.phone).toBe("required");
+    expect(primary.email).toBe("required");
+    expect(primary.birthDate).toBe("required");
   });
 });

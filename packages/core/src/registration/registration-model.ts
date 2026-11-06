@@ -6,8 +6,8 @@
  * mapped copy through the sync layer – their field names never become ours.
  *
  * Data minimisation: only fields a property's configuration asks for are collected – plus
- * the contact data every stay needs (ROLE_MANDATORY_FIELDS): the main guest's e-mail and a
- * mobile number for every traveller. No free text. Identity documents only where a
+ * the contact data every stay needs (ROLE_MANDATORY_FIELDS): the main guest's e-mail and
+ * mobile number. No free text. Identity documents only where a
  * property requires them.
  */
 import { type BillingChoice } from "../billing/billing-address";
@@ -36,14 +36,23 @@ export const MANDATORY_FIELDS: readonly RegistrationField[] = ["firstName", "las
 
 /**
  * Required by UNIQUE PLACES for every stay, independent of the property configuration:
- * a real e-mail for the main guest (reachable, not a channel relay) and a mobile number
- * for every traveller. Fellow travellers are not asked for an e-mail.
+ * a real e-mail and a mobile number of the responsible main guest (reachable, not a channel
+ * relay). Fellow travellers (adults and children) are not asked for an e-mail; their mobile
+ * number is optional (ROLE_OPTIONAL_FIELDS) – decided 2026-11-06.
  */
 export const ROLE_MANDATORY_FIELDS: Readonly<
   Record<"primary" | "companion", readonly RegistrationField[]>
 > = {
   primary: ["firstName", "lastName", "email", "phone"],
-  companion: ["firstName", "lastName", "phone"],
+  companion: ["firstName", "lastName"],
+};
+
+/** Always offered, never required by UNIQUE PLACES itself (a property may still require it). */
+export const ROLE_OPTIONAL_FIELDS: Readonly<
+  Record<"primary" | "companion", readonly RegistrationField[]>
+> = {
+  primary: [],
+  companion: ["phone"],
 };
 
 /** Fields of the "Meldedaten" step (address and document) – the rest is personal data. */

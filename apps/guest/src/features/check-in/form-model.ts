@@ -7,9 +7,10 @@ import {
   CHECK_IN_STEPS,
   type CheckInStep,
   type FieldError,
+  type FieldRequirement,
+  fieldRequirements,
   missingFields,
   type RegistrationField,
-  ROLE_MANDATORY_FIELDS,
   rulesFor,
   SHARED_ADDRESS_FIELDS,
 } from "@up/core";
@@ -32,7 +33,13 @@ export type FormFieldDef = {
   name: string;
   field: RegistrationField;
   kind: FieldKind;
+  /** Required now (also `aria-required`). */
   required: boolean;
+  /**
+   * How to label it: "conditional" = may become required by an answer still missing (age,
+   * nationality) – never shown as "optional".
+   */
+  requirement: FieldRequirement;
   autoComplete: string;
   value: string;
   /** Phone only: preselected calling-code country (ISO alpha-2). */
@@ -88,16 +95,6 @@ export function fieldName(position: number, field: RegistrationField): string {
   return `g${String(position)}.${field}`;
 }
 
-/** Required for a guest of this role regardless of age (children rules may require less). */
-function alwaysRequired(journey: StayJourney, position: number, field: RegistrationField): boolean {
-  const config = journey.settings.registration;
-  const role = position === 0 ? "primary" : "companion";
-  if (ROLE_MANDATORY_FIELDS[role].includes(field)) return true;
-  if (position === 0) return config.primaryGuest.required.includes(field);
-  const child = config.children?.required ?? config.companions.required;
-  return config.companions.required.includes(field) && child.includes(field);
-}
-
 export function buildStepForm(
   journey: StayJourney,
   step: GuestStep,
@@ -119,11 +116,20 @@ export function buildStepForm(
           ? "same-as-primary"
           : "own"
         : storedAddressSource(journey, position);
-    const rules = rulesFor(
+    const role = position === 0 ? "primary" : "companion";
+    const rules = rulesFor(journey.settings.registration, role, stored, journey.arrivalDate);
+    // Labels follow what was entered so far – including values echoed after an error.
+    const current: Record<string, string> = { ...stored };
+    for (const field of fields) {
+      const echoed = feedback?.values?.[fieldName(position, field)];
+      if (echoed !== undefined && echoed.trim() !== "") current[field] = echoed.trim();
+    }
+    const requirements = fieldRequirements(
       journey.settings.registration,
-      position === 0 ? "primary" : "companion",
-      stored,
+      role,
+      current,
       journey.arrivalDate,
+      fields,
     );
     const displayName = [stored.firstName, stored.lastName].filter(Boolean).join(" ");
     const missing = missingFields(
@@ -156,7 +162,8 @@ export function buildStepForm(
           name,
           field,
           kind: KINDS[field] ?? "text",
-          required: alwaysRequired(journey, position, field),
+          required: requirements[field] === "required",
+          requirement: requirements[field],
           // Personal data is only offered to the browser's autofill for the primary guest.
           autoComplete: position === 0 ? (AUTOCOMPLETE[field] ?? "off") : "off",
           value: feedback?.values?.[name] ?? storedValue ?? "",
