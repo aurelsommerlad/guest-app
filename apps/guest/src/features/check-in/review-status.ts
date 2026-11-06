@@ -21,17 +21,25 @@ export type ReviewStatusRow = {
   open: boolean;
 };
 
-export function reviewStatusRows(journey: StayJourney): ReviewStatusRow[] {
+export function reviewStatusRows(
+  journey: StayJourney,
+  /** Stored verification state (C4/C5); without it an entered value counts as unconfirmed. */
+  verification: { email?: ContactVerificationStatus; phone?: ContactVerificationStatus } = {},
+): ReviewStatusRow[] {
   const registration = journey.registration;
   if (!registration) return [];
   const config = journey.settings.registration;
   const primary = registration.guests.find((guest) => guest.position === 0)?.data ?? {};
-  // No verification sender is active (Resend/seven.io need approval): an entered e-mail
-  // awaits confirmation, SMS confirmation is switched off.
+  // A value that is asked to be confirmed but has no code yet reads "Bestätigung ausstehend".
   const emailVerification = config.validation?.emailVerification ?? "off";
+  const storedEmail = verification.email ?? "none";
   const email: ContactVerificationStatus =
-    primary.email && emailVerification !== "off" ? "pending" : "none";
-  const phone: ContactVerificationStatus = primary.phone ? "disabled" : "none";
+    primary.email && emailVerification !== "off" && storedEmail === "none"
+      ? "pending"
+      : storedEmail;
+  const phone: ContactVerificationStatus = primary.phone
+    ? (verification.phone ?? "disabled")
+    : "none";
   const status = registrationStatus(config, registration, journey.arrivalDate, { email, phone });
   const d = status.dimensions;
   const rows: ReviewStatusRow[] = [
@@ -45,7 +53,7 @@ export function reviewStatusRows(journey: StayJourney): ReviewStatusRow[] {
   rows.push({
     id: "email",
     value: primary.email ? `email.${d.email}` : "email.not-provided",
-    open: d.email === "pending",
+    open: d.email === "pending" || d.email === "locked",
   });
   if (primary.phone) rows.push({ id: "phone", value: `phone.${d.phone}`, open: false });
   rows.push({

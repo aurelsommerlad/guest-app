@@ -20,7 +20,9 @@ export async function V2Review({
   steps,
   countryName,
   formatDate,
+  verification,
 }: {
+  verification?: Parameters<typeof reviewStatusRows>[1];
   journey: StayJourney;
   steps: readonly CheckInStep[];
   countryName: (code: string) => string;
@@ -92,7 +94,7 @@ export async function V2Review({
   const companions = stepPositions(journey, "guests").filter((position) => position > 0);
   const billing = journey.registration?.billing;
   const company = billingRows(billing, countryName);
-  const status = reviewStatusRows(journey);
+  const status = reviewStatusRows(journey, verification);
   return (
     <div>
       {section("primary", t("review.primary"), "guests", rows("guests", 0))}

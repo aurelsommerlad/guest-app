@@ -32,3 +32,19 @@ export {
   type SimulatedFailure,
   SimulatedFeratelTransport,
 } from "./feratel/simulated-feratel-transport";
+export {
+  RESEND_EMAILS_URL,
+  ResendEmailSender,
+  type ResendEmailSenderOptions,
+} from "./messaging/resend-email-sender";
+export {
+  SEVEN_SMS_URL,
+  SevenSmsSender,
+  type SevenSmsSenderOptions,
+} from "./messaging/seven-sms-sender";
+export {
+  type OutboxEntry,
+  SimulatedEmailSender,
+  SimulatedSmsSender,
+  VerificationOutbox,
+} from "./messaging/simulated-senders";

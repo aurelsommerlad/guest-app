@@ -19,6 +19,13 @@ export const STAY_DATA_SOURCES = ["mock", "apaleo"] as const;
  */
 export const GUEST_ACCESS_MODES = ["preview", "secured"] as const;
 
+/**
+ * Contact verification codes (ADR 0021, C4/C5). Default off – sending needs explicit approval.
+ * "simulated" sends nothing and is only allowed locally (end-to-end tests).
+ */
+export const EMAIL_DELIVERY_MODES = ["off", "simulated", "resend"] as const;
+export const SMS_DELIVERY_MODES = ["off", "simulated", "seven"] as const;
+
 /** Apaleo write-back of the online check-in (ADR 0016) – off unless explicitly enabled. */
 export const REGISTRATION_WRITEBACK_MODES = ["disabled", "enabled"] as const;
 
@@ -93,6 +100,21 @@ export const serverEnvSchema = clientEnvSchema
     PREVIEW_NOW: z.iso.datetime({ offset: true }).optional(),
     /** Separate Extras app (linked without any reservation data in the URL). */
     EXTRAS_APP_URL: z.url().optional(),
+    /** Server secret for code and contact hashes (HMAC pepper, ADR 0021). */
+    OTP_PEPPER: z.string().min(32).optional(),
+    EMAIL_DELIVERY: z.enum(EMAIL_DELIVERY_MODES).default("off"),
+    RESEND_API_KEY: z.string().startsWith("re_").optional(),
+    /** Verified sender of the Resend domain, e.g. "UNIQUE PLACES <check-in@…>". */
+    EMAIL_FROM: z.string().min(3).max(200).optional(),
+    /**
+     * Optional safety net for tests with a real provider: only these addresses or "@domain"s
+     * receive mails (comma-separated). Others are treated as not deliverable.
+     */
+    EMAIL_DELIVERY_ALLOWLIST: z.string().max(2000).optional(),
+    SMS_DELIVERY: z.enum(SMS_DELIVERY_MODES).default("off"),
+    SEVEN_API_KEY: z.string().min(10).optional(),
+    /** SMS sender id (≤ 11 letters/digits or ≤ 16 digits). */
+    SMS_FROM: z.string().max(16).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.APP_ENV !== "local" && !env.NEXT_PUBLIC_APP_URL.startsWith("https://")) {
@@ -190,6 +212,47 @@ export const serverEnvSchema = clientEnvSchema
       env.APP_ENV !== "local"
     ) {
       ctx.addIssue({ code: "custom", path: ["EXTRAS_APP_URL"], message: "must use https" });
+    }
+    for (const [mode, label] of [
+      [env.EMAIL_DELIVERY, "EMAIL_DELIVERY"],
+      [env.SMS_DELIVERY, "SMS_DELIVERY"],
+    ] as const) {
+      if (mode === "simulated" && env.APP_ENV !== "local") {
+        ctx.addIssue({
+          code: "custom",
+          path: [label],
+          message: "simulated is only allowed locally",
+        });
+      }
+      if (mode !== "off" && !env.OTP_PEPPER) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["OTP_PEPPER"],
+          message: `required when ${label}=${mode}`,
+        });
+      }
+    }
+    if (env.EMAIL_DELIVERY === "resend") {
+      for (const key of ["RESEND_API_KEY", "EMAIL_FROM"] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "required when EMAIL_DELIVERY=resend",
+          });
+        }
+      }
+    }
+    if (env.SMS_DELIVERY === "seven") {
+      for (const key of ["SEVEN_API_KEY", "SMS_FROM"] as const) {
+        if (!env[key]) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: "required when SMS_DELIVERY=seven",
+          });
+        }
+      }
     }
     if (env.STAY_DATA_SOURCE === "apaleo") {
       for (const key of [

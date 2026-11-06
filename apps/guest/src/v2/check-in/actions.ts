@@ -2,9 +2,12 @@
 
 import {
   type CheckInFormState,
+  type VerificationFormState,
+  handleConfirmEmailCode,
   handleConfirmTrip,
   handleSaveBilling,
   handleSaveStep,
+  handleSendEmailCode,
   handleSubmitCheckIn,
 } from "../../features/check-in/action-handlers";
 import { type GuestStep } from "../../features/check-in/check-in-service";
@@ -45,4 +48,20 @@ export async function submitCheckInV2(
   formData: FormData,
 ): Promise<CheckInFormState> {
   return handleSubmitCheckIn("/v2/check-in", locale, formData);
+}
+
+export async function sendEmailCodeV2(
+  locale: Locale,
+  _previous: VerificationFormState,
+  _formData: FormData,
+): Promise<VerificationFormState> {
+  return handleSendEmailCode("/v2/check-in", locale);
+}
+
+export async function confirmEmailCodeV2(
+  locale: Locale,
+  _previous: VerificationFormState,
+  formData: FormData,
+): Promise<VerificationFormState> {
+  return handleConfirmEmailCode("/v2/check-in", locale, formData);
 }

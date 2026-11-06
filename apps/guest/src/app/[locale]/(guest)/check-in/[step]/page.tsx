@@ -8,13 +8,18 @@ import { notFound } from "next/navigation";
 
 import { designOf } from "../../../../../config/design";
 import {
+  confirmEmailCodeAction,
   saveBillingAction,
   saveStepAction,
+  sendEmailCodeAction,
   submitCheckInAction,
   confirmTripAction,
 } from "../../../../../features/check-in/actions";
 import { checkInAvailability } from "../../../../../features/check-in/check-in-service";
 import { BillingForm } from "../../../../../features/check-in/components/BillingForm";
+import { EmailVerification } from "../../../../../features/check-in/components/EmailVerification";
+import { contactVerificationView } from "../../../../../features/check-in/contact-verification-service";
+import { toPanelView } from "../../../../../features/check-in/verification-view";
 import { CheckInShell } from "../../../../../features/check-in/components/CheckInShell";
 import { GuestStepForm } from "../../../../../features/check-in/components/GuestStepForm";
 import { ReviewSummary } from "../../../../../features/check-in/components/ReviewSummary";
@@ -28,7 +33,7 @@ import {
   LEGACY_STEPS,
   visibleSteps,
 } from "../../../../../features/check-in/form-model";
-import { checkInDeps } from "../../../../../features/check-in/server";
+import { checkInDeps, verificationDeps } from "../../../../../features/check-in/server";
 import { requireGuestContext } from "../../../../../features/guest-context/server";
 import { redirect } from "../../../../../i18n/navigation";
 import { routing } from "../../../../../i18n/routing";
@@ -157,9 +162,20 @@ export default async function CheckInStepPage({ params }: Props) {
     );
   } else if (step === "review") {
     const names = new Intl.DisplayNames([locale], { type: "region" });
+    const vDeps = verificationDeps();
+    const email = await contactVerificationView(vDeps, context, journey, "email");
+    const phone = await contactVerificationView(vDeps, context, journey, "sms");
     content = (
       <div className="flex flex-col gap-6">
+        <EmailVerification
+          view={toPanelView(email, 10)}
+          sendAction={sendEmailCodeAction.bind(null, locale)}
+          confirmAction={confirmEmailCodeAction.bind(null, locale)}
+          locale={locale}
+          timeZone={timeZone}
+        />
         <ReviewSummary
+          verification={{ email: email.status, phone: phone.status }}
           journey={journey}
           steps={steps}
           countryName={(code) => names.of(code) ?? code}
@@ -172,6 +188,7 @@ export default async function CheckInStepPage({ params }: Props) {
         <SubmitForm
           action={submitCheckInAction.bind(null, locale)}
           version={registration?.version ?? 0}
+          blocked={email.blocksSubmit}
         />
       </div>
     );

@@ -29,6 +29,8 @@ export type ContactVerificationStatus = (typeof CONTACT_VERIFICATION_STATUSES)[n
 
 export const WAIVER_REASONS = [
   "guest-has-no-own-email",
+  /** C5: no reachable mobile number (e.g. landline only, number abroad without SMS). */
+  "guest-has-no-reachable-mobile",
   "delivery-failed",
   "confirmed-in-person",
   "other",
@@ -124,3 +126,25 @@ export function contactVerificationStatus(
 export function satisfiesRequiredVerification(status: ContactVerificationStatus): boolean {
   return status === "verified" || status === "waived";
 }
+
+/** How a code was handed over: really sent, only simulated (no provider active) or failed. */
+export const VERIFICATION_DELIVERIES = ["sent", "simulated", "failed"] as const;
+export type VerificationDelivery = (typeof VERIFICATION_DELIVERIES)[number];
+
+/** Audit trail of contact verification – ids, channels and outcomes only, never values. */
+export const CONTACT_VERIFICATION_EVENTS = [
+  "code-sent",
+  "code-simulated",
+  "code-send-failed",
+  "code-wrong",
+  "code-expired",
+  "code-locked",
+  "verified",
+  "reset-by-change",
+  "waived",
+  "waiver-revoked",
+] as const;
+export type ContactVerificationEvent = (typeof CONTACT_VERIFICATION_EVENTS)[number];
+
+export const VERIFICATION_ACTORS = ["guest", "admin", "system"] as const;
+export type VerificationActor = (typeof VERIFICATION_ACTORS)[number];

@@ -248,7 +248,8 @@
       "responsible-under-age": "Die Person, die den Check-in verantwortet, muss am Anreisetag mindestens 18 Jahre alt sein.",
       "invalid-format": "Bitte prüfe das Format dieser Angabe.",
       "billingSummary": "Bitte prüfe die markierten Felder. Die Rechnungsangaben wurden noch nicht gespeichert.",
-      "summaryNotSaved": "Bitte prüfe die markierten Felder. Die Änderungen in diesem Schritt sind noch nicht gespeichert."
+      "summaryNotSaved": "Bitte prüfe die markierten Felder. Die Änderungen in diesem Schritt sind noch nicht gespeichert.",
+      "contactNotVerified": "Bitte bestätige zuerst Deine E-Mail-Adresse – oben auf dieser Seite."
     },
     "next": "Speichern & weiter",
     "saving": "Wird gespeichert …",
@@ -409,6 +410,40 @@
           "company-manual": "Firma – übernimmt unser Team",
           "company-failed": "Firma – übernimmt unser Team"
         }
+      }
+    },
+    "verify": {
+      "title": "E-Mail-Adresse bestätigen",
+      "introRequired": "Bitte bestätige Deine E-Mail-Adresse {email} mit einem 6-stelligen Code – so erreichen Dich unsere Informationen zum Aufenthalt sicher.",
+      "introOptional": "Du kannst Deine E-Mail-Adresse {email} mit einem 6-stelligen Code bestätigen.",
+      "sentTo": "Wir haben einen 6-stelligen Code an {email} gesendet. Er ist {minutes} Minuten gültig.",
+      "send": "Code senden",
+      "resend": "Neuen Code senden",
+      "sending": "Wird gesendet …",
+      "codeLabel": "Bestätigungscode",
+      "confirm": "Bestätigen",
+      "confirming": "Wird geprüft …",
+      "change": "Adresse ändern",
+      "verifiedBody": "{email} ist bestätigt.",
+      "waivedBody": "{email} wurde von unserem Team freigegeben.",
+      "notOffered": "Die Bestätigung Deiner E-Mail-Adresse ist gerade nicht verfügbar. Du kannst den Check-in trotzdem absenden – wir melden uns bei Bedarf.",
+      "simulatedHint": "Testumgebung: Es wird keine E-Mail versendet.",
+      "noMail": "Keine E-Mail erhalten? Prüfe bitte auch Deinen Spam-Ordner.",
+      "errors": {
+        "wrong-code": "Der Code stimmt nicht. {count, plural, =0 {Bitte fordere einen neuen Code an.} one {Noch # Versuch.} other {Noch # Versuche.}}",
+        "expired": "Der Code ist abgelaufen. Bitte fordere einen neuen an.",
+        "locked": "Zu viele Fehlversuche – dieser Code ist gesperrt. Bitte fordere einen neuen an.",
+        "no-code": "Bitte fordere zuerst einen Code an.",
+        "changed": "Deine E-Mail-Adresse wurde geändert. Bitte fordere einen neuen Code an.",
+        "cooldown": "Bitte warte einen Moment, bevor Du einen neuen Code anforderst.",
+        "cooldownUntil": "Einen neuen Code kannst Du ab {time} Uhr anfordern.",
+        "send-limit": "Für heute können wir keinen weiteren Code senden. Unser Team hilft Dir gern weiter.",
+        "delivery-failed": "Der Code konnte gerade nicht gesendet werden. Bitte versuche es später noch einmal oder wende Dich an unser Team.",
+        "not-offered": "Die Bestätigung ist gerade nicht verfügbar.",
+        "no-value": "Bitte gib zuerst Deine E-Mail-Adresse an.",
+        "already-verified": "Deine E-Mail-Adresse ist bereits bestätigt.",
+        "rate-limited": "Zu viele Versuche in kurzer Zeit. Bitte warte ein paar Minuten.",
+        "unavailable": "Das hat gerade nicht geklappt. Bitte versuche es noch einmal."
       }
     }
   },

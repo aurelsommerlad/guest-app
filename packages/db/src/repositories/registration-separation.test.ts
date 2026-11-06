@@ -196,15 +196,13 @@ describe("shared address", () => {
       "guest_registration_guests_address_source_valid",
     );
     await expectConstraintViolation(
-      db
-        .insert(guestRegistrationGuests)
-        .values({
-          ...row,
-          position: 1,
-          role: "companion",
-          addressSource: "same-as-primary",
-          street: "x",
-        }),
+      db.insert(guestRegistrationGuests).values({
+        ...row,
+        position: 1,
+        role: "companion",
+        addressSource: "same-as-primary",
+        street: "x",
+      }),
       "guest_registration_guests_address_source_valid",
     );
   });

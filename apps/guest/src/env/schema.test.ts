@@ -14,7 +14,39 @@ describe("validateServerEnv", () => {
       STAY_DATA_SOURCE: "mock",
       GUEST_ACCESS_MODE: "preview",
       APALEO_REGISTRATION_WRITEBACK: "disabled",
+      EMAIL_DELIVERY: "off",
+      SMS_DELIVERY: "off",
     });
+  });
+
+  it("keeps verification messages off by default and guards each delivery mode (C4/C5)", () => {
+    const local = { APP_ENV: "local", NEXT_PUBLIC_APP_URL: "http://localhost:3000" };
+    const staging = { APP_ENV: "staging", NEXT_PUBLIC_APP_URL: "https://stay.unique-places.com" };
+    const pepper = "p".repeat(32);
+    expect(validateServerEnv(staging)).toMatchObject({
+      EMAIL_DELIVERY: "off",
+      SMS_DELIVERY: "off",
+    });
+    // Simulated sending only locally, always with a pepper.
+    expect(
+      validateServerEnv({ ...local, EMAIL_DELIVERY: "simulated", OTP_PEPPER: pepper })
+        .EMAIL_DELIVERY,
+    ).toBe("simulated");
+    expect(() =>
+      validateServerEnv({ ...staging, EMAIL_DELIVERY: "simulated", OTP_PEPPER: pepper }),
+    ).toThrow(/EMAIL_DELIVERY/);
+    expect(() => validateServerEnv({ ...local, SMS_DELIVERY: "simulated" })).toThrow(/OTP_PEPPER/);
+    expect(() => validateServerEnv({ ...local, OTP_PEPPER: "short" })).toThrow(/OTP_PEPPER/);
+    // Real providers need their credentials.
+    expect(() =>
+      validateServerEnv({ ...staging, EMAIL_DELIVERY: "resend", OTP_PEPPER: pepper }),
+    ).toThrow(/RESEND_API_KEY/);
+    expect(() =>
+      validateServerEnv({ ...staging, SMS_DELIVERY: "seven", OTP_PEPPER: pepper }),
+    ).toThrow(/SEVEN_API_KEY/);
+    expect(() => validateServerEnv({ ...staging, RESEND_API_KEY: "sk_wrong" })).toThrow(
+      /RESEND_API_KEY/,
+    );
   });
 
   it("validates the Phase 11 variables (key, write-back, cron, extras)", () => {

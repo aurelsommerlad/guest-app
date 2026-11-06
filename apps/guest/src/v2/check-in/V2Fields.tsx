@@ -63,7 +63,7 @@ export function V2TextField({
   min?: string;
   max?: string;
   maxLength?: number;
-  inputMode?: "email" | "text";
+  inputMode?: "email" | "text" | "numeric";
 }) {
   const { id, name, label, required, autoComplete, defaultValue, hint, error, className } = props;
   return (

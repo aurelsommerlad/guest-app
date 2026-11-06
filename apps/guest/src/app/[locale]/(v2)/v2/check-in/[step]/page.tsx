@@ -6,6 +6,8 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { checkInAvailability } from "../../../../../../features/check-in/check-in-service";
+import { contactVerificationView } from "../../../../../../features/check-in/contact-verification-service";
+import { toPanelView } from "../../../../../../features/check-in/verification-view";
 import { countryOptions } from "../../../../../../features/check-in/countries";
 import {
   buildBillingForm,
@@ -14,14 +16,16 @@ import {
   LEGACY_STEPS,
   visibleSteps,
 } from "../../../../../../features/check-in/form-model";
-import { checkInDeps } from "../../../../../../features/check-in/server";
+import { checkInDeps, verificationDeps } from "../../../../../../features/check-in/server";
 import { requireGuestContext } from "../../../../../../features/guest-context/server";
 import { redirect } from "../../../../../../i18n/navigation";
 import { routing } from "../../../../../../i18n/routing";
 import {
+  confirmEmailCodeV2,
   confirmTripV2,
   saveBillingV2,
   saveStepV2,
+  sendEmailCodeV2,
   submitCheckInV2,
 } from "../../../../../../v2/check-in/actions";
 import { V2CheckInShell } from "../../../../../../v2/check-in/V2CheckInShell";
@@ -32,6 +36,7 @@ import {
   V2TripForm,
 } from "../../../../../../v2/check-in/V2Forms";
 import { V2Review } from "../../../../../../v2/check-in/V2Review";
+import { V2EmailVerification } from "../../../../../../v2/check-in/V2Verification";
 
 type Props = { params: Promise<{ locale: string; step: string }> };
 
@@ -142,9 +147,20 @@ export default async function V2CheckInStepPage({ params }: Props) {
     );
   } else if (step === "review") {
     const names = new Intl.DisplayNames([locale], { type: "region" });
+    const vDeps = verificationDeps();
+    const email = await contactVerificationView(vDeps, context, journey, "email");
+    const phone = await contactVerificationView(vDeps, context, journey, "sms");
     content = (
       <div className="v2-stack" style={{ gap: 40 }}>
+        <V2EmailVerification
+          view={toPanelView(email, 10)}
+          sendAction={sendEmailCodeV2.bind(null, locale)}
+          confirmAction={confirmEmailCodeV2.bind(null, locale)}
+          locale={locale}
+          timeZone={timeZone}
+        />
         <V2Review
+          verification={{ email: email.status, phone: phone.status }}
           journey={journey}
           steps={steps}
           countryName={(code) => names.of(code) ?? code}
@@ -157,6 +173,7 @@ export default async function V2CheckInStepPage({ params }: Props) {
         <V2SubmitForm
           action={submitCheckInV2.bind(null, locale)}
           version={registration?.version ?? 0}
+          blocked={email.blocksSubmit}
         />
       </div>
     );

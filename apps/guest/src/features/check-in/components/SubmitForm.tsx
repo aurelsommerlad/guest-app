@@ -9,22 +9,26 @@ import type { CheckInFormState } from "../actions";
 type Props = {
   action: (previous: CheckInFormState, formData: FormData) => Promise<CheckInFormState>;
   version: number;
+  /** A required confirmation is still open (the server checks it again). */
+  blocked?: boolean;
 };
 
 /** Confirmation and the one submit. A second click or tab is harmless (idempotent). */
-export function SubmitForm({ action, version }: Props) {
+export function SubmitForm({ action, version, blocked = false }: Props) {
   const t = useTranslations("checkIn");
   const [state, formAction, pending] = useActionState(action, { status: "idle" });
   const message =
-    state.status === "not-confirmed"
-      ? t("errors.notConfirmed")
-      : state.status === "conflict"
-        ? t("errors.conflict")
-        : state.status === "rate-limited"
-          ? t("errors.rateLimited")
-          : state.status === "unavailable"
-            ? t("errors.unavailable")
-            : undefined;
+    blocked || state.status === "contact-not-verified"
+      ? t("errors.contactNotVerified")
+      : state.status === "not-confirmed"
+        ? t("errors.notConfirmed")
+        : state.status === "conflict"
+          ? t("errors.conflict")
+          : state.status === "rate-limited"
+            ? t("errors.rateLimited")
+            : state.status === "unavailable"
+              ? t("errors.unavailable")
+              : undefined;
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="version" value={version} />
@@ -50,7 +54,7 @@ export function SubmitForm({ action, version }: Props) {
         type="submit"
         variant="primary"
         iconEnd="arrow-right"
-        disabled={pending}
+        disabled={pending || blocked}
         className="w-full sm:w-auto sm:self-start"
       >
         {pending ? t("submitting") : t("submit")}

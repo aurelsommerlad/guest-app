@@ -61,6 +61,11 @@ export type CheckInDeps = {
   now: () => Date;
   /** PMS of the reservation – for prefilling guest data (optional). */
   pmsFor?: (provider: ReservationProvider) => PmsProvider | undefined;
+  /**
+   * Required contact confirmations (ADR 0021, C4): "blocked" while a required code can be
+   * sent but is neither confirmed nor waived. Not set → nothing is required.
+   */
+  verificationGate?: (context: GuestContext, journey: StayJourney) => Promise<"ok" | "blocked">;
 };
 
 export const CHECK_IN_RATE_LIMIT = { windowMs: 15 * 60 * 1000, max: 60 } as const;
@@ -182,6 +187,14 @@ export function reservationGuestCount(context: GuestContext): number | undefined
 }
 
 type Prepared = { db: Database; journey: StayJourney };
+
+/** Shared guard of every check-in write: available, own reservation, rate limit. */
+export async function prepareCheckInWrite(
+  deps: CheckInDeps,
+  context: GuestContext,
+): Promise<{ db: Database; journey: StayJourney } | Exclude<StepResult, { ok: true }>> {
+  return prepare(deps, context);
+}
 
 async function prepare(
   deps: CheckInDeps,
@@ -467,7 +480,13 @@ export type SubmitOutcome =
   | { ok: true; registrationId: string; newlySubmitted: boolean }
   | {
       ok: false;
-      reason: "unavailable" | "rate-limited" | "conflict" | "incomplete" | "not-confirmed";
+      reason:
+        | "unavailable"
+        | "rate-limited"
+        | "conflict"
+        | "incomplete"
+        | "not-confirmed"
+        | "contact-not-verified";
     };
 
 /** Final step: confirm and submit. Idempotent; syncs are queued, not awaited. */
@@ -491,6 +510,9 @@ export async function submitCheckIn(
   }
   if (!input.confirmed) return { ok: false, reason: "not-confirmed" };
   if (!journey.assessment.readyToSubmit) return { ok: false, reason: "incomplete" };
+  if (deps.verificationGate && (await deps.verificationGate(context, journey)) === "blocked") {
+    return { ok: false, reason: "contact-not-verified" };
+  }
 
   const config = journey.settings.registration;
   const now = deps.now();

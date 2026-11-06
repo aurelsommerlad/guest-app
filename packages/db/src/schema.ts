@@ -12,6 +12,12 @@
 import {
   ADDRESS_STATUSES,
   BILLING_KINDS,
+  CONTACT_VERIFICATION_EVENTS,
+  OTP_CHALLENGE_STATUSES,
+  OTP_CHANNELS,
+  VERIFICATION_ACTORS,
+  VERIFICATION_DELIVERIES,
+  WAIVER_REASONS,
   BINDING_REGISTRATION_RULES,
   CONTENT_LOCALES,
   CREATING_OPERATIONS,
@@ -711,6 +717,18 @@ export const guestRegistrationContacts = pgTable(
     emailVerifiedHash: text("email_verified_hash"),
     phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
     phoneVerifiedHash: text("phone_verified_hash"),
+    /**
+     * Documented staff exception instead of a code (C4/C5): who, when, why. Never counts as
+     * "verified"; cleared when the value changes.
+     */
+    emailWaivedAt: timestamp("email_waived_at", { withTimezone: true }),
+    emailWaivedBy: uuid("email_waived_by"),
+    emailWaiverReason: text("email_waiver_reason", { enum: WAIVER_REASONS }),
+    emailWaiverNote: text("email_waiver_note"),
+    phoneWaivedAt: timestamp("phone_waived_at", { withTimezone: true }),
+    phoneWaivedBy: uuid("phone_waived_by"),
+    phoneWaiverReason: text("phone_waiver_reason", { enum: WAIVER_REASONS }),
+    phoneWaiverNote: text("phone_waiver_note"),
     /** Contact data may be removed after this instant (contact retention). */
     purgeAfter: timestamp("purge_after", { withTimezone: true }),
     ...timestamps,
@@ -744,6 +762,129 @@ export const guestRegistrationContacts = pgTable(
     check(
       "guest_registration_contacts_phone_verified_consistent",
       sql`(${t.phoneVerifiedAt} IS NULL) = (${t.phoneVerifiedHash} IS NULL) AND (${t.phoneVerifiedHash} IS NULL OR ${isSha256Hex(t.phoneVerifiedHash)})`,
+    ),
+    ...(["email", "phone"] as const).map((channel) => {
+      const at = channel === "email" ? t.emailWaivedAt : t.phoneWaivedAt;
+      const by = channel === "email" ? t.emailWaivedBy : t.phoneWaivedBy;
+      const reason = channel === "email" ? t.emailWaiverReason : t.phoneWaiverReason;
+      const note = channel === "email" ? t.emailWaiverNote : t.phoneWaiverNote;
+      return check(
+        `guest_registration_contacts_${channel}_waiver_valid`,
+        sql`((${at} IS NULL) = (${by} IS NULL) AND (${at} IS NULL) = (${reason} IS NULL))
+        AND (${reason} IS NULL OR ${reason} IN (${sql.raw(WAIVER_REASONS.map((r) => `'${r}'`).join(", "))}))
+        AND (${note} IS NULL OR (${at} IS NOT NULL AND char_length(${note}) <= 300 AND ${note} !~ '[<>[:cntrl:]]'))
+        AND (${reason} IS DISTINCT FROM 'other' OR char_length(coalesce(${note}, '')) >= 5)`,
+      );
+    }),
+    foreignKey({
+      name: "guest_registration_contacts_email_waived_by_fkey",
+      columns: [t.tenantId, t.emailWaivedBy],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "guest_registration_contacts_phone_waived_by_fkey",
+      columns: [t.tenantId, t.phoneWaivedBy],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("restrict"),
+  ],
+).enableRLS();
+
+/**
+ * One-time codes for contact verification (ADR 0021, C4/C5). Only HMACs: the code hash is
+ * bound to the challenge id and a server pepper, the target hash identifies the address /
+ * number without storing it twice. Rows also serve as the send history for the limits.
+ */
+export const contactVerificationChallenges = pgTable(
+  "contact_verification_challenges",
+  {
+    id: uuid("id").primaryKey(),
+    tenantId: text("tenant_id").notNull(),
+    registrationId: uuid("registration_id").notNull(),
+    position: integer("position").notNull().default(0),
+    channel: text("channel", { enum: OTP_CHANNELS }).notNull(),
+    targetHash: text("target_hash").notNull(),
+    codeHash: text("code_hash").notNull(),
+    status: text("status", { enum: OTP_CHALLENGE_STATUSES }).notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    delivery: text("delivery", { enum: VERIFICATION_DELIVERIES }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "contact_verification_challenges_registration_fkey",
+      columns: [t.tenantId, t.registrationId],
+      foreignColumns: [guestRegistrations.tenantId, guestRegistrations.id],
+    }).onDelete("cascade"),
+    index("contact_verification_challenges_history_idx").on(
+      t.tenantId,
+      t.registrationId,
+      t.channel,
+      t.createdAt,
+    ),
+    index("contact_verification_challenges_target_idx").on(t.targetHash, t.createdAt),
+    check("contact_verification_challenges_target_hash_format", isSha256Hex(t.targetHash)),
+    check("contact_verification_challenges_code_hash_format", isSha256Hex(t.codeHash)),
+    check(
+      "contact_verification_challenges_position_range",
+      sql`${t.position} BETWEEN 0 AND ${sql.raw(String(MAX_TRAVELLERS - 1))}`,
+    ),
+    check("contact_verification_challenges_attempts_range", sql`${t.attempts} BETWEEN 0 AND 20`),
+    check(
+      "contact_verification_challenges_verified_consistent",
+      sql`(${t.status} = 'verified') = (${t.verifiedAt} IS NOT NULL)`,
+    ),
+    check(
+      "contact_verification_challenges_failed_not_pending",
+      sql`${t.delivery} <> 'failed' OR ${t.status} <> 'pending'`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Audit trail of contact verification: what happened when, by whom – no addresses, numbers
+ * or codes. Append-only (trigger in 0016); removed with its check-in.
+ */
+export const contactVerificationEvents = pgTable(
+  "contact_verification_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    registrationId: uuid("registration_id").notNull(),
+    position: integer("position").notNull().default(0),
+    channel: text("channel", { enum: OTP_CHANNELS }).notNull(),
+    event: text("event", { enum: CONTACT_VERIFICATION_EVENTS }).notNull(),
+    actor: text("actor", { enum: VERIFICATION_ACTORS }).notNull(),
+    adminUserId: uuid("admin_user_id"),
+    waiverReason: text("waiver_reason", { enum: WAIVER_REASONS }),
+    challengeId: uuid("challenge_id"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: "contact_verification_events_registration_fkey",
+      columns: [t.tenantId, t.registrationId],
+      foreignColumns: [guestRegistrations.tenantId, guestRegistrations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "contact_verification_events_admin_fkey",
+      columns: [t.tenantId, t.adminUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("restrict"),
+    index("contact_verification_events_registration_idx").on(
+      t.tenantId,
+      t.registrationId,
+      t.occurredAt,
+    ),
+    check(
+      "contact_verification_events_actor_consistent",
+      sql`(${t.actor} = 'admin') = (${t.adminUserId} IS NOT NULL)`,
+    ),
+    check(
+      "contact_verification_events_waiver_reason",
+      sql`(${t.event} = 'waived') = (${t.waiverReason} IS NOT NULL)`,
     ),
   ],
 ).enableRLS();
@@ -1570,6 +1711,8 @@ export const schema = {
   guestRegistrationGuests,
   guestRegistrationContacts,
   guestRegistrationBilling,
+  contactVerificationChallenges,
+  contactVerificationEvents,
   guestRegistrationSyncs,
   unitAccessCodes,
   paymentRequests,

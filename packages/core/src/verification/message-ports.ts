@@ -1,6 +1,6 @@
 /**
  * Ports for verification messages (ADR 0021). Adapters: Resend (e-mail), seven.io (SMS,
- * prepared). Not implemented in C1 – nothing is sent.
+ * prepared). Adapters live in @up/integrations; nothing is sent without explicit approval.
  *
  * Rules for every adapter:
  * - the message contains the code and the property name only – no booking details;
@@ -19,6 +19,8 @@ export type VerificationMessage = {
   propertyName: string;
   /** Minutes until the code expires (for the text). */
   validMinutes: number;
+  /** The challenge id – lets a provider drop a retried duplicate request. */
+  idempotencyKey?: string;
 };
 
 export interface VerificationEmailSender {

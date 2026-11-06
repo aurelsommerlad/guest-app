@@ -14,6 +14,7 @@ import {
 import { billingRows, reviewStatusRows } from "../review-status";
 
 type Props = {
+  verification?: Parameters<typeof reviewStatusRows>[1];
   journey: StayJourney;
   steps: readonly CheckInStep[];
   countryName: (code: string) => string;
@@ -23,7 +24,13 @@ type Props = {
 const DOCUMENT_FIELDS = new Set<RegistrationField>(["documentType", "documentNumber"]);
 
 /** Everything entered as calm cards (Hauptgast · Mitreisende · Adresse · Ausweis), each editable. */
-export async function ReviewSummary({ journey, steps, countryName, formatDate }: Props) {
+export async function ReviewSummary({
+  journey,
+  steps,
+  countryName,
+  formatDate,
+  verification,
+}: Props) {
   const t = await getTranslations("checkIn");
   const display = (field: RegistrationField, value: string) => {
     if (field === "nationality" || field === "country") return countryName(value);
@@ -80,7 +87,7 @@ export async function ReviewSummary({ journey, steps, countryName, formatDate }:
   const addressGroup = group("address", 0, (field) => !DOCUMENT_FIELDS.has(field));
   const documentGroup = group("address", 0, (field) => DOCUMENT_FIELDS.has(field));
   const company = billingRows(journey.registration?.billing, countryName);
-  const status = reviewStatusRows(journey);
+  const status = reviewStatusRows(journey, verification);
 
   return (
     <div className="flex flex-col gap-3">

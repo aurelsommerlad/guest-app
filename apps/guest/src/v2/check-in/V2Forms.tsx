@@ -16,9 +16,19 @@ import { V2PhoneField, V2SelectField, V2TextField } from "./V2Fields";
 
 type Action = (previous: CheckInFormState, formData: FormData) => Promise<CheckInFormState>;
 
-function SubmitButton({ pending, label, busy }: { pending: boolean; label: string; busy: string }) {
+function SubmitButton({
+  pending,
+  label,
+  busy,
+  disabled = false,
+}: {
+  pending: boolean;
+  label: string;
+  busy: string;
+  disabled?: boolean;
+}) {
   return (
-    <button type="submit" className="v2-button" disabled={pending}>
+    <button type="submit" className="v2-button" disabled={pending || disabled}>
       <span>{pending ? busy : label}</span>
       <V2Arrow />
     </button>
@@ -429,19 +439,30 @@ export function V2BillingForm({
 }
 
 /** Confirmation and the one submit (idempotent on the server). */
-export function V2SubmitForm({ action, version }: { action: Action; version: number }) {
+export function V2SubmitForm({
+  action,
+  version,
+  blocked = false,
+}: {
+  action: Action;
+  version: number;
+  /** A required confirmation is still open (the server checks it again). */
+  blocked?: boolean;
+}) {
   const t = useTranslations("checkIn");
   const [state, formAction, pending] = useActionState(action, { status: "idle" });
   const message =
-    state.status === "not-confirmed"
-      ? t("errors.notConfirmed")
-      : state.status === "conflict"
-        ? t("errors.conflict")
-        : state.status === "rate-limited"
-          ? t("errors.rateLimited")
-          : state.status === "unavailable"
-            ? t("errors.unavailable")
-            : undefined;
+    blocked || state.status === "contact-not-verified"
+      ? t("errors.contactNotVerified")
+      : state.status === "not-confirmed"
+        ? t("errors.notConfirmed")
+        : state.status === "conflict"
+          ? t("errors.conflict")
+          : state.status === "rate-limited"
+            ? t("errors.rateLimited")
+            : state.status === "unavailable"
+              ? t("errors.unavailable")
+              : undefined;
   return (
     <form action={formAction} className="v2-form" noValidate>
       <input type="hidden" name="version" value={version} />
@@ -450,7 +471,12 @@ export function V2SubmitForm({ action, version }: { action: Action; version: num
         <span className="v2-body">{t("confirm")}</span>
       </label>
       <Notice {...(message ? { text: message } : {})} />
-      <SubmitButton pending={pending} label={t("submit")} busy={t("submitting")} />
+      <SubmitButton
+        pending={pending}
+        disabled={blocked}
+        label={t("submit")}
+        busy={t("submitting")}
+      />
       <p className="v2-caption">{t("privacy")}</p>
     </form>
   );

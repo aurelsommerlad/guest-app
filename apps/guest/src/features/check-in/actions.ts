@@ -3,9 +3,12 @@
 import { type Locale } from "../../i18n/routing";
 import {
   type CheckInFormState,
+  type VerificationFormState,
+  handleConfirmEmailCode,
   handleConfirmTrip,
   handleSaveBilling,
   handleSaveStep,
+  handleSendEmailCode,
   handleSubmitCheckIn,
 } from "./action-handlers";
 import { type GuestStep } from "./check-in-service";
@@ -14,7 +17,7 @@ import { type GuestStep } from "./check-in-service";
  * Server actions of the check-in steps (Next.js checks the Origin of every action: CSRF
  * protection). Logic in action-handlers.ts; afterwards the guest returns to "/check-in".
  */
-export type { CheckInFormState } from "./action-handlers";
+export type { CheckInFormState, VerificationFormState } from "./action-handlers";
 
 export async function confirmTripAction(
   locale: Locale,
@@ -48,4 +51,20 @@ export async function submitCheckInAction(
   formData: FormData,
 ): Promise<CheckInFormState> {
   return handleSubmitCheckIn("/check-in", locale, formData);
+}
+
+export async function sendEmailCodeAction(
+  locale: Locale,
+  _previous: VerificationFormState,
+  _formData: FormData,
+): Promise<VerificationFormState> {
+  return handleSendEmailCode("/check-in", locale);
+}
+
+export async function confirmEmailCodeAction(
+  locale: Locale,
+  _previous: VerificationFormState,
+  formData: FormData,
+): Promise<VerificationFormState> {
+  return handleConfirmEmailCode("/check-in", locale, formData);
 }

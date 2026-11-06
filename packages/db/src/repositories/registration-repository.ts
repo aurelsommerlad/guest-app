@@ -32,6 +32,8 @@ import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } f
 
 import { type Database } from "../client";
 import {
+  contactVerificationChallenges,
+  contactVerificationEvents,
   guestRegistrationBilling,
   guestRegistrationContacts,
   guestRegistrationGuests,
@@ -360,27 +362,74 @@ async function failureReason(
  */
 /** Contact data (e-mail, phone) of one traveller slot – kept apart from the legal data. */
 async function upsertContact(
-  tx: Pick<Database, "insert">,
+  tx: Pick<Database, "insert" | "select" | "update">,
   tenantId: string,
   registrationId: string,
   guest: Pick<RegistrationGuest, "position" | "data">,
 ): Promise<void> {
   const values = { email: guest.data.email ?? null, phone: guest.data.phone ?? null };
+  const [previous] = await tx
+    .select({ email: guestRegistrationContacts.email, phone: guestRegistrationContacts.phone })
+    .from(guestRegistrationContacts)
+    .where(
+      and(
+        eq(guestRegistrationContacts.tenantId, tenantId),
+        eq(guestRegistrationContacts.registrationId, registrationId),
+        eq(guestRegistrationContacts.position, guest.position),
+      ),
+    );
+  // Only a change away from an earlier value can void a confirmation (first entry cannot).
+  const emailChanged = Boolean(previous?.email) && previous?.email !== values.email;
+  const phoneChanged = Boolean(previous?.phone) && previous?.phone !== values.phone;
+  // A changed value is no longer the confirmed (or waived) one – the guest confirms again.
+  const resetEmail = emailChanged
+    ? { emailVerifiedAt: null, emailVerifiedHash: null, ...clearedWaiver("email") }
+    : {};
+  const resetPhone = phoneChanged
+    ? { phoneVerifiedAt: null, phoneVerifiedHash: null, ...clearedWaiver("phone") }
+    : {};
   await tx
     .insert(guestRegistrationContacts)
     .values({ tenantId, registrationId, position: guest.position, ...values })
     .onConflictDoUpdate({
       target: [guestRegistrationContacts.registrationId, guestRegistrationContacts.position],
-      set: {
-        ...values,
-        // A changed value is no longer the confirmed one.
-        emailVerifiedAt: sql`CASE WHEN ${guestRegistrationContacts.email} IS NOT DISTINCT FROM ${values.email} THEN ${guestRegistrationContacts.emailVerifiedAt} ELSE NULL END`,
-        emailVerifiedHash: sql`CASE WHEN ${guestRegistrationContacts.email} IS NOT DISTINCT FROM ${values.email} THEN ${guestRegistrationContacts.emailVerifiedHash} ELSE NULL END`,
-        phoneVerifiedAt: sql`CASE WHEN ${guestRegistrationContacts.phone} IS NOT DISTINCT FROM ${values.phone} THEN ${guestRegistrationContacts.phoneVerifiedAt} ELSE NULL END`,
-        phoneVerifiedHash: sql`CASE WHEN ${guestRegistrationContacts.phone} IS NOT DISTINCT FROM ${values.phone} THEN ${guestRegistrationContacts.phoneVerifiedHash} ELSE NULL END`,
-        updatedAt: new Date(),
-      },
+      set: { ...values, ...resetEmail, ...resetPhone, updatedAt: new Date() },
     });
+  const now = new Date();
+  for (const [channel, changed] of [
+    ["email", emailChanged],
+    ["sms", phoneChanged],
+  ] as const) {
+    if (!changed) continue;
+    // Codes sent to the old value are void.
+    await tx
+      .update(contactVerificationChallenges)
+      .set({ status: "superseded", updatedAt: now })
+      .where(
+        and(
+          eq(contactVerificationChallenges.tenantId, tenantId),
+          eq(contactVerificationChallenges.registrationId, registrationId),
+          eq(contactVerificationChallenges.position, guest.position),
+          eq(contactVerificationChallenges.channel, channel),
+          eq(contactVerificationChallenges.status, "pending"),
+        ),
+      );
+    await tx.insert(contactVerificationEvents).values({
+      tenantId,
+      registrationId,
+      position: guest.position,
+      channel,
+      event: "reset-by-change",
+      actor: "guest",
+      occurredAt: now,
+    });
+  }
+}
+
+function clearedWaiver(channel: "email" | "phone") {
+  return channel === "email"
+    ? { emailWaivedAt: null, emailWaivedBy: null, emailWaiverReason: null, emailWaiverNote: null }
+    : { phoneWaivedAt: null, phoneWaivedBy: null, phoneWaiverReason: null, phoneWaiverNote: null };
 }
 
 export async function saveRegistrationGuests(
@@ -827,15 +876,23 @@ export async function purgeExpiredRegistrationData(db: Database, now: Date): Pro
         ),
       )
       .returning({ id: guestRegistrations.id, tenantId: guestRegistrations.tenantId });
-    // Operational contact data has its own (usually shorter) retention.
-    await tx
+    // Operational contact data has its own (usually shorter) retention – the code challenges
+    // of a removed contact go with it (the audit events hold no contact data and stay).
+    const purgedContacts = await tx
       .delete(guestRegistrationContacts)
       .where(
         and(
           isNotNull(guestRegistrationContacts.purgeAfter),
           lte(guestRegistrationContacts.purgeAfter, now),
         ),
-      );
+      )
+      .returning({ registrationId: guestRegistrationContacts.registrationId });
+    const contactRegistrations = [...new Set(purgedContacts.map((row) => row.registrationId))];
+    if (contactRegistrations.length > 0) {
+      await tx
+        .delete(contactVerificationChallenges)
+        .where(inArray(contactVerificationChallenges.registrationId, contactRegistrations));
+    }
     if (expired.length === 0) return 0;
     const ids = expired.map((row) => row.id);
     await tx
@@ -847,6 +904,9 @@ export async function purgeExpiredRegistrationData(db: Database, now: Date): Pro
     await tx
       .delete(guestRegistrationBilling)
       .where(inArray(guestRegistrationBilling.registrationId, ids));
+    await tx
+      .delete(contactVerificationChallenges)
+      .where(inArray(contactVerificationChallenges.registrationId, ids));
     return expired.length;
   });
 }

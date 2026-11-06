@@ -338,6 +338,12 @@ export {
   supersede,
 } from "./verification/otp";
 export {
+  CONTACT_VERIFICATION_EVENTS,
+  type ContactVerificationEvent,
+  VERIFICATION_ACTORS,
+  type VerificationActor,
+  VERIFICATION_DELIVERIES,
+  type VerificationDelivery,
   CONTACT_VERIFICATION_STATUSES,
   type ContactVerificationRecord,
   type ContactVerificationStatus,
@@ -359,6 +365,11 @@ export {
   type VerificationMessage,
   type VerificationSmsSender,
 } from "./verification/message-ports";
+export {
+  type VerificationEmailContent,
+  verificationEmailContent,
+  verificationSmsText,
+} from "./verification/message-text";
 export {
   AGE_DECLARATION_STATUSES,
   type AgeDeclarationStatus,

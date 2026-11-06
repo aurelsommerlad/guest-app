@@ -21,7 +21,14 @@ import {
   submitCheckIn,
 } from "./check-in-service";
 import { BILLING_FORM_FIELDS, parseStepValues } from "./form-model";
-import { checkInDeps } from "./server";
+import {
+  confirmVerificationCode,
+  type ConfirmCodeResult,
+  sendCodeIfDue,
+  sendVerificationCode,
+  type SendCodeResult,
+} from "./contact-verification-service";
+import { checkInDeps, verificationDeps } from "./server";
 
 /**
  * Handlers behind the check-in server actions – shared by every design of the check-in
@@ -35,7 +42,13 @@ export type CheckInBase = "/check-in" | "/v2/check-in";
 export type CheckInFormState =
   | { status: "idle" }
   | {
-      status: "invalid" | "conflict" | "rate-limited" | "unavailable" | "not-confirmed";
+      status:
+        | "invalid"
+        | "conflict"
+        | "rate-limited"
+        | "unavailable"
+        | "not-confirmed"
+        | "contact-not-verified";
       errors?: Record<number, FieldError[]>;
       /** Billing step only. */
       billingErrors?: BillingFieldIssue[];
@@ -111,6 +124,11 @@ export async function handleSaveStep(
     values,
     addressSources,
   });
+  if (result.ok && step === "guests") {
+    // The e-mail is entered here: send the code now, so it waits at the review (best effort).
+    const saved = await checkInAvailability(deps, context);
+    if (saved.available) await sendCodeIfDue(verificationDeps(), context, saved.journey, locale);
+  }
   if (result.ok || result.reason === "submitted") return redirect({ href: base, locale });
   if (result.reason === "invalid") {
     return {
@@ -165,4 +183,60 @@ export async function handleSubmitCheckIn(
   }
   if (result.reason === "incomplete") return redirect({ href: base, locale });
   return { status: result.reason };
+}
+
+/* ------------------------------------------------------------------------------------------
+ * Contact verification (ADR 0021, C4): code request and code entry on the review step.
+ * ---------------------------------------------------------------------------------------- */
+
+export type VerificationFormState =
+  | { status: "idle" }
+  | {
+      status: "error";
+      reason:
+        | Exclude<SendCodeResult, { ok: true }>["reason"]
+        | Exclude<ConfirmCodeResult, { ok: true }>["reason"];
+      attemptsLeft?: number;
+      retryAt?: string;
+    };
+
+export async function handleSendEmailCode(
+  base: CheckInBase,
+  locale: Locale,
+): Promise<VerificationFormState> {
+  const context = await currentContext();
+  if (!context) return redirect({ href: "/login", locale });
+  const result = await sendVerificationCode(verificationDeps(), context, {
+    channel: "email",
+    locale,
+  });
+  // Re-render the review with the new state (sent to, valid until) – no client-side state.
+  if (result.ok || result.reason === "already-verified") {
+    return redirect({ href: `${base}/review`, locale });
+  }
+  return {
+    status: "error",
+    reason: result.reason,
+    ...(result.retryAt ? { retryAt: result.retryAt.toISOString() } : {}),
+  };
+}
+
+export async function handleConfirmEmailCode(
+  base: CheckInBase,
+  locale: Locale,
+  formData: FormData,
+): Promise<VerificationFormState> {
+  const context = await currentContext();
+  if (!context) return redirect({ href: "/login", locale });
+  const code = formData.get("code");
+  const result = await confirmVerificationCode(verificationDeps(), context, {
+    channel: "email",
+    code: typeof code === "string" ? code : "",
+  });
+  if (result.ok) return redirect({ href: `${base}/review`, locale });
+  return {
+    status: "error",
+    reason: result.reason,
+    ...(result.attemptsLeft === undefined ? {} : { attemptsLeft: result.attemptsLeft }),
+  };
 }

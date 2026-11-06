@@ -131,6 +131,18 @@ export {
   type UnitKey,
 } from "./repositories/journey-repository";
 export {
+  type ContactVerificationState,
+  countTargetSends,
+  listContactVerificationEvents,
+  listVerificationSends,
+  loadContactVerification,
+  recordVerificationAttempt,
+  recordVerificationChallenge,
+  revokeContactWaiver,
+  type StoredChallenge,
+  waiveContactVerification,
+} from "./repositories/contact-verification-repository";
+export {
   claimDueSyncs,
   completeSyncAttempt,
   getRegistrationById,

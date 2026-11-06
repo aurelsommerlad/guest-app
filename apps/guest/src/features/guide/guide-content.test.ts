@@ -102,9 +102,7 @@ describe("GUIDE for the Apaleo TEST property (content source HØV)", () => {
     // Drafts stay drafts – the link shows exactly what HØV guests see.
     expect(draft.status).toBe("draft");
     // A context of another tenant never reaches HØV's content through the link.
-    expect(await loadGuideSections(db, testGuest("test-ap-1", "other-tenant"), logger)).toEqual(
-      [],
-    );
+    expect(await loadGuideSections(db, testGuest("test-ap-1", "other-tenant"), logger)).toEqual([]);
   });
 });
 

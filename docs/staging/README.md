@@ -84,3 +84,24 @@ Erwartet am Ende (L): `applied_migrations` = 11, `test_property_mapped` = true,
 
 Neu erzeugen (nach neuen Migrationen) mit denselben Regeln: Inhalt der Migrationsdateien
 unverändert, Hash = SHA-256 der Datei, `created_at` = `when` aus `meta/_journal.json`.
+
+## Kontaktverifizierung (ADR 0021, C4/C5)
+
+| Schritt | Skript                 | Wann                                                  |
+| ------- | ---------------------- | ----------------------------------------------------- |
+| 1       | `S-migration-0016.sql` | nur wenn `applied_migrations` = 16 (Voraussetzung: Q) |
+
+- **S** legt zwei Tabellen an, ohne Klartext von Codes, Adressen oder Nummern:
+  - `contact_verification_challenges`: Einmalcodes, gespeichert nur als HMAC, mit Ablauf,
+    Fehlversuchen und Versandart;
+  - `contact_verification_events`: Prüfprotokoll, nur ergänzbar (Trigger).
+- Zusätzlich bekommt `guest_registration_contacts` die Spalten für die dokumentierte
+  Freigabe durch das Team: wer, wann, Grund, Notiz.
+- RLS ist aktiv, die Data-API gesperrt.
+- Das Skript gleicht vor dem Eintrag in `drizzle.__drizzle_migrations` die ID-Sequenz an.
+  Lokale Kopien älterer Staging-Stände hatten eine nachlaufende Sequenz.
+- Versand: In keiner Staging-Umgebung ist ein Anbieter aktiv (`EMAIL_DELIVERY` und
+  `SMS_DELIVERY` stehen auf `off`). Der Check-in zeigt dann „Bestätigung gerade nicht
+  verfügbar“ und blockiert nicht. Ein echter Versand über Resend oder seven.io braucht eine
+  ausdrückliche Freigabe.
+- Angewendet am 2026-11-06. Danach `applied_migrations` = 17.

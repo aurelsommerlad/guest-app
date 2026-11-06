@@ -904,3 +904,19 @@ select.v2-input {
 .v2-billing:not(:has(input[name="billingKind"][value="company"]:checked)) .v2-billing-company {
   display: none;
 }
+
+/* Check-in: secondary action rendered as a text link (e.g. "Neuen Code senden"). */
+.v2-link-button {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.v2-link-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
