@@ -188,15 +188,17 @@
     "progress": "Step {current} of {total}",
     "steps": {
       "trip": "Your trip",
+      "guests": "Guests",
       "address": "Your address",
-      "review": "Review & submit",
-      "guests": "Guests"
+      "billing": "Invoice",
+      "review": "Review & submit"
     },
     "intro": {
       "trip": "A few details before you arrive – so everything is ready when you get here.",
+      "guests": "Everyone in your booking. We have filled in what we already know.",
       "address": "We need these details for the statutory guest registration.",
-      "review": "Please review your details before submitting your check-in.",
-      "guests": "Everyone in your booking. We have filled in what we already know."
+      "billing": "Should the invoice go to a company? Otherwise there is nothing else to do.",
+      "review": "Please review your details before submitting your check-in."
     },
     "trip": {
       "arrival": "Arrival",
@@ -241,7 +243,10 @@
       "unavailable": "That did not work just now. Please try again later.",
       "notConfirmed": "Please confirm that your details are correct.",
       "relay-email": "Please enter your personal email address – we cannot use forwarding addresses from booking platforms.",
-      "not-mobile": "Please enter a mobile number."
+      "not-mobile": "Please enter a mobile number.",
+      "invalid-postal-code": "This postcode does not match the selected country.",
+      "responsible-under-age": "The person responsible for the check-in must be at least 18 years old on the day of arrival.",
+      "invalid-format": "Please check the format of this entry."
     },
     "next": "Save & continue",
     "saving": "Saving …",
@@ -269,9 +274,10 @@
     },
     "stepsShort": {
       "trip": "Trip",
+      "guests": "Guests",
       "address": "Address",
-      "review": "Review",
-      "guests": "Guests"
+      "billing": "Invoice",
+      "review": "Review"
     },
     "stepState": {
       "complete": "done",
@@ -295,7 +301,12 @@
       "companions": "Fellow travellers",
       "address": "Address",
       "document": "ID",
-      "contact": "Contact"
+      "contact": "Contact",
+      "billing": "Invoice",
+      "billingPrivate": "Private – to the main guest",
+      "sharedAddress": "Address",
+      "sharedAddressValue": "same as main guest",
+      "status": "Status of your check-in"
     },
     "primaryGuest": "Main guest",
     "personEmpty": "No details yet",
@@ -305,6 +316,97 @@
     "hints": {
       "email": "For your booking information – please use your personal address.",
       "phone": "For questions during your stay."
+    },
+    "sharedAddress": "Same address as main guest",
+    "sharedAddressHint": "The main guest’s address is used.",
+    "billing": {
+      "choiceLabel": "Invoice recipient",
+      "private": "Private – to me",
+      "privateHint": "The invoice is addressed to you as the main guest.",
+      "company": "To a company",
+      "companyHint": "The company becomes the invoice recipient. Your registration address is not affected.",
+      "companyTitle": "Company address",
+      "contactTitle": "For the attention of (optional)",
+      "note": "We add the company details to the invoice before you leave. An invoice that has already been issued does not change.",
+      "fields": {
+        "companyName": "Company name",
+        "street": "Street and number",
+        "postalCode": "Postcode",
+        "city": "City",
+        "country": "Country",
+        "vatId": "VAT ID",
+        "contactFirstName": "First name",
+        "contactLastName": "Last name",
+        "contactPerson": "For the attention of"
+      },
+      "vatIdHint": "Optional, e.g. DE123456789. We only check the format."
+    },
+    "status": {
+      "labels": {
+        "data": "Details",
+        "age": "Age of responsible person",
+        "address": "Address",
+        "email": "Email",
+        "phone": "Mobile number",
+        "identity": "ID document",
+        "legal": "Guest registration",
+        "billing": "Invoice"
+      },
+      "values": {
+        "data": {
+          "complete": "complete",
+          "incomplete": "incomplete"
+        },
+        "age": {
+          "declared-adult": "Stated: of age on arrival",
+          "declared-under-age": "Stated: under 18 on arrival",
+          "missing": "Date of birth missing",
+          "invalid": "Check date of birth"
+        },
+        "address": {
+          "unverified": "provided, not checked",
+          "formally-valid": "formally plausible (not postally checked)",
+          "postally-plausible": "postally plausible"
+        },
+        "email": {
+          "not-provided": "not provided",
+          "none": "provided",
+          "pending": "provided – confirmation to follow",
+          "verified": "confirmed",
+          "locked": "confirmation locked",
+          "waived": "approved by our team",
+          "unsupported-country": "provided",
+          "disabled": "provided"
+        },
+        "phone": {
+          "none": "provided",
+          "pending": "provided – confirmation to follow",
+          "verified": "confirmed",
+          "locked": "provided",
+          "waived": "provided",
+          "unsupported-country": "provided",
+          "disabled": "provided (no SMS confirmation)"
+        },
+        "identity": {
+          "not-required": "not required",
+          "pending-on-site": "please show on arrival",
+          "checked-by-staff": "checked on site"
+        },
+        "legal": {
+          "not-required": "not required",
+          "pending": "sent after you submit",
+          "submitted": "sent",
+          "failed": "our team will follow up",
+          "manual": "handled by our team"
+        },
+        "billing": {
+          "private": "private",
+          "company-pending": "company – added before departure",
+          "company-applied": "company – added",
+          "company-manual": "company – handled by our team",
+          "company-failed": "company – handled by our team"
+        }
+      }
     }
   },
   "extras": {

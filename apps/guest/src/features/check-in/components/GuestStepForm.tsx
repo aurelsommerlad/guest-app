@@ -48,6 +48,7 @@ const SPANS: Record<FormFieldDef["field"], string> = {
 };
 
 const DOCUMENT_FIELDS = new Set<FormFieldDef["field"]>(["documentType", "documentNumber"]);
+const ADDRESS_FIELDS = new Set<FormFieldDef["field"]>(["street", "postalCode", "city", "country"]);
 
 function FieldCard({
   title,
@@ -289,7 +290,42 @@ export function GuestStepForm({
                     <span>{t("prefilledHint")}</span>
                   </p>
                 )}
-                {grid(set.position, set.fields)}
+                {set.sharedAddress ? (
+                  // Hides the address while "same as main guest" is ticked – CSS only (:has).
+                  <div className="flex flex-col gap-4 [&:has(.shared-toggle:checked)_.shared-fields]:hidden">
+                    {grid(
+                      set.position,
+                      set.fields.filter((def) => !ADDRESS_FIELDS.has(def.field)),
+                    )}
+                    <label className="flex cursor-pointer items-start gap-3 rounded-control border border-border p-3">
+                      <input
+                        type="checkbox"
+                        name={set.sharedAddress.name}
+                        value="same-as-primary"
+                        defaultChecked={
+                          values?.[set.sharedAddress.name] !== undefined
+                            ? values[set.sharedAddress.name] === "same-as-primary"
+                            : set.sharedAddress.checked
+                        }
+                        className="shared-toggle mt-0.5 size-5 shrink-0 accent-success"
+                      />
+                      <span className="flex flex-col gap-0.5">
+                        <span className="type-small text-text">{t("sharedAddress")}</span>
+                        <span className="type-caption text-text-muted">
+                          {t("sharedAddressHint")}
+                        </span>
+                      </span>
+                    </label>
+                    <div className="shared-fields">
+                      {grid(
+                        set.position,
+                        set.fields.filter((def) => ADDRESS_FIELDS.has(def.field)),
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  grid(set.position, set.fields)
+                )}
               </div>
             </details>
           );

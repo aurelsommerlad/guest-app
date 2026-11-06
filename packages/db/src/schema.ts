@@ -10,6 +10,8 @@
  *   roles (`anon`, `authenticated`) see nothing. The app connects as the table owner.
  */
 import {
+  ADDRESS_STATUSES,
+  BILLING_KINDS,
   BINDING_REGISTRATION_RULES,
   CONTENT_LOCALES,
   CREATING_OPERATIONS,
@@ -599,6 +601,8 @@ export const guestRegistrations = pgTable(
   ],
 ).enableRLS();
 
+export const ADDRESS_SOURCES = ["own", "same-as-primary"] as const;
+
 function maxLength(column: AnyPgColumn, length: number): SQL {
   return sql`${column} IS NULL OR char_length(${column}) BETWEEN 1 AND ${sql.raw(String(length))}`;
 }
@@ -617,10 +621,6 @@ export const guestRegistrationGuests = pgTable(
     role: text("role", { enum: GUEST_ROLES }).notNull(),
     firstName: text("first_name"),
     lastName: text("last_name"),
-    /** Main guest only: a directly reachable address (channel relays are refused). */
-    email: text("email"),
-    /** Mobile number of every traveller, E.164. */
-    phone: text("phone"),
     birthDate: date("birth_date", { mode: "string" }),
     nationality: text("nationality"),
     street: text("street"),
@@ -629,6 +629,13 @@ export const guestRegistrationGuests = pgTable(
     country: text("country"),
     documentType: text("document_type", { enum: DOCUMENT_TYPES }),
     documentNumber: text("document_number"),
+    /**
+     * Fellow travellers: "same-as-primary" = the main guest's address (a reference, so the
+     * address columns stay empty; ADR 0021).
+     */
+    addressSource: text("address_source", { enum: ADDRESS_SOURCES }).notNull().default("own"),
+    /** Formal plausibility of the own address at the last save (never "verified"). */
+    addressStatus: text("address_status", { enum: ADDRESS_STATUSES }),
     /** Fields whose value came from the PMS and was not changed by the guest (provenance). */
     prefilledFields: text("prefilled_fields")
       .array()
@@ -662,14 +669,13 @@ export const guestRegistrationGuests = pgTable(
         AND (${t.country} IS NULL OR ${t.country} ~ '^[A-Z]{2}$')`,
     ),
     check(
-      "guest_registration_guests_email_valid",
-      sql`${t.email} IS NULL OR (${t.email} = lower(${t.email})
-        AND char_length(${t.email}) BETWEEN 3 AND 254 AND position('@' in ${t.email}) > 1
-        AND ${t.email} !~ '@([a-z0-9-]+\\.)*guest\\.booking\\.com$')`,
+      "guest_registration_guests_address_source_valid",
+      sql`${oneOf(t.addressSource, ADDRESS_SOURCES)} AND (${t.position} > 0 OR ${t.addressSource} = 'own')
+        AND (${t.addressSource} = 'own' OR (${t.street} IS NULL AND ${t.postalCode} IS NULL AND ${t.city} IS NULL AND ${t.country} IS NULL))`,
     ),
     check(
-      "guest_registration_guests_phone_e164",
-      sql`${t.phone} IS NULL OR ${t.phone} ~ '^\\+[1-9][0-9]{6,14}$'`,
+      "guest_registration_guests_address_status_valid",
+      sql`${t.addressStatus} IS NULL OR ${oneOf(t.addressStatus, ADDRESS_STATUSES)}`,
     ),
     check(
       "guest_registration_guests_prefilled_fields_known",
@@ -680,6 +686,122 @@ export const guestRegistrationGuests = pgTable(
       sql`(${maxLength(t.firstName, 100)}) AND (${maxLength(t.lastName, 100)})
         AND (${maxLength(t.street, 200)}) AND (${maxLength(t.postalCode, 12)})
         AND (${maxLength(t.city, 100)}) AND (${maxLength(t.documentNumber, 40)})`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Operational contact data of a traveller (ADR 0021): e-mail (main guest) and mobile number –
+ * kept apart from the legal registration data in guest_registration_guests, with its own
+ * purpose, verification state and (shorter) retention. One row per traveller slot.
+ */
+export const guestRegistrationContacts = pgTable(
+  "guest_registration_contacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    registrationId: uuid("registration_id").notNull(),
+    position: integer("position").notNull(),
+    /** Main guest only: a directly reachable address (channel relays are refused). */
+    email: text("email"),
+    /** Mobile number, E.164. */
+    phone: text("phone"),
+    /** Confirmation by code (C4): when, and the HMAC of the confirmed value. */
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    emailVerifiedHash: text("email_verified_hash"),
+    phoneVerifiedAt: timestamp("phone_verified_at", { withTimezone: true }),
+    phoneVerifiedHash: text("phone_verified_hash"),
+    /** Contact data may be removed after this instant (contact retention). */
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "guest_registration_contacts_registration_fkey",
+      columns: [t.tenantId, t.registrationId],
+      foreignColumns: [guestRegistrations.tenantId, guestRegistrations.id],
+    }).onDelete("cascade"),
+    unique("guest_registration_contacts_position_key").on(t.registrationId, t.position),
+    index("guest_registration_contacts_purge_after_idx").on(t.purgeAfter),
+    check(
+      "guest_registration_contacts_position_range",
+      sql`${t.position} BETWEEN 0 AND ${sql.raw(String(MAX_TRAVELLERS - 1))}`,
+    ),
+    check(
+      "guest_registration_contacts_email_valid",
+      sql`${t.email} IS NULL OR (${t.email} = lower(${t.email})
+        AND char_length(${t.email}) BETWEEN 3 AND 254 AND position('@' in ${t.email}) > 1
+        AND ${t.email} !~ '@([a-z0-9-]+\\.)*guest\\.booking\\.com$')`,
+    ),
+    check(
+      "guest_registration_contacts_phone_e164",
+      sql`${t.phone} IS NULL OR ${t.phone} ~ '^\\+[1-9][0-9]{6,14}$'`,
+    ),
+    check(
+      "guest_registration_contacts_email_verified_consistent",
+      sql`(${t.emailVerifiedAt} IS NULL) = (${t.emailVerifiedHash} IS NULL) AND (${t.emailVerifiedHash} IS NULL OR ${isSha256Hex(t.emailVerifiedHash)})`,
+    ),
+    check(
+      "guest_registration_contacts_phone_verified_consistent",
+      sql`(${t.phoneVerifiedAt} IS NULL) = (${t.phoneVerifiedHash} IS NULL) AND (${t.phoneVerifiedHash} IS NULL OR ${isSha256Hex(t.phoneVerifiedHash)})`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Invoice recipient chosen in the check-in (ADR 0021): private (the registration address) or
+ * a company – stored apart from the private registration address, which it never changes.
+ * Nothing here is sent to the PMS (folio write-back is a separate, disabled phase).
+ */
+export const guestRegistrationBilling = pgTable(
+  "guest_registration_billing",
+  {
+    tenantId: text("tenant_id").notNull(),
+    registrationId: uuid("registration_id").notNull(),
+    kind: text("kind", { enum: BILLING_KINDS }).notNull(),
+    companyName: text("company_name"),
+    street: text("street"),
+    postalCode: text("postal_code"),
+    city: text("city"),
+    country: text("country"),
+    vatId: text("vat_id"),
+    contactFirstName: text("contact_first_name"),
+    contactLastName: text("contact_last_name"),
+    addressStatus: text("address_status", { enum: ADDRESS_STATUSES }),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({
+      name: "guest_registration_billing_pkey",
+      columns: [t.tenantId, t.registrationId],
+    }),
+    foreignKey({
+      name: "guest_registration_billing_registration_fkey",
+      columns: [t.tenantId, t.registrationId],
+      foreignColumns: [guestRegistrations.tenantId, guestRegistrations.id],
+    }).onDelete("cascade"),
+    check("guest_registration_billing_kind_valid", oneOf(t.kind, BILLING_KINDS)),
+    check(
+      "guest_registration_billing_shape",
+      sql`(${t.kind} = 'private' AND ${t.companyName} IS NULL AND ${t.street} IS NULL AND ${t.postalCode} IS NULL AND ${t.city} IS NULL AND ${t.country} IS NULL AND ${t.vatId} IS NULL AND ${t.contactFirstName} IS NULL AND ${t.contactLastName} IS NULL AND ${t.addressStatus} IS NULL)
+        OR (${t.kind} = 'company' AND ${t.companyName} IS NOT NULL AND ${t.street} IS NOT NULL AND ${t.city} IS NOT NULL AND ${t.country} ~ '^[A-Z]{2}$' AND ${t.addressStatus} IS NOT NULL)`,
+    ),
+    check(
+      "guest_registration_billing_contact_person",
+      sql`(${t.contactFirstName} IS NULL) = (${t.contactLastName} IS NULL)`,
+    ),
+    check(
+      "guest_registration_billing_vat_id_format",
+      sql`${t.vatId} IS NULL OR ${t.vatId} ~ '^[A-Z]{2}[A-Z0-9+*]{2,14}$'`,
+    ),
+    check(
+      "guest_registration_billing_address_status_valid",
+      sql`${t.addressStatus} IS NULL OR ${oneOf(t.addressStatus, ADDRESS_STATUSES)}`,
+    ),
+    check(
+      "guest_registration_billing_text_lengths",
+      sql`(${maxLength(t.companyName, 200)}) AND (${maxLength(t.street, 200)}) AND (${maxLength(t.postalCode, 12)})
+        AND (${maxLength(t.city, 100)}) AND (${maxLength(t.contactFirstName, 100)}) AND (${maxLength(t.contactLastName, 100)})`,
     ),
   ],
 ).enableRLS();
@@ -1446,6 +1568,8 @@ export const schema = {
   propertyJourneySettings,
   guestRegistrations,
   guestRegistrationGuests,
+  guestRegistrationContacts,
+  guestRegistrationBilling,
   guestRegistrationSyncs,
   unitAccessCodes,
   paymentRequests,

@@ -13,7 +13,7 @@
  */
 import { z } from "zod";
 
-import { isValidIsoDate } from "../registration/registration-rules";
+import { isValidIsoDate } from "../registration/dates";
 import {
   OFFICIAL_OPERATIONS,
   OFFICIAL_REGISTRATION_TARGETS,

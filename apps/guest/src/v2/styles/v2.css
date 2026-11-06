@@ -878,3 +878,29 @@ select.v2-input {
 .v2-item dd {
   margin: 0;
 }
+
+/* Check-in: "same address as main guest" and the invoice recipient choice. Pure CSS (:has) –
+   the form works without JavaScript; hidden inputs are ignored on the server. */
+.v2-shared {
+  margin-top: 28px;
+}
+
+.v2-shared:has(input:checked) + .v2-shared-fields {
+  display: none;
+}
+
+.v2-shared-fields {
+  margin-top: 24px;
+}
+
+.v2-choice {
+  display: grid;
+  gap: 18px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.v2-billing:not(:has(input[name="billingKind"][value="company"]:checked)) .v2-billing-company {
+  display: none;
+}

@@ -15,6 +15,7 @@
  */
 import {
   ADDRESS_FIELDS,
+  type BillingFieldIssue,
   type CheckInStep,
   type FieldError,
   fieldsForRole,
@@ -23,7 +24,9 @@ import {
   localDateOf,
   type Logger,
   MAX_TRAVELLERS,
+  hasBillingStep,
   missingFields,
+  normalizeBillingInput,
   normalizeGuestInput,
   type PmsProvider,
   prefillGuests,
@@ -31,13 +34,17 @@ import {
   type RegistrationField,
   type RegistrationGuest,
   type RegistrationGuestData,
+  responsibleAdultError,
   ROLE_MANDATORY_FIELDS,
   rulesFor,
+  SHARED_ADDRESS_FIELDS,
+  sharedAddressAllowed,
 } from "@up/core";
 import {
   type Database,
   hitRateLimit,
   type GuestRegistrationRecord,
+  saveRegistrationBilling,
   saveRegistrationGuests,
   seedRegistrationGuests,
   startRegistration,
@@ -242,6 +249,42 @@ export function stepPositions(journey: StayJourney, step: GuestStep): number[] {
   return Array.from({ length: count }, (_, index) => index);
 }
 
+export type AddressSource = NonNullable<RegistrationGuest["addressSource"]>;
+
+/**
+ * Whether a fellow traveller may state "same address as the main guest" (ADR 0021): only if
+ * the property allows it and the traveller has address fields at all. The address is then
+ * not copied – it stays a reference to the main guest's address.
+ */
+export function sharedAddressOffered(
+  journey: StayJourney,
+  step: GuestStep,
+  position: number,
+): boolean {
+  if (step !== "guests" || position === 0) return false;
+  if (!sharedAddressAllowed(journey.settings.registration)) return false;
+  return stepFields(journey, step, position).some((field) => SHARED_ADDRESS_FIELDS.includes(field));
+}
+
+/** The stored address source of a traveller ("own" unless they share the main guest's). */
+export function storedAddressSource(journey: StayJourney, position: number): AddressSource {
+  const guest = journey.registration?.guests.find((item) => item.position === position);
+  return guest?.addressSource ?? "own";
+}
+
+/** Fields a traveller actually fills in: without the address when they share the main guest's. */
+export function effectiveStepFields(
+  journey: StayJourney,
+  step: GuestStep,
+  position: number,
+  source: AddressSource,
+): RegistrationField[] {
+  const fields = stepFields(journey, step, position);
+  return source === "same-as-primary" && sharedAddressOffered(journey, step, position)
+    ? fields.filter((field) => !SHARED_ADDRESS_FIELDS.includes(field))
+    : fields;
+}
+
 /**
  * Saves one step's values. Only the step's own fields are replaced; values of other
  * steps of the same traveller are kept. Invalid input is reported and nothing is saved.
@@ -253,6 +296,8 @@ export async function saveGuestStep(
     step: GuestStep;
     version: number;
     values: Readonly<Record<number, Readonly<Record<string, unknown>>>>;
+    /** Per fellow traveller: shares the main guest's address (ignored where not offered). */
+    addressSources?: Readonly<Record<number, AddressSource>>;
   },
 ): Promise<StepResult> {
   const prepared = await prepare(deps, context);
@@ -265,22 +310,42 @@ export async function saveGuestStep(
   const today = localDateOf(deps.now(), journey.window.timeZone);
   const errors: Record<number, FieldError[]> = {};
   const guests: RegistrationGuest[] = [];
+  const config = journey.settings.registration;
   for (const position of stepPositions(journey, input.step)) {
-    const fields = stepFields(journey, input.step, position);
+    const source: AddressSource =
+      sharedAddressOffered(journey, input.step, position) &&
+      input.addressSources?.[position] === "same-as-primary"
+        ? "same-as-primary"
+        : "own";
+    const allFields = stepFields(journey, input.step, position);
+    const fields = effectiveStepFields(journey, input.step, position, source);
     const { data, errors: fieldErrors } = normalizeGuestInput(
       input.values[position] ?? {},
       fields,
       today,
     );
-    if (fieldErrors.length > 0) errors[position] = fieldErrors;
     const existing = registration.guests.find((guest) => guest.position === position)?.data ?? {};
+    // All of the step's fields are replaced – a shared address drops the traveller's own copy.
     const kept = Object.fromEntries(
-      Object.entries(existing).filter(([field]) => !fields.includes(field as RegistrationField)),
+      Object.entries(existing).filter(([field]) => !allFields.includes(field as RegistrationField)),
     ) as RegistrationGuestData;
+    const merged = { ...kept, ...data };
+    // The responsible (main) guest must be of age on the arrival day – checked on the server
+    // against the declared birth date; a declaration, not a verification (ADR 0021).
+    if (
+      position === 0 &&
+      fields.includes("birthDate") &&
+      !fieldErrors.some((error) => error.field === "birthDate")
+    ) {
+      const ageError = responsibleAdultError(config, merged, journey.arrivalDate);
+      if (ageError && merged.birthDate !== undefined) fieldErrors.push(ageError);
+    }
+    if (fieldErrors.length > 0) errors[position] = fieldErrors;
     guests.push({
       position,
       role: position === 0 ? "primary" : "companion",
-      data: { ...kept, ...data },
+      data: merged,
+      ...(source === "same-as-primary" ? { addressSource: source } : {}),
     });
   }
   if (Object.keys(errors).length > 0) {
@@ -326,7 +391,7 @@ function missingByPosition(
   const missing: Record<number, FieldError[]> = {};
   for (const guest of guests) {
     const role = guest.position === 0 ? "primary" : "companion";
-    const fields = stepFields(journey, step, guest.position);
+    const fields = effectiveStepFields(journey, step, guest.position, guest.addressSource ?? "own");
     const rules = rulesFor(journey.settings.registration, role, guest.data, journey.arrivalDate);
     // Age unknown: only flag what every traveller needs – whether e.g. the nationality is
     // required depends on the birth date (child rules), which is flagged itself.
@@ -343,6 +408,59 @@ function missingByPosition(
       missing[guest.position] = absent.map((field) => ({ field, code: "required" }));
   }
   return missing;
+}
+
+export type BillingStepResult =
+  | { ok: true }
+  | { ok: false; reason: "unavailable" | "rate-limited" | "conflict" | "submitted" }
+  | { ok: false; reason: "invalid"; issues: BillingFieldIssue[] };
+
+/**
+ * Optional step "Rechnung": private (default) or a company as invoice recipient. Stored on
+ * its own (ADR 0021) – never mixed with the registration address. Nothing goes to the PMS
+ * here; handing the recipient to the folio is a separate, approval-bound step (C7).
+ */
+export async function saveBillingStep(
+  deps: CheckInDeps,
+  context: GuestContext,
+  input: { version: number; values: Readonly<Record<string, unknown>> },
+): Promise<BillingStepResult> {
+  const prepared = await prepare(deps, context);
+  if (!isPrepared(prepared)) {
+    return { ok: false, reason: prepared.reason === "invalid" ? "unavailable" : prepared.reason };
+  }
+  const { db, journey } = prepared;
+  const registration = journey.registration;
+  if (!registration || !hasBillingStep(journey.settings.registration)) {
+    return { ok: false, reason: "unavailable" };
+  }
+  if (registration.status === "submitted") return { ok: false, reason: "submitted" };
+  const parsed = normalizeBillingInput(input.values);
+  if (!parsed.ok) return { ok: false, reason: "invalid", issues: parsed.issues };
+  const saved = await saveRegistrationBilling(
+    db,
+    context,
+    registration.id,
+    input.version,
+    parsed.billing,
+  );
+  if (!saved.ok) {
+    return {
+      ok: false,
+      reason:
+        saved.reason === "submitted"
+          ? "submitted"
+          : saved.reason === "conflict"
+            ? "conflict"
+            : "unavailable",
+    };
+  }
+  deps.logger.info("check-in step saved", {
+    step: "billing",
+    registrationId: registration.id,
+    kind: parsed.billing.kind,
+  });
+  return { ok: true };
 }
 
 export type SubmitOutcome =
@@ -383,11 +501,20 @@ export async function submitCheckIn(
           new Date(journey.window.checkOutAt).getTime() +
             config.retentionDaysAfterDeparture * 86_400_000,
         );
+  // Operational contact data (e-mail, phone) has its own, usually shorter retention.
+  const contactPurgeAfter =
+    config.contactRetentionDaysAfterDeparture === undefined
+      ? undefined
+      : new Date(
+          new Date(journey.window.checkOutAt).getTime() +
+            config.contactRetentionDaysAfterDeparture * 86_400_000,
+        );
   const result = await submitRegistration(db, context, registration.id, {
     expectedVersion: input.version,
     targets: config.targets,
     now,
     ...(purgeAfter ? { purgeAfter } : {}),
+    ...(contactPurgeAfter ? { contactPurgeAfter } : {}),
   });
   if (!result.ok)
     return { ok: false, reason: result.reason === "conflict" ? "conflict" : "unavailable" };

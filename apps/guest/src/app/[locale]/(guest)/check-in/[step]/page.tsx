@@ -8,11 +8,13 @@ import { notFound } from "next/navigation";
 
 import { designOf } from "../../../../../config/design";
 import {
+  saveBillingAction,
   saveStepAction,
   submitCheckInAction,
   confirmTripAction,
 } from "../../../../../features/check-in/actions";
 import { checkInAvailability } from "../../../../../features/check-in/check-in-service";
+import { BillingForm } from "../../../../../features/check-in/components/BillingForm";
 import { CheckInShell } from "../../../../../features/check-in/components/CheckInShell";
 import { GuestStepForm } from "../../../../../features/check-in/components/GuestStepForm";
 import { ReviewSummary } from "../../../../../features/check-in/components/ReviewSummary";
@@ -20,6 +22,7 @@ import { SubmitForm } from "../../../../../features/check-in/components/SubmitFo
 import { TripForm } from "../../../../../features/check-in/components/TripForm";
 import { countryOptions } from "../../../../../features/check-in/countries";
 import {
+  buildBillingForm,
   buildStepForm,
   isCheckInStep,
   LEGACY_STEPS,
@@ -171,6 +174,15 @@ export default async function CheckInStepPage({ params }: Props) {
           version={registration?.version ?? 0}
         />
       </div>
+    );
+  } else if (step === "billing") {
+    content = (
+      <BillingForm
+        action={saveBillingAction.bind(null, locale)}
+        form={buildBillingForm(journey)}
+        version={registration?.version ?? 0}
+        countries={countries}
+      />
     );
   } else {
     content = (

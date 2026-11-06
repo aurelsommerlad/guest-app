@@ -6,7 +6,7 @@
  * status therefore never says "verified" – an actual age check is only possible with an
  * identity document (identityCheck, done by staff).
  */
-import { ageOn, isValidIsoDate } from "./registration-rules";
+import { ageOn, isValidIsoDate } from "./dates";
 
 export const DEFAULT_RESPONSIBLE_ADULT_MIN_AGE = 18;
 /** Older declared ages are treated as a typing error. */

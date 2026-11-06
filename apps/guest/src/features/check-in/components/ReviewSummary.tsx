@@ -5,7 +5,13 @@ import { getTranslations } from "next-intl/server";
 
 import { Link } from "../../../i18n/navigation";
 import { type StayJourney } from "../../journey/stay-journey";
-import { type GuestStep, stepFields, stepPositions } from "../check-in-service";
+import {
+  effectiveStepFields,
+  type GuestStep,
+  stepPositions,
+  storedAddressSource,
+} from "../check-in-service";
+import { billingRows, reviewStatusRows } from "../review-status";
 
 type Props = {
   journey: StayJourney;
@@ -37,19 +43,29 @@ export async function ReviewSummary({ journey, steps, countryName, formatDate }:
     title?: string,
   ): SummaryGroup => {
     const data = dataOf(position);
-    return {
-      id: `${step}-${String(position)}`,
-      ...(title ? { title } : {}),
-      items: stepFields(journey, step, position)
-        .filter((field) => filter(field) && data[field])
-        .map((field) => ({
-          id: field,
-          label: t(`fields.${field}`),
-          value: display(field, data[field] ?? ""),
-        })),
-    };
+    const source = storedAddressSource(journey, position);
+    const items: { id: string; label: string; value: string }[] = effectiveStepFields(
+      journey,
+      step,
+      position,
+      source,
+    )
+      .filter((field) => filter(field) && data[field])
+      .map((field) => ({
+        id: field,
+        label: t(`fields.${field}`),
+        value: display(field, data[field] ?? ""),
+      }));
+    if (source === "same-as-primary") {
+      items.push({
+        id: "sharedAddress",
+        label: t("review.sharedAddress"),
+        value: t("review.sharedAddressValue"),
+      });
+    }
+    return { id: `${step}-${String(position)}`, ...(title ? { title } : {}), items };
   };
-  const change = (step: GuestStep, name: string) => (
+  const change = (step: CheckInStep, name: string) => (
     <Link
       href={`/check-in/${step}`}
       className="type-small inline-flex min-h-11 items-center gap-1.5 text-action underline-offset-4 hover:underline"
@@ -63,6 +79,8 @@ export async function ReviewSummary({ journey, steps, countryName, formatDate }:
   const companions = stepPositions(journey, "guests").filter((position) => position > 0);
   const addressGroup = group("address", 0, (field) => !DOCUMENT_FIELDS.has(field));
   const documentGroup = group("address", 0, (field) => DOCUMENT_FIELDS.has(field));
+  const company = billingRows(journey.registration?.billing, countryName);
+  const status = reviewStatusRows(journey);
 
   return (
     <div className="flex flex-col gap-3">
@@ -96,6 +114,48 @@ export async function ReviewSummary({ journey, steps, countryName, formatDate }:
           icon="id-card"
           action={change("address", t("review.document"))}
           groups={[documentGroup]}
+        />
+      )}
+      {steps.includes("billing") && (
+        <SummaryCard
+          title={t("review.billing")}
+          icon="file-text"
+          action={change("billing", t("review.billing"))}
+          groups={[
+            {
+              id: "billing",
+              items:
+                company.length > 0
+                  ? company.map((row) => ({
+                      id: row.id,
+                      label: t(`billing.fields.${row.id as "companyName"}`),
+                      value: row.value,
+                    }))
+                  : [
+                      {
+                        id: "billingKind",
+                        label: t("billing.choiceLabel"),
+                        value: t("review.billingPrivate"),
+                      },
+                    ],
+            },
+          ]}
+        />
+      )}
+      {status.length > 0 && (
+        <SummaryCard
+          title={t("review.status")}
+          icon="circle-check"
+          groups={[
+            {
+              id: "status",
+              items: status.map((row) => ({
+                id: row.id,
+                label: t(`status.labels.${row.id}`),
+                value: t(`status.values.${row.value}` as "status.values.data.complete"),
+              })),
+            },
+          ]}
         />
       )}
     </div>

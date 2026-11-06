@@ -197,6 +197,10 @@ export {
   PERSONAL_FIELDS,
   propertyRegistrationConfigSchema,
   REGISTRATION_DISABLED,
+  responsibleAdultError,
+  SHARED_ADDRESS_FIELDS,
+  sharedAddressAllowed,
+  hasBillingStep,
   type RegistrationAssessment,
   rulesFor,
   type StepState,
@@ -376,6 +380,11 @@ export {
   type SharedAddressResult,
 } from "./registration/shared-address";
 export {
+  AT_MELDEG_TEMPLATE,
+  LEGAL_TEMPLATE_IDS,
+  legalTemplate,
+  type LegalTemplateId,
+  templateFields,
   configFromTemplate,
   DE_BMG_TEMPLATE,
   LEGAL_REGISTRATION_TEMPLATES,
@@ -437,6 +446,8 @@ export {
   type LegalRegistrationStatus,
   legalRegistrationStatus,
 } from "./check-in-status/check-in-status";
+
+export { registrationStatus } from "./check-in-status/registration-status";
 
 // Official guest registration (Meldewesen, ADR 0022, phase F1 – simulated targets only).
 export * from "./official-registration";

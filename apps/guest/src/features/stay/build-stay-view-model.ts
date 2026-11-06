@@ -295,7 +295,11 @@ function pickLocalTime(value: LocalTime): LocalTime {
 function selectCheckIn(journey: StayJourneyInput): CheckInCardView | undefined {
   const { phase, primaryAction, registration } = journey.journey;
   const steps = journey.assessment.steps;
-  const visible = CHECK_IN_STEPS.filter((step) => steps?.[step] !== "skipped");
+  // Without an assessment the optional invoice step is not shown (it exists only when the
+  // property offers company billing).
+  const visible = CHECK_IN_STEPS.filter((step) =>
+    steps ? steps[step] !== "skipped" : step !== "billing",
+  );
   if (primaryAction === "online-check-in") {
     if (registration === "not-started") {
       return { state: "not-started", href: CHECK_IN_HREF, steps: visible };

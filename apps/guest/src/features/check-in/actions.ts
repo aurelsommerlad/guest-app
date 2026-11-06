@@ -4,6 +4,7 @@ import { type Locale } from "../../i18n/routing";
 import {
   type CheckInFormState,
   handleConfirmTrip,
+  handleSaveBilling,
   handleSaveStep,
   handleSubmitCheckIn,
 } from "./action-handlers";
@@ -31,6 +32,14 @@ export async function saveStepAction(
   formData: FormData,
 ): Promise<CheckInFormState> {
   return handleSaveStep("/check-in", locale, step, formData);
+}
+
+export async function saveBillingAction(
+  locale: Locale,
+  _previous: CheckInFormState,
+  formData: FormData,
+): Promise<CheckInFormState> {
+  return handleSaveBilling("/check-in", locale, formData);
 }
 
 export async function submitCheckInAction(

@@ -140,6 +140,7 @@ export {
   purgeExpiredRegistrationData,
   type RegistrationSyncRecord,
   type ReservationKey,
+  saveRegistrationBilling,
   saveRegistrationGuests,
   seedRegistrationGuests,
   startRegistration,

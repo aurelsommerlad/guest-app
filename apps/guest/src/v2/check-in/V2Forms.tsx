@@ -5,7 +5,12 @@ import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 
 import type { CheckInFormState } from "../../features/check-in/action-handlers";
-import type { FormFieldDef, GuestFieldset } from "../../features/check-in/form-model";
+import type {
+  BillingFieldDef,
+  BillingForm,
+  FormFieldDef,
+  GuestFieldset,
+} from "../../features/check-in/form-model";
 import { V2Arrow } from "../components/glyphs";
 import { V2PhoneField, V2SelectField, V2TextField } from "./V2Fields";
 
@@ -62,6 +67,7 @@ const SPANS: Record<FormFieldDef["field"], string> = {
 };
 
 const DOCUMENT_FIELDS = new Set<FormFieldDef["field"]>(["documentType", "documentNumber"]);
+const ADDRESS_FIELDS = new Set<FormFieldDef["field"]>(["street", "postalCode", "city", "country"]);
 
 /**
  * Guests / address. Same field names, validation and saving as the current app (form-model,
@@ -249,7 +255,38 @@ export function V2GuestStepForm({
                 </summary>
                 <div className="v2-person-body">
                   {prefilled(set.prefilled)}
-                  {grid(set.position, set.fields)}
+                  {set.sharedAddress ? (
+                    <>
+                      {grid(
+                        set.position,
+                        set.fields.filter((def) => !ADDRESS_FIELDS.has(def.field)),
+                      )}
+                      <label className="v2-check v2-shared">
+                        <input
+                          type="checkbox"
+                          name={set.sharedAddress.name}
+                          value="same-as-primary"
+                          defaultChecked={
+                            values?.[set.sharedAddress.name] !== undefined
+                              ? values[set.sharedAddress.name] === "same-as-primary"
+                              : set.sharedAddress.checked
+                          }
+                        />
+                        <span className="v2-stack" style={{ gap: 4 }}>
+                          <span className="v2-body">{t("sharedAddress")}</span>
+                          <span className="v2-caption">{t("sharedAddressHint")}</span>
+                        </span>
+                      </label>
+                      <div className="v2-shared-fields">
+                        {grid(
+                          set.position,
+                          set.fields.filter((def) => ADDRESS_FIELDS.has(def.field)),
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    grid(set.position, set.fields)
+                  )}
                 </div>
               </details>
             );
@@ -257,6 +294,122 @@ export function V2GuestStepForm({
         </div>
       )}
 
+      <SubmitButton pending={pending} label={t("next")} busy={t("saving")} />
+    </form>
+  );
+}
+
+const BILLING_SPANS: Record<BillingFieldDef["name"], string> = {
+  companyName: "v2-span-6",
+  street: "v2-span-6",
+  postalCode: "v2-span-2",
+  city: "v2-span-4",
+  country: "v2-span-6",
+  vatId: "v2-span-6",
+  contactFirstName: "v2-span-3",
+  contactLastName: "v2-span-3",
+};
+
+/**
+ * Optional invoice recipient (ADR 0021): private by default, or a company with its own
+ * address – independent of the registration address. Works without JavaScript (:has).
+ */
+export function V2BillingForm({
+  action,
+  form,
+  version,
+  countries,
+}: {
+  action: Action;
+  form: BillingForm;
+  version: number;
+  countries: readonly SelectOption[];
+}) {
+  const t = useTranslations("checkIn");
+  const [state, formAction, pending] = useActionState(action, { status: "idle" });
+  const values = state.status === "idle" ? undefined : state.values;
+  const issues = state.status === "idle" ? undefined : state.billingErrors;
+  const kind = (values?.["billingKind"] ?? form.kind) === "company" ? "company" : "private";
+  const notice =
+    state.status === "invalid"
+      ? t("errors.summary")
+      : state.status === "conflict"
+        ? t("errors.conflict")
+        : state.status === "rate-limited"
+          ? t("errors.rateLimited")
+          : state.status === "unavailable"
+            ? t("errors.unavailable")
+            : undefined;
+
+  const field = (def: BillingFieldDef) => {
+    const code =
+      issues?.find(
+        (issue) =>
+          issue.field === def.name ||
+          (issue.field === "contactPerson" &&
+            (def.name === "contactFirstName" || def.name === "contactLastName")),
+      )?.code ?? def.error;
+    const error = code ? t(`errors.${code}`) : undefined;
+    const text = t(`billing.fields.${def.name}`);
+    const common = {
+      id: `billing-${def.name}`,
+      name: def.name,
+      label: def.required || def.name.startsWith("contact") ? text : `${text} (${t("optional")})`,
+      required: def.required,
+      autoComplete: def.autoComplete,
+      defaultValue: values?.[def.name] ?? def.value,
+      className: BILLING_SPANS[def.name],
+      ...(error ? { error } : {}),
+    };
+    if (def.kind === "country") {
+      return (
+        <V2SelectField key={def.name} {...common} options={countries} placeholder={t("choose")} />
+      );
+    }
+    return (
+      <V2TextField
+        key={def.name}
+        {...common}
+        maxLength={def.name === "companyName" || def.name === "street" ? 200 : 100}
+        {...(def.name === "vatId" ? { hint: t("billing.vatIdHint") } : {})}
+      />
+    );
+  };
+  const company = form.fields.filter((def) => !def.name.startsWith("contact"));
+  const contact = form.fields.filter((def) => def.name.startsWith("contact"));
+
+  return (
+    <form action={formAction} className="v2-form v2-billing" noValidate>
+      <input type="hidden" name="version" value={version} />
+      <Notice {...(notice ? { text: notice } : {})} />
+      <fieldset className="v2-choice">
+        <legend className="v2-sr-only">{t("billing.choiceLabel")}</legend>
+        {(["private", "company"] as const).map((option) => (
+          <label key={option} className="v2-check">
+            <input
+              type="radio"
+              name="billingKind"
+              value={option}
+              defaultChecked={kind === option}
+            />
+            <span className="v2-stack" style={{ gap: 4 }}>
+              <span className="v2-body">{t(`billing.${option}`)}</span>
+              <span className="v2-caption">{t(`billing.${option}Hint`)}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      <div className="v2-billing-company v2-stack" style={{ gap: 44 }}>
+        <section className="v2-stack v2-stack-4">
+          <h2 className="v2-section-head v2-eyebrow">{t("billing.companyTitle")}</h2>
+          <div className="v2-fields">{company.map(field)}</div>
+        </section>
+        <section className="v2-stack v2-stack-4">
+          <h2 className="v2-section-head v2-eyebrow">{t("billing.contactTitle")}</h2>
+          <div className="v2-fields">{contact.map(field)}</div>
+        </section>
+        <p className="v2-caption">{t("billing.note")}</p>
+      </div>
       <SubmitButton pending={pending} label={t("next")} busy={t("saving")} />
     </form>
   );

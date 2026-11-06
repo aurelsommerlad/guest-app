@@ -188,15 +188,17 @@
     "progress": "Schritt {current} von {total}",
     "steps": {
       "trip": "Deine Reise",
+      "guests": "Gäste",
       "address": "Deine Adresse",
-      "review": "Prüfen & absenden",
-      "guests": "Gäste"
+      "billing": "Rechnung",
+      "review": "Prüfen & absenden"
     },
     "intro": {
       "trip": "Ein paar Angaben vor Deiner Anreise – dann ist bei Ankunft alles erledigt.",
+      "guests": "Alle Reisenden Deiner Buchung. Was wir schon kennen, haben wir für Dich eingetragen.",
       "address": "Diese Angaben benötigen wir für die gesetzliche Gästemeldung.",
-      "review": "Bitte prüfe Deine Angaben, bevor Du den Check-in abschickst.",
-      "guests": "Alle Reisenden Deiner Buchung. Was wir schon kennen, haben wir für Dich eingetragen."
+      "billing": "Soll die Rechnung an eine Firma gehen? Sonst ist nichts weiter zu tun.",
+      "review": "Bitte prüfe Deine Angaben, bevor Du den Check-in abschickst."
     },
     "trip": {
       "arrival": "Anreise",
@@ -241,7 +243,10 @@
       "unavailable": "Das hat gerade nicht geklappt. Bitte versuche es später noch einmal.",
       "notConfirmed": "Bitte bestätige, dass Deine Angaben richtig sind.",
       "relay-email": "Bitte gib Deine persönliche E-Mail-Adresse an – Weiterleitungsadressen von Buchungsportalen können wir nicht nutzen.",
-      "not-mobile": "Bitte gib eine Mobilnummer an."
+      "not-mobile": "Bitte gib eine Mobilnummer an.",
+      "invalid-postal-code": "Diese Postleitzahl passt nicht zum gewählten Land.",
+      "responsible-under-age": "Die Person, die den Check-in verantwortet, muss am Anreisetag mindestens 18 Jahre alt sein.",
+      "invalid-format": "Bitte prüfe das Format dieser Angabe."
     },
     "next": "Speichern & weiter",
     "saving": "Wird gespeichert …",
@@ -269,9 +274,10 @@
     },
     "stepsShort": {
       "trip": "Reise",
+      "guests": "Gäste",
       "address": "Adresse",
-      "review": "Prüfen",
-      "guests": "Gäste"
+      "billing": "Rechnung",
+      "review": "Prüfen"
     },
     "stepState": {
       "complete": "erledigt",
@@ -295,7 +301,12 @@
       "companions": "Mitreisende",
       "address": "Adresse",
       "document": "Ausweis",
-      "contact": "Kontakt"
+      "contact": "Kontakt",
+      "billing": "Rechnung",
+      "billingPrivate": "Privat – an den Hauptgast",
+      "sharedAddress": "Anschrift",
+      "sharedAddressValue": "wie Hauptgast",
+      "status": "Stand Deines Check-ins"
     },
     "primaryGuest": "Hauptgast",
     "personEmpty": "Noch keine Angaben",
@@ -305,6 +316,97 @@
     "hints": {
       "email": "Für Deine Buchungsinformationen – bitte Deine persönliche Adresse.",
       "phone": "Für Rückfragen während des Aufenthalts."
+    },
+    "sharedAddress": "Gleiche Anschrift wie Hauptgast",
+    "sharedAddressHint": "Die Anschrift des Hauptgasts wird übernommen.",
+    "billing": {
+      "choiceLabel": "Rechnungsempfänger",
+      "private": "Privat – an mich",
+      "privateHint": "Die Rechnung geht an Dich als Hauptgast.",
+      "company": "An eine Firma",
+      "companyHint": "Die Firma wird Rechnungsempfänger. Deine Meldeadresse bleibt davon unberührt.",
+      "companyTitle": "Firmenanschrift",
+      "contactTitle": "Zu Händen (optional)",
+      "note": "Wir übernehmen die Firmenangaben vor Deiner Abreise in die Rechnung. Eine bereits erstellte Rechnung ändert sich dadurch nicht.",
+      "fields": {
+        "companyName": "Firmenname",
+        "street": "Straße und Hausnummer",
+        "postalCode": "Postleitzahl",
+        "city": "Ort",
+        "country": "Land",
+        "vatId": "USt-IdNr.",
+        "contactFirstName": "Vorname",
+        "contactLastName": "Nachname",
+        "contactPerson": "Zu Händen"
+      },
+      "vatIdHint": "Optional, z. B. DE123456789. Wir prüfen nur das Format."
+    },
+    "status": {
+      "labels": {
+        "data": "Angaben",
+        "age": "Alter verantwortliche Person",
+        "address": "Anschrift",
+        "email": "E-Mail",
+        "phone": "Mobilnummer",
+        "identity": "Ausweis",
+        "legal": "Gästemeldung",
+        "billing": "Rechnung"
+      },
+      "values": {
+        "data": {
+          "complete": "vollständig",
+          "incomplete": "unvollständig"
+        },
+        "age": {
+          "declared-adult": "Angabe: volljährig am Anreisetag",
+          "declared-under-age": "Angabe: unter 18 am Anreisetag",
+          "missing": "Geburtsdatum fehlt",
+          "invalid": "Geburtsdatum prüfen"
+        },
+        "address": {
+          "unverified": "angegeben, nicht geprüft",
+          "formally-valid": "formal plausibel (nicht postalisch geprüft)",
+          "postally-plausible": "postalisch plausibel"
+        },
+        "email": {
+          "not-provided": "nicht angegeben",
+          "none": "angegeben",
+          "pending": "angegeben – Bestätigung folgt",
+          "verified": "bestätigt",
+          "locked": "Bestätigung gesperrt",
+          "waived": "vom Team freigegeben",
+          "unsupported-country": "angegeben",
+          "disabled": "angegeben"
+        },
+        "phone": {
+          "none": "angegeben",
+          "pending": "angegeben – Bestätigung folgt",
+          "verified": "bestätigt",
+          "locked": "angegeben",
+          "waived": "angegeben",
+          "unsupported-country": "angegeben",
+          "disabled": "angegeben (keine SMS-Bestätigung)"
+        },
+        "identity": {
+          "not-required": "keine Vorlage nötig",
+          "pending-on-site": "bitte bei Ankunft vorzeigen",
+          "checked-by-staff": "vor Ort geprüft"
+        },
+        "legal": {
+          "not-required": "nicht erforderlich",
+          "pending": "wird nach dem Absenden übermittelt",
+          "submitted": "übermittelt",
+          "failed": "wird vom Team nachgeholt",
+          "manual": "übernimmt unser Team"
+        },
+        "billing": {
+          "private": "privat",
+          "company-pending": "Firma – wird vor Abreise übernommen",
+          "company-applied": "Firma – übernommen",
+          "company-manual": "Firma – übernimmt unser Team",
+          "company-failed": "Firma – übernimmt unser Team"
+        }
+      }
     }
   },
   "extras": {

@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { checkInAvailability } from "../../../../../../features/check-in/check-in-service";
 import { countryOptions } from "../../../../../../features/check-in/countries";
 import {
+  buildBillingForm,
   buildStepForm,
   isCheckInStep,
   LEGACY_STEPS,
@@ -17,9 +18,19 @@ import { checkInDeps } from "../../../../../../features/check-in/server";
 import { requireGuestContext } from "../../../../../../features/guest-context/server";
 import { redirect } from "../../../../../../i18n/navigation";
 import { routing } from "../../../../../../i18n/routing";
-import { confirmTripV2, saveStepV2, submitCheckInV2 } from "../../../../../../v2/check-in/actions";
+import {
+  confirmTripV2,
+  saveBillingV2,
+  saveStepV2,
+  submitCheckInV2,
+} from "../../../../../../v2/check-in/actions";
 import { V2CheckInShell } from "../../../../../../v2/check-in/V2CheckInShell";
-import { V2GuestStepForm, V2SubmitForm, V2TripForm } from "../../../../../../v2/check-in/V2Forms";
+import {
+  V2BillingForm,
+  V2GuestStepForm,
+  V2SubmitForm,
+  V2TripForm,
+} from "../../../../../../v2/check-in/V2Forms";
 import { V2Review } from "../../../../../../v2/check-in/V2Review";
 
 type Props = { params: Promise<{ locale: string; step: string }> };
@@ -148,6 +159,15 @@ export default async function V2CheckInStepPage({ params }: Props) {
           version={registration?.version ?? 0}
         />
       </div>
+    );
+  } else if (step === "billing") {
+    content = (
+      <V2BillingForm
+        action={saveBillingV2.bind(null, locale)}
+        form={buildBillingForm(journey)}
+        version={registration?.version ?? 0}
+        countries={countryOptions(locale)}
+      />
     );
   } else {
     content = (

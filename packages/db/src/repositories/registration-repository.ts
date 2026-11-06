@@ -11,6 +11,8 @@
  *   operations across tenants and return tenant ids; every follow-up call is tenant-scoped.
  */
 import {
+  assessAddress,
+  type BillingChoice,
   type GuestCountSource,
   type GuestRegistration,
   isEntityKey,
@@ -29,7 +31,13 @@ import {
 import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 
 import { type Database } from "../client";
-import { guestRegistrationGuests, guestRegistrations, guestRegistrationSyncs } from "../schema";
+import {
+  guestRegistrationBilling,
+  guestRegistrationContacts,
+  guestRegistrationGuests,
+  guestRegistrations,
+  guestRegistrationSyncs,
+} from "../schema";
 
 export type ReservationKey = {
   reservationProvider: ReservationProvider;
@@ -49,60 +57,106 @@ function assertReservationKey(key: ReservationKey): void {
 }
 
 type GuestRow = typeof guestRegistrationGuests.$inferSelect;
+type ContactRow = typeof guestRegistrationContacts.$inferSelect;
+type BillingRow = typeof guestRegistrationBilling.$inferSelect;
+
+/** Legal registration fields (guest_registration_guests) – contact data lives apart. */
+const LEGAL_COLUMNS = [
+  "firstName",
+  "lastName",
+  "birthDate",
+  "nationality",
+  "street",
+  "postalCode",
+  "city",
+  "country",
+  "documentType",
+  "documentNumber",
+] as const satisfies readonly RegistrationField[];
+
 type GuestColumns = Pick<
   GuestRow,
-  | "firstName"
-  | "lastName"
-  | "email"
-  | "phone"
-  | "birthDate"
-  | "nationality"
-  | "street"
-  | "postalCode"
-  | "city"
-  | "country"
-  | "documentType"
-  | "documentNumber"
+  (typeof LEGAL_COLUMNS)[number] | "addressSource" | "addressStatus"
 >;
 
-/** Canonical field → column. One place, so the model never leaks column names. */
-function toColumns(data: RegistrationGuestData): GuestColumns {
+/**
+ * Canonical guest → legal columns. One place, so the model never leaks column names. A
+ * fellow traveller with the main guest's address stores no own address (a reference).
+ */
+function toColumns(
+  guest: Pick<RegistrationGuest, "position" | "data" | "addressSource">,
+): GuestColumns {
+  const shared = guest.position > 0 && guest.addressSource === "same-as-primary";
+  const data = guest.data;
+  const own = (value: string | undefined) => (shared ? null : (value ?? null));
+  const address = {
+    ...(data.street ? { street: data.street } : {}),
+    ...(data.postalCode ? { postalCode: data.postalCode } : {}),
+    ...(data.city ? { city: data.city } : {}),
+    ...(data.country ? { country: data.country } : {}),
+  };
+  const hasAddress = Object.keys(address).length > 0;
   return {
     firstName: data.firstName ?? null,
     lastName: data.lastName ?? null,
-    email: data.email ?? null,
-    phone: data.phone ?? null,
     birthDate: data.birthDate ?? null,
     nationality: data.nationality ?? null,
-    street: data.street ?? null,
-    postalCode: data.postalCode ?? null,
-    city: data.city ?? null,
-    country: data.country ?? null,
+    street: own(data.street),
+    postalCode: own(data.postalCode),
+    city: own(data.city),
+    country: own(data.country),
     documentType: (data.documentType as GuestColumns["documentType"]) ?? null,
     documentNumber: data.documentNumber ?? null,
+    addressSource: shared ? "same-as-primary" : "own",
+    // Formal plausibility only – no provider is asked (ADR 0021).
+    addressStatus: shared || !hasAddress ? null : assessAddress(address).status,
   };
 }
 
-function toGuest(row: GuestRow): RegistrationGuest {
+function toGuest(row: GuestRow, contact?: ContactRow): RegistrationGuest {
   const data: RegistrationGuestData = {};
-  for (const field of REGISTRATION_FIELDS) {
-    const value = row[field satisfies RegistrationField];
+  for (const field of LEGAL_COLUMNS) {
+    const value = row[field];
     if (value !== null) data[field] = value;
   }
+  if (contact?.email) data.email = contact.email;
+  if (contact?.phone) data.phone = contact.phone;
   const prefilled = REGISTRATION_FIELDS.filter((field) => row.prefilledFields.includes(field));
   return {
     position: row.position,
     role: row.role,
     data,
     ...(prefilled.length > 0 ? { prefilledFields: prefilled } : {}),
+    ...(row.addressSource === "same-as-primary" ? { addressSource: row.addressSource } : {}),
   };
 }
 
 /** Provenance after a save: a prefilled field stays "from the PMS" only while unchanged. */
-function keptPrefilled(previous: GuestRow | undefined, data: RegistrationGuestData): string[] {
+function keptPrefilled(
+  previous: GuestRow | undefined,
+  contact: ContactRow | undefined,
+  data: RegistrationGuestData,
+): string[] {
   if (!previous) return [];
-  const before = toGuest(previous);
+  const before = toGuest(previous, contact);
   return (before.prefilledFields ?? []).filter((field) => before.data[field] === data[field]);
+}
+
+function toBilling(row: BillingRow | undefined): BillingChoice | undefined {
+  if (!row) return undefined;
+  if (row.kind === "private") return { kind: "private" };
+  return {
+    kind: "company",
+    companyName: row.companyName ?? "",
+    street: row.street ?? "",
+    ...(row.postalCode ? { postalCode: row.postalCode } : {}),
+    city: row.city ?? "",
+    country: row.country ?? "",
+    ...(row.vatId ? { vatId: row.vatId } : {}),
+    ...(row.contactFirstName && row.contactLastName
+      ? { contactPerson: { firstName: row.contactFirstName, lastName: row.contactLastName } }
+      : {}),
+  };
 }
 
 type RegistrationRow = typeof guestRegistrations.$inferSelect;
@@ -113,7 +167,15 @@ export type GuestRegistrationRecord = GuestRegistration & {
   purgedAt?: Date;
 };
 
-function toRecord(row: RegistrationRow, guests: readonly GuestRow[]): GuestRegistrationRecord {
+function toRecord(
+  row: RegistrationRow,
+  guests: readonly GuestRow[],
+  contacts: readonly ContactRow[] = [],
+  billing?: BillingRow,
+): GuestRegistrationRecord {
+  const contactAt = (position: number) =>
+    contacts.find((contact) => contact.registrationId === row.id && contact.position === position);
+  const billingChoice = toBilling(billing);
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -126,7 +188,8 @@ function toRecord(row: RegistrationRow, guests: readonly GuestRow[]): GuestRegis
     guests: guests
       .filter((guest) => guest.registrationId === row.id)
       .sort((a, b) => a.position - b.position)
-      .map(toGuest),
+      .map((guest) => toGuest(guest, contactAt(guest.position))),
+    ...(billingChoice ? { billing: billingChoice } : {}),
     arrivalAt: row.arrivalAt,
     departureAt: row.departureAt,
     ...(row.submittedAt ? { submittedAt: row.submittedAt } : {}),
@@ -153,7 +216,25 @@ async function withGuests(
       ),
     )
     .orderBy(asc(guestRegistrationGuests.position));
-  return toRecord(row, guests);
+  const contacts = await db
+    .select()
+    .from(guestRegistrationContacts)
+    .where(
+      and(
+        eq(guestRegistrationContacts.tenantId, context.tenantId),
+        eq(guestRegistrationContacts.registrationId, row.id),
+      ),
+    );
+  const [billing] = await db
+    .select()
+    .from(guestRegistrationBilling)
+    .where(
+      and(
+        eq(guestRegistrationBilling.tenantId, context.tenantId),
+        eq(guestRegistrationBilling.registrationId, row.id),
+      ),
+    );
+  return toRecord(row, guests, contacts, billing);
 }
 
 /** The registration of the reservation the current guest session belongs to. */
@@ -277,6 +358,31 @@ async function failureReason(
  * Saves travellers of a draft (whole guests per position are replaced). Rejects stale
  * versions and submitted registrations. Optionally changes a guest-sourced count.
  */
+/** Contact data (e-mail, phone) of one traveller slot – kept apart from the legal data. */
+async function upsertContact(
+  tx: Pick<Database, "insert">,
+  tenantId: string,
+  registrationId: string,
+  guest: Pick<RegistrationGuest, "position" | "data">,
+): Promise<void> {
+  const values = { email: guest.data.email ?? null, phone: guest.data.phone ?? null };
+  await tx
+    .insert(guestRegistrationContacts)
+    .values({ tenantId, registrationId, position: guest.position, ...values })
+    .onConflictDoUpdate({
+      target: [guestRegistrationContacts.registrationId, guestRegistrationContacts.position],
+      set: {
+        ...values,
+        // A changed value is no longer the confirmed one.
+        emailVerifiedAt: sql`CASE WHEN ${guestRegistrationContacts.email} IS NOT DISTINCT FROM ${values.email} THEN ${guestRegistrationContacts.emailVerifiedAt} ELSE NULL END`,
+        emailVerifiedHash: sql`CASE WHEN ${guestRegistrationContacts.email} IS NOT DISTINCT FROM ${values.email} THEN ${guestRegistrationContacts.emailVerifiedHash} ELSE NULL END`,
+        phoneVerifiedAt: sql`CASE WHEN ${guestRegistrationContacts.phone} IS NOT DISTINCT FROM ${values.phone} THEN ${guestRegistrationContacts.phoneVerifiedAt} ELSE NULL END`,
+        phoneVerifiedHash: sql`CASE WHEN ${guestRegistrationContacts.phone} IS NOT DISTINCT FROM ${values.phone} THEN ${guestRegistrationContacts.phoneVerifiedHash} ELSE NULL END`,
+        updatedAt: new Date(),
+      },
+    });
+}
+
 export async function saveRegistrationGuests(
   db: Database,
   context: TenantContext,
@@ -333,10 +439,23 @@ export async function saveRegistrationGuests(
                 eq(guestRegistrationGuests.registrationId, id),
               ),
             );
+    const existingContacts =
+      guests.length === 0
+        ? []
+        : await tx
+            .select()
+            .from(guestRegistrationContacts)
+            .where(
+              and(
+                eq(guestRegistrationContacts.tenantId, context.tenantId),
+                eq(guestRegistrationContacts.registrationId, id),
+              ),
+            );
     for (const guest of guests) {
-      const columns = toColumns(guest.data);
+      const columns = toColumns(guest);
       const prefilledFields = keptPrefilled(
         existing.find((row) => row.position === guest.position),
+        existingContacts.find((row) => row.position === guest.position),
         guest.data,
       );
       await tx
@@ -353,6 +472,7 @@ export async function saveRegistrationGuests(
           target: [guestRegistrationGuests.registrationId, guestRegistrationGuests.position],
           set: { ...columns, prefilledFields, updatedAt: new Date() },
         });
+      await upsertContact(tx, context.tenantId, id, guest);
     }
     return { ok: true, version: updated.version };
   });
@@ -389,7 +509,7 @@ export async function seedRegistrationGuests(
         registrationId: id,
         position: guest.position,
         role: guest.position === 0 ? ("primary" as const) : ("companion" as const),
-        ...toColumns(guest.data),
+        ...toColumns(guest),
         prefilledFields: [...(guest.prefilledFields ?? [])],
       }));
     if (rows.length === 0) return 0;
@@ -398,6 +518,10 @@ export async function seedRegistrationGuests(
       .values(rows)
       .onConflictDoNothing()
       .returning({ position: guestRegistrationGuests.position });
+    for (const { position } of inserted) {
+      const guest = guests.find((item) => item.position === position);
+      if (guest) await upsertContact(tx, context.tenantId, id, guest);
+    }
     return inserted.length;
   });
 }
@@ -455,6 +579,8 @@ export async function submitRegistration(
     targets: readonly RegistrationTarget[];
     now: Date;
     purgeAfter?: Date;
+    /** Contact data retention (ADR 0021); defaults to the registration's purge date. */
+    contactPurgeAfter?: Date;
   },
 ): Promise<SubmitResult> {
   assertTenantContext(context);
@@ -495,6 +621,27 @@ export async function submitRegistration(
           gte(guestRegistrationGuests.position, submitted.guestCount),
         ),
       );
+    await tx
+      .delete(guestRegistrationContacts)
+      .where(
+        and(
+          eq(guestRegistrationContacts.tenantId, context.tenantId),
+          eq(guestRegistrationContacts.registrationId, id),
+          gte(guestRegistrationContacts.position, submitted.guestCount),
+        ),
+      );
+    const contactPurgeAfter = input.contactPurgeAfter ?? input.purgeAfter;
+    if (contactPurgeAfter) {
+      await tx
+        .update(guestRegistrationContacts)
+        .set({ purgeAfter: contactPurgeAfter, updatedAt: input.now })
+        .where(
+          and(
+            eq(guestRegistrationContacts.tenantId, context.tenantId),
+            eq(guestRegistrationContacts.registrationId, id),
+          ),
+        );
+    }
     if (input.targets.length > 0) {
       await tx
         .insert(guestRegistrationSyncs)
@@ -663,8 +810,9 @@ export async function completeSyncAttempt(
 }
 
 /**
- * Retention (system operation): deletes the travellers' personal data of registrations
- * whose purge date has passed. Metadata (status, sync state) stays for traceability.
+ * Retention (system operation): deletes the travellers' personal data, contact data and
+ * billing data of registrations whose purge date has passed, and contact data whose own
+ * (shorter) purge date has passed. Metadata (status, sync state) stays for traceability.
  */
 export async function purgeExpiredRegistrationData(db: Database, now: Date): Promise<number> {
   return db.transaction(async (tx) => {
@@ -679,13 +827,99 @@ export async function purgeExpiredRegistrationData(db: Database, now: Date): Pro
         ),
       )
       .returning({ id: guestRegistrations.id, tenantId: guestRegistrations.tenantId });
+    // Operational contact data has its own (usually shorter) retention.
+    await tx
+      .delete(guestRegistrationContacts)
+      .where(
+        and(
+          isNotNull(guestRegistrationContacts.purgeAfter),
+          lte(guestRegistrationContacts.purgeAfter, now),
+        ),
+      );
     if (expired.length === 0) return 0;
-    await tx.delete(guestRegistrationGuests).where(
-      inArray(
-        guestRegistrationGuests.registrationId,
-        expired.map((row) => row.id),
-      ),
-    );
+    const ids = expired.map((row) => row.id);
+    await tx
+      .delete(guestRegistrationGuests)
+      .where(inArray(guestRegistrationGuests.registrationId, ids));
+    await tx
+      .delete(guestRegistrationContacts)
+      .where(inArray(guestRegistrationContacts.registrationId, ids));
+    await tx
+      .delete(guestRegistrationBilling)
+      .where(inArray(guestRegistrationBilling.registrationId, ids));
     return expired.length;
+  });
+}
+
+/* ------------------------------------------------------------------------------------------
+ * Billing (invoice recipient, ADR 0021)
+ * ---------------------------------------------------------------------------------------- */
+
+/**
+ * Saves the invoice recipient of a draft (optimistic concurrency like the guests). Never
+ * touches the private registration address; nothing is sent to the PMS.
+ */
+export async function saveRegistrationBilling(
+  db: Database,
+  context: TenantContext,
+  id: string,
+  expectedVersion: number,
+  billing: BillingChoice,
+): Promise<WriteResult> {
+  assertTenantContext(context);
+  if (!UUID.test(id)) return { ok: false, reason: "not-found" };
+  return db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(guestRegistrations)
+      .set({ version: sql`${guestRegistrations.version} + 1`, updatedAt: new Date() })
+      .where(
+        and(
+          eq(guestRegistrations.tenantId, context.tenantId),
+          eq(guestRegistrations.id, id),
+          eq(guestRegistrations.status, "draft"),
+          eq(guestRegistrations.version, expectedVersion),
+        ),
+      )
+      .returning({ version: guestRegistrations.version });
+    if (!updated) return failureReason(tx, context, id);
+    const values =
+      billing.kind === "private"
+        ? {
+            kind: "private" as const,
+            companyName: null,
+            street: null,
+            postalCode: null,
+            city: null,
+            country: null,
+            vatId: null,
+            contactFirstName: null,
+            contactLastName: null,
+            addressStatus: null,
+          }
+        : {
+            kind: "company" as const,
+            companyName: billing.companyName,
+            street: billing.street,
+            postalCode: billing.postalCode ?? null,
+            city: billing.city,
+            country: billing.country,
+            vatId: billing.vatId ?? null,
+            contactFirstName: billing.contactPerson?.firstName ?? null,
+            contactLastName: billing.contactPerson?.lastName ?? null,
+            addressStatus: assessAddress({
+              street: billing.street,
+              ...(billing.postalCode ? { postalCode: billing.postalCode } : {}),
+              city: billing.city,
+              country: billing.country,
+            }).status,
+          };
+    await tx
+      .insert(guestRegistrationBilling)
+      .values({ tenantId: context.tenantId, registrationId: id, ...values })
+      .onConflictDoUpdate({
+        target: [guestRegistrationBilling.tenantId, guestRegistrationBilling.registrationId],
+        set: { ...values, updatedAt: new Date() },
+      });
+    return { ok: true, version: updated.version };
   });
 }

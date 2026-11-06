@@ -1,6 +1,6 @@
 import "server-only";
 
-import { type FieldError } from "@up/core";
+import { type BillingFieldIssue, type FieldError } from "@up/core";
 import { after } from "next/server";
 
 import { redirect } from "../../i18n/navigation";
@@ -8,15 +8,18 @@ import { type Locale } from "../../i18n/routing";
 import { getGuestContext } from "../guest-context/server";
 import { runRegistrationSync } from "../registration-sync/server";
 import {
+  type AddressSource,
   checkInAvailability,
   confirmTrip,
+  effectiveStepFields,
   type GuestStep,
+  saveBillingStep,
   saveGuestStep,
-  stepFields,
+  sharedAddressOffered,
   stepPositions,
   submitCheckIn,
 } from "./check-in-service";
-import { parseStepValues } from "./form-model";
+import { BILLING_FORM_FIELDS, parseStepValues } from "./form-model";
 import { checkInDeps } from "./server";
 
 /**
@@ -33,6 +36,8 @@ export type CheckInFormState =
   | {
       status: "invalid" | "conflict" | "rate-limited" | "unavailable" | "not-confirmed";
       errors?: Record<number, FieldError[]>;
+      /** Billing step only. */
+      billingErrors?: BillingFieldIssue[];
       values?: Record<string, string>;
       version?: number;
     };
@@ -70,10 +75,26 @@ export async function handleSaveStep(
   const availability = await checkInAvailability(deps, context);
   if (!availability.available) return { status: "unavailable" };
   const journey = availability.journey;
-  const { values, echo } = parseStepValues(formData, stepPositions(journey, step), (position) =>
-    stepFields(journey, step, position),
+  const positions = stepPositions(journey, step);
+  // "Same address as the main guest" travels as "g<position>.addressSource".
+  const addressSources: Record<number, AddressSource> = {};
+  for (const position of positions) {
+    if (!sharedAddressOffered(journey, step, position)) continue;
+    const shared = formData.get(`g${String(position)}.addressSource`) === "same-as-primary";
+    addressSources[position] = shared ? "same-as-primary" : "own";
+  }
+  const { values, echo } = parseStepValues(formData, positions, (position) =>
+    effectiveStepFields(journey, step, position, addressSources[position] ?? "own"),
   );
-  const result = await saveGuestStep(deps, context, { step, version: versionOf(formData), values });
+  for (const [position, source] of Object.entries(addressSources)) {
+    echo[`g${position}.addressSource`] = source;
+  }
+  const result = await saveGuestStep(deps, context, {
+    step,
+    version: versionOf(formData),
+    values,
+    addressSources,
+  });
   if (result.ok || result.reason === "submitted") return redirect({ href: base, locale });
   if (result.reason === "invalid") {
     return {
@@ -84,6 +105,29 @@ export async function handleSaveStep(
     };
   }
   return { status: result.reason, values: echo };
+}
+
+export async function handleSaveBilling(
+  base: CheckInBase,
+  locale: Locale,
+  formData: FormData,
+): Promise<CheckInFormState> {
+  const context = await currentContext();
+  if (!context) return redirect({ href: "/login", locale });
+  const values: Record<string, string> = {};
+  for (const name of BILLING_FORM_FIELDS) {
+    const raw = formData.get(name);
+    if (typeof raw === "string") values[name] = raw.slice(0, 400);
+  }
+  const result = await saveBillingStep(checkInDeps(), context, {
+    version: versionOf(formData),
+    values,
+  });
+  if (result.ok || result.reason === "submitted") return redirect({ href: base, locale });
+  if (result.reason === "invalid") {
+    return { status: "invalid", billingErrors: result.issues, values };
+  }
+  return { status: result.reason, values };
 }
 
 export async function handleSubmitCheckIn(

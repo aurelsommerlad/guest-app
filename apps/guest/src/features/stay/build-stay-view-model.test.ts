@@ -199,6 +199,7 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
     trip: "complete",
     guests: "complete",
     address: "incomplete",
+    billing: "skipped",
     review: "incomplete",
   } as const;
   const before = new Date("2026-08-20T09:00:00+02:00");
@@ -251,6 +252,7 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
       trip: "complete",
       guests: "complete",
       address: "complete",
+      billing: "skipped",
       review: "complete",
     } as const;
     const card = buildStayViewModel(source, "de", before, {
@@ -266,6 +268,7 @@ describe("STAY redesign view model (check-in card, summary, preview)", () => {
       trip: "complete",
       guests: "complete",
       address: "complete",
+      billing: "skipped",
       review: "complete",
     } as const;
     const completed = (extra: Partial<StayJourneyInput>) =>
@@ -320,12 +323,14 @@ describe("STAY tiles (original two-tile design)", () => {
     trip: "complete",
     guests: "complete",
     address: "complete",
+    billing: "skipped",
     review: "incomplete",
   } as const;
   const done = {
     trip: "complete",
     guests: "complete",
     address: "complete",
+    billing: "skipped",
     review: "complete",
   } as const;
 

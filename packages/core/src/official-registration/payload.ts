@@ -13,7 +13,7 @@ import {
   type RegistrationGuest,
   type RegistrationGuestData,
 } from "../registration/registration-model";
-import { ageOn, isValidIsoDate } from "../registration/registration-rules";
+import { ageOn, isValidIsoDate } from "../registration/dates";
 import { type StayDates } from "./model";
 
 export type OfficialGuest = {

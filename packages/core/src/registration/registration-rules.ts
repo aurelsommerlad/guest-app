@@ -3,6 +3,18 @@ import { z } from "zod";
 import { normalizeEmail, usableContactEmail } from "../contact/email";
 import { normalizePhone } from "../contact/phone";
 import { isCountryCode } from "./countries";
+import { checkPostalCode } from "../address/postal-codes";
+import { checkInValidationPolicySchema } from "../check-in-status/validation-policy";
+import { ageOn, isValidIsoDate } from "./dates";
+import {
+  LEGAL_TEMPLATE_IDS,
+  legalRequiredFields,
+  legalTemplate,
+  templateFields,
+} from "./legal-templates";
+import { responsibleAdultStatus } from "./responsible-adult";
+
+export { ageOn, isValidIsoDate } from "./dates";
 import {
   ADDRESS_FIELDS,
   CHECK_IN_STEPS,
@@ -17,6 +29,7 @@ import {
   REGISTRATION_TARGETS,
   ROLE_MANDATORY_FIELDS,
   type RegistrationField,
+  type RegistrationGuest,
   type RegistrationGuestData,
 } from "./registration-model";
 
@@ -66,6 +79,9 @@ export const propertyRegistrationConfigSchema = z.strictObject({
   guestCardRelevant: z.boolean(),
   providerSettings: z.partialRecord(z.enum(REGISTRATION_TARGETS), providerSettingsSchema),
   retentionDaysAfterDeparture: z.number().int().min(1).max(3650).optional(),
+  contactRetentionDaysAfterDeparture: z.number().int().min(1).max(3650).optional(),
+  legalTemplate: z.enum(LEGAL_TEMPLATE_IDS).optional(),
+  validation: checkInValidationPolicySchema.optional(),
 });
 
 /** Online check-in switched off – what a property without configuration gets. */
@@ -95,15 +111,6 @@ function plainText(max: number) {
         .max(max)
         .regex(/^[^\p{Cc}<>]+$/u),
     );
-}
-
-const isoDate = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-export function isValidIsoDate(value: string): boolean {
-  const match = isoDate.exec(value);
-  if (!match) return false;
-  const date = new Date(`${value}T00:00:00Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
 }
 
 const country = z
@@ -142,8 +149,18 @@ const fieldSchemas: Record<RegistrationField, z.ZodType<string, string>> = {
 
 export type FieldError = {
   field: RegistrationField;
-  /** relay-email: a channel relay such as …@guest.booking.com; not-mobile: e.g. a landline. */
-  code: "required" | "invalid" | "relay-email" | "not-mobile";
+  /**
+   * relay-email: a channel relay such as …@guest.booking.com; not-mobile: e.g. a landline;
+   * invalid-postal-code: does not fit the country's format; responsible-under-age: the main
+   * guest is younger than the property's minimum age on the arrival day (ADR 0021).
+   */
+  code:
+    | "required"
+    | "invalid"
+    | "relay-email"
+    | "not-mobile"
+    | "invalid-postal-code"
+    | "responsible-under-age";
 };
 
 function unique(fields: readonly RegistrationField[]): RegistrationField[] {
@@ -162,14 +179,9 @@ export function fieldsForRole(
   return unique([
     ...ROLE_MANDATORY_FIELDS[role],
     ...sets.flatMap((rules) => [...rules.required, ...rules.optional]),
+    ...(config.legalTemplate ? templateFields(legalTemplate(config.legalTemplate), role) : []),
+    ...(role === "primary" && config.validation ? (["birthDate"] as const) : []),
   ]);
-}
-
-/** Full years between a birth date and a local date (both YYYY-MM-DD). */
-export function ageOn(birthDate: string, onDate: string): number {
-  const [by, bm, bd] = birthDate.split("-").map(Number) as [number, number, number];
-  const [y, m, d] = onDate.split("-").map(Number) as [number, number, number];
-  return y - by - (m < bm || (m === bm && d < bd) ? 1 : 0);
 }
 
 /** The rule set that applies to one guest (children rules depend on the birth date). */
@@ -179,7 +191,30 @@ export function rulesFor(
   data: RegistrationGuestData,
   arrivalDate: string,
 ): GuestFieldRules {
-  return withMandatory(baseRulesFor(config, role, data, arrivalDate), role);
+  const rules = withMandatory(baseRulesFor(config, role, data, arrivalDate), role);
+  const extra: RegistrationField[] = [];
+  if (config.legalTemplate) {
+    extra.push(
+      ...legalRequiredFields(
+        legalTemplate(config.legalTemplate),
+        { position: role === "primary" ? 0 : 1, data },
+        arrivalDate,
+      ),
+    );
+  }
+  // The responsible person's age is checked on the server – the birth date is needed for it.
+  if (role === "primary" && config.validation) extra.push("birthDate");
+  let required = unique([...rules.required, ...extra]);
+  // Countries without postal codes (e.g. HK, AE): the postal code is not required there.
+  if (data.country && checkPostalCode(data.country, undefined) === "ok") {
+    required = required.filter((field) => field !== "postalCode");
+  }
+  return {
+    required,
+    optional: unique([...rules.optional, ...rules.required, ...extra]).filter(
+      (field) => !required.includes(field),
+    ),
+  };
 }
 
 /** Contact data UNIQUE PLACES needs for every stay is always required (ROLE_MANDATORY_FIELDS). */
@@ -245,7 +280,48 @@ export function normalizeGuestInput(
     }
     data[field] = parsed.data;
   }
+  // The postal code must fit the country (shape only – ADR 0021).
+  if (data.postalCode !== undefined && data.country !== undefined) {
+    const postal = checkPostalCode(data.country, data.postalCode);
+    if (postal === "invalid-format") {
+      errors.push({ field: "postalCode", code: "invalid-postal-code" });
+      delete data.postalCode;
+    }
+  }
   return { data, errors };
+}
+
+/**
+ * The main guest's age on the arrival day against the property's minimum age (server-side,
+ * a declaration – never "verified"). Undefined when the property sets no minimum age.
+ */
+export function responsibleAdultError(
+  config: PropertyRegistrationConfig,
+  data: RegistrationGuestData,
+  arrivalDate: string,
+): FieldError | undefined {
+  if (!config.validation) return undefined;
+  const status = responsibleAdultStatus(
+    data.birthDate,
+    arrivalDate,
+    config.validation.responsibleAdultMinAge,
+  );
+  if (status === "declared-under-age") return { field: "birthDate", code: "responsible-under-age" };
+  if (status === "invalid") return { field: "birthDate", code: "invalid" };
+  return undefined;
+}
+
+/** Address fields a fellow traveller takes over from the main guest ("Adresse wie Hauptgast"). */
+export const SHARED_ADDRESS_FIELDS: readonly RegistrationField[] = [
+  "street",
+  "postalCode",
+  "city",
+  "country",
+];
+
+/** Whether fellow travellers may use the main guest's address. */
+export function sharedAddressAllowed(config: PropertyRegistrationConfig): boolean {
+  return config.validation?.sharedAddress === "allowed";
 }
 
 /** Required fields that are missing or invalid for this guest. */
@@ -299,13 +375,23 @@ export function guestMissingFields(
   position: number,
   data: RegistrationGuestData,
   arrivalDate: string,
+  addressSource: RegistrationGuest["addressSource"] = "own",
 ): RegistrationField[] {
   const role = position === 0 ? "primary" : "companion";
+  const sharesAddress =
+    position > 0 && addressSource === "same-as-primary" && sharedAddressAllowed(config);
   return missingFields(
     rulesFor(config, role, data, arrivalDate),
     data,
-    guestStepFields(config, position),
+    guestStepFields(config, position).filter(
+      (field) => !sharesAddress || !SHARED_ADDRESS_FIELDS.includes(field),
+    ),
   );
+}
+
+/** Whether the company billing step is part of this property's check-in. */
+export function hasBillingStep(config: PropertyRegistrationConfig): boolean {
+  return config.validation?.companyBilling === true;
 }
 
 export function hasAddressStep(config: PropertyRegistrationConfig): boolean {
@@ -314,18 +400,25 @@ export function hasAddressStep(config: PropertyRegistrationConfig): boolean {
 
 export function assessRegistration(
   config: PropertyRegistrationConfig,
-  registration: Pick<GuestRegistration, "status" | "guestCount" | "guests"> | undefined,
+  registration: Pick<GuestRegistration, "status" | "guestCount" | "guests" | "billing"> | undefined,
   arrivalDate: string,
 ): RegistrationAssessment {
   const guests = registration?.guests ?? [];
-  const dataAt = (position: number) =>
-    guests.find((guest) => guest.position === position)?.data ?? {};
+  const guestAt = (position: number) => guests.find((guest) => guest.position === position);
+  const dataAt = (position: number) => guestAt(position)?.data ?? {};
   const primary = dataAt(0);
   const guestsComplete = () => {
+    // The responsible person must be of age on the arrival day (declaration, server-side).
+    if (responsibleAdultError(config, primary, arrivalDate)) return false;
     for (let position = 0; position < (registration?.guestCount ?? 1); position++) {
-      if (guestMissingFields(config, position, dataAt(position), arrivalDate).length > 0) {
-        return false;
-      }
+      const missing = guestMissingFields(
+        config,
+        position,
+        dataAt(position),
+        arrivalDate,
+        guestAt(position)?.addressSource,
+      );
+      if (missing.length > 0) return false;
     }
     return true;
   };
@@ -343,6 +436,7 @@ export function assessRegistration(
               ADDRESS_FIELDS,
             ).length === 0,
         ),
+    billing: !hasBillingStep(config) ? "skipped" : state(registration?.billing !== undefined),
     review: state(registration?.status === "submitted"),
   };
   const open = CHECK_IN_STEPS.filter((step) => steps[step] === "incomplete");

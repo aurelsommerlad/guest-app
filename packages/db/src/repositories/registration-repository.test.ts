@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { type Database } from "../client";
 import {
+  guestRegistrationContacts,
   guestRegistrationGuests,
   guestRegistrations,
   guestRegistrationSyncs,
@@ -363,17 +364,20 @@ describe("prefill, contact data and occupancy", () => {
       position: 0,
       role: "primary" as const,
     };
+    const contact = { tenantId: row.tenantId, registrationId: row.registrationId, position: 0 };
     await expectConstraintViolation(
-      db.insert(guestRegistrationGuests).values({ ...row, email: "abc@guest.booking.com" }),
-      "guest_registration_guests_email_valid",
+      db.insert(guestRegistrationContacts).values({ ...contact, email: "abc@guest.booking.com" }),
+      "guest_registration_contacts_email_valid",
     );
     await expectConstraintViolation(
-      db.insert(guestRegistrationGuests).values({ ...row, email: "abc@eu.guest.booking.com" }),
-      "guest_registration_guests_email_valid",
+      db
+        .insert(guestRegistrationContacts)
+        .values({ ...contact, email: "abc@eu.guest.booking.com" }),
+      "guest_registration_contacts_email_valid",
     );
     await expectConstraintViolation(
-      db.insert(guestRegistrationGuests).values({ ...row, phone: "0170 1234567" }),
-      "guest_registration_guests_phone_e164",
+      db.insert(guestRegistrationContacts).values({ ...contact, phone: "0170 1234567" }),
+      "guest_registration_contacts_phone_e164",
     );
     await expectConstraintViolation(
       db.insert(guestRegistrationGuests).values({ ...row, prefilledFields: ["passport"] }),

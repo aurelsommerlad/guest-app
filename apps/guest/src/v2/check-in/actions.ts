@@ -3,6 +3,7 @@
 import {
   type CheckInFormState,
   handleConfirmTrip,
+  handleSaveBilling,
   handleSaveStep,
   handleSubmitCheckIn,
 } from "../../features/check-in/action-handlers";
@@ -28,6 +29,14 @@ export async function saveStepV2(
   formData: FormData,
 ): Promise<CheckInFormState> {
   return handleSaveStep("/v2/check-in", locale, step, formData);
+}
+
+export async function saveBillingV2(
+  locale: Locale,
+  _previous: CheckInFormState,
+  formData: FormData,
+): Promise<CheckInFormState> {
+  return handleSaveBilling("/v2/check-in", locale, formData);
 }
 
 export async function submitCheckInV2(

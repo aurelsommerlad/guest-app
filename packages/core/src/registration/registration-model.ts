@@ -10,6 +10,9 @@
  * mobile number for every traveller. No free text. Identity documents only where a
  * property requires them.
  */
+import { type BillingChoice } from "../billing/billing-address";
+import { type CheckInValidationPolicy } from "../check-in-status/validation-policy";
+import { type LegalTemplateId } from "./legal-templates";
 
 /** Every field a guest can be asked for. Which ones are used is property configuration. */
 export const REGISTRATION_FIELDS = [
@@ -72,6 +75,11 @@ export type RegistrationGuest = {
    * PMS data vs. guest input). Missing = nothing prefilled.
    */
   prefilledFields?: readonly RegistrationField[];
+  /**
+   * Fellow travellers only: the address is the main guest's (stored as a reference, not a
+   * copy – ADR 0021). Missing = own address.
+   */
+  addressSource?: "own" | "same-as-primary";
 };
 
 export const REGISTRATION_STATUSES = ["draft", "submitted"] as const;
@@ -98,6 +106,8 @@ export type GuestRegistration = {
   guestCountChangedAt?: Date;
   /** Personal data may be removed after this instant (retention, ADR 0016). */
   purgeAfter?: Date;
+  /** Invoice recipient (company billing, ADR 0021) – only when the guest chose one. */
+  billing?: BillingChoice;
   /** Optimistic concurrency: incremented on every write. */
   version: number;
 };
@@ -134,8 +144,20 @@ export type PropertyRegistrationConfig = {
   providerSettings: Partial<Record<RegistrationTarget, Readonly<Record<string, string>>>>;
   /** Days after departure until personal data is purged; undefined = not configured yet. */
   retentionDaysAfterDeparture?: number;
+  /**
+   * Days after departure until the operational contact data (e-mail, phone) is purged –
+   * separate from the legal registration data (ADR 0021). Undefined = with the registration.
+   */
+  contactRetentionDaysAfterDeparture?: number;
+  /** Country registration template (DE/AT) whose rules are added per traveller (ADR 0021). */
+  legalTemplate?: LegalTemplateId;
+  /** Validation policy (age, shared address, company billing, verification). Undefined = off. */
+  validation?: CheckInValidationPolicy;
 };
 
-/** trip → guests (main guest + fellow travellers) → address (main guest's registration data) → review */
-export const CHECK_IN_STEPS = ["trip", "guests", "address", "review"] as const;
+/**
+ * trip → guests (main guest + fellow travellers) → address (main guest's registration data)
+ * → billing (invoice recipient, only with company billing enabled) → review
+ */
+export const CHECK_IN_STEPS = ["trip", "guests", "address", "billing", "review"] as const;
 export type CheckInStep = (typeof CHECK_IN_STEPS)[number];

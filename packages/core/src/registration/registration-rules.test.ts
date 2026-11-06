@@ -187,6 +187,7 @@ describe("registration progress", () => {
       trip: "complete",
       guests: "complete",
       address: "incomplete",
+      billing: "skipped",
       review: "incomplete",
     });
     expect(result.nextStep).toBe("address");

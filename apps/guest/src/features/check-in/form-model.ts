@@ -3,6 +3,7 @@
  * Field names are "g<position>.<field>", e.g. "g0.firstName", "g2.birthDate".
  */
 import {
+  type BillingFieldIssue,
   CHECK_IN_STEPS,
   type CheckInStep,
   type FieldError,
@@ -10,10 +11,19 @@ import {
   type RegistrationField,
   ROLE_MANDATORY_FIELDS,
   rulesFor,
+  SHARED_ADDRESS_FIELDS,
 } from "@up/core";
 import { splitPhone } from "@up/core/phone";
 
-import { type GuestStep, stepFields, stepPositions } from "./check-in-service";
+import {
+  type AddressSource,
+  effectiveStepFields,
+  type GuestStep,
+  sharedAddressOffered,
+  stepFields,
+  stepPositions,
+  storedAddressSource,
+} from "./check-in-service";
 import { type StayJourney } from "../journey/stay-journey";
 
 export type FieldKind = "text" | "email" | "phone" | "date" | "country" | "document-type";
@@ -41,7 +51,17 @@ export type GuestFieldset = {
   missing: RegistrationField[];
   /** Some values came from the booking (PMS) and were not changed yet. */
   prefilled: boolean;
+  /**
+   * Fellow travellers only, where the property allows it: "same address as the main guest".
+   * `checked` → the address fields are hidden and ignored on the server.
+   */
+  sharedAddress?: { name: string; checked: boolean };
 };
+
+/** Address fields that a shared address replaces (for grouping them in the form). */
+export const SHARED_ADDRESS_FORM_FIELDS: ReadonlySet<RegistrationField> = new Set(
+  SHARED_ADDRESS_FIELDS,
+);
 
 const KINDS: Partial<Record<RegistrationField, FieldKind>> = {
   email: "email",
@@ -90,6 +110,15 @@ export function buildStepForm(
     const stored =
       journey.registration?.guests.find((guest) => guest.position === position)?.data ?? {};
     const fields = stepFields(journey, step, position);
+    const offered = sharedAddressOffered(journey, step, position);
+    const sharedName = `g${String(position)}.addressSource`;
+    const source: AddressSource = !offered
+      ? "own"
+      : feedback?.values?.[sharedName] !== undefined
+        ? feedback.values[sharedName] === "same-as-primary"
+          ? "same-as-primary"
+          : "own"
+        : storedAddressSource(journey, position);
     const rules = rulesFor(
       journey.settings.registration,
       position === 0 ? "primary" : "companion",
@@ -97,7 +126,11 @@ export function buildStepForm(
       journey.arrivalDate,
     );
     const displayName = [stored.firstName, stored.lastName].filter(Boolean).join(" ");
-    const missing = missingFields(rules, stored, fields);
+    const missing = missingFields(
+      rules,
+      stored,
+      effectiveStepFields(journey, step, position, storedAddressSource(journey, position)),
+    );
     const guest = journey.registration?.guests.find((item) => item.position === position);
     // Stored E.164 → calling code + national number; otherwise the guest's own country.
     const phone = stored.phone ? splitPhone(stored.phone) : undefined;
@@ -112,6 +145,9 @@ export function buildStepForm(
       missing,
       prefilled: (guest?.prefilledFields ?? []).some((field) => fields.includes(field)),
       ...(displayName ? { displayName } : {}),
+      ...(offered
+        ? { sharedAddress: { name: sharedName, checked: source === "same-as-primary" } }
+        : {}),
       fields: fields.map((field) => {
         const name = fieldName(position, field);
         const error = feedback?.errors?.[position]?.find((item) => item.field === field)?.code;
@@ -177,3 +213,87 @@ export const LEGACY_STEPS: Readonly<Record<string, CheckInStep>> = {
   primary: "guests",
   companions: "guests",
 };
+
+/** Names of the billing form's inputs (also the keys `normalizeBillingInput` reads). */
+export const BILLING_FORM_FIELDS = [
+  "billingKind",
+  "companyName",
+  "street",
+  "postalCode",
+  "city",
+  "country",
+  "vatId",
+  "contactFirstName",
+  "contactLastName",
+] as const;
+export type BillingFormField = Exclude<(typeof BILLING_FORM_FIELDS)[number], "billingKind">;
+
+export type BillingFieldDef = {
+  name: BillingFormField;
+  kind: "text" | "country";
+  required: boolean;
+  autoComplete: string;
+  value: string;
+  error?: BillingFieldIssue["code"];
+};
+
+export type BillingForm = { kind: "private" | "company"; fields: BillingFieldDef[] };
+
+const BILLING_REQUIRED = new Set<BillingFormField>(["companyName", "street", "city", "country"]);
+const BILLING_AUTOCOMPLETE: Record<BillingFormField, string> = {
+  companyName: "organization",
+  street: "billing address-line1",
+  postalCode: "billing postal-code",
+  city: "billing address-level2",
+  country: "billing country",
+  vatId: "off",
+  contactFirstName: "off",
+  contactLastName: "off",
+};
+
+/**
+ * The optional company invoice recipient (ADR 0021): separate from the registration address,
+ * prefilled from what is stored – never from the main guest's private address.
+ */
+export function buildBillingForm(
+  journey: StayJourney,
+  feedback?: { errors?: readonly BillingFieldIssue[]; values?: Readonly<Record<string, string>> },
+): BillingForm {
+  const billing = journey.registration?.billing;
+  const company = billing?.kind === "company" ? billing : undefined;
+  const stored: Record<BillingFormField, string | undefined> = {
+    companyName: company?.companyName,
+    street: company?.street,
+    postalCode: company?.postalCode,
+    city: company?.city,
+    country: company?.country,
+    vatId: company?.vatId,
+    contactFirstName: company?.contactPerson?.firstName,
+    contactLastName: company?.contactPerson?.lastName,
+  };
+  const errorOf = (name: BillingFormField) =>
+    feedback?.errors?.find(
+      (issue) =>
+        issue.field === name ||
+        (issue.field === "contactPerson" &&
+          (name === "contactFirstName" || name === "contactLastName")),
+    )?.code;
+  const kind =
+    (feedback?.values?.["billingKind"] ?? billing?.kind) === "company" ? "company" : "private";
+  return {
+    kind,
+    fields: BILLING_FORM_FIELDS.filter(
+      (name): name is BillingFormField => name !== "billingKind",
+    ).map((name) => {
+      const error = errorOf(name);
+      return {
+        name,
+        kind: name === "country" ? "country" : "text",
+        required: BILLING_REQUIRED.has(name),
+        autoComplete: BILLING_AUTOCOMPLETE[name],
+        value: feedback?.values?.[name] ?? stored[name] ?? "",
+        ...(error ? { error } : {}),
+      };
+    }),
+  };
+}

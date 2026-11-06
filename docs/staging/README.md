@@ -62,5 +62,25 @@ Erwartet am Ende (L): `applied_migrations` = 11, `test_property_mapped` = true,
   ist ohnehin nur mit `environment = 'simulated'` möglich (CHECK).
 - Angewendet am 2026-11-05. Danach `applied_migrations` = 15.
 
+## Check-in-Validierung und Rechnungsadresse (ADR 0021, C2)
+
+| Schritt | Skript                 | Wann                                                  |
+| ------- | ---------------------- | ----------------------------------------------------- |
+| 1       | `Q-migration-0015.sql` | nur wenn `applied_migrations` = 15 (Voraussetzung: P) |
+
+- **Q** trennt die betrieblichen Kontaktdaten (E-Mail, Telefon, Bestätigungszeitpunkte) von den
+  Meldedaten und legt dafür `guest_registration_contacts` an. Diese Tabelle hat eine eigene
+  Löschfrist. Bestehende E-Mail- und Telefonwerte werden vor dem Entfernen der Spalten
+  übernommen; sie erhalten dabei die Löschfrist des Check-ins.
+- Neu sind außerdem:
+  - `guest_registration_billing` für eine optionale Firmen-Rechnungsadresse, unabhängig von der
+    Meldeadresse;
+  - in `guest_registration_guests` die Spalten `address_source` für die gemeinsame Anschrift von
+    Mitreisenden (`same-as-primary`, ohne Kopie der Adresse) und `address_status`
+    (formale Prüfung).
+- Für beide neuen Tabellen sind RLS aktiv und die Data-API gesperrt.
+- Angewendet am 2026-11-06. Danach `applied_migrations` = 16; 1 Kontakt-Datensatz wurde
+  übernommen.
+
 Neu erzeugen (nach neuen Migrationen) mit denselben Regeln: Inhalt der Migrationsdateien
 unverändert, Hash = SHA-256 der Datei, `created_at` = `when` aus `meta/_journal.json`.
