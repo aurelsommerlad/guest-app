@@ -100,6 +100,24 @@ export { SeedConflictError, type SeedResult, seedTenant } from "./seed/seed-tena
 export { guideFixtures, seedGuideFixtures } from "./seed/guide-fixtures";
 export { exploreFixtures, seedExploreFixtures } from "./seed/explore-fixtures";
 export {
+  OFFER_FIXTURE_IDS,
+  OFFER_FIXTURE_PROPERTY,
+  offerFixtureInputs,
+  partnerFixtures,
+  seedOfferFixtures,
+} from "./seed/offer-fixtures";
+export {
+  findPropertyOfferBySlug,
+  listOfferRequestsForReservation,
+  listPropertyOffers,
+  type OfferMetricsRow,
+  type OfferRequestRecord,
+  recordOfferMetrics,
+  summarizeOfferMetrics,
+  upsertOffer,
+  upsertPartner,
+} from "./repositories/offer-repository";
+export {
   SAMPLE_KEYBOX_CODE,
   sampleAccessConfig,
   sampleRegistrationConfig,

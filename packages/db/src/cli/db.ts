@@ -12,6 +12,7 @@
  *                                  [--with-preview-fixtures]   (never in production)
  *                                  [--with-guide-fixtures]     (local only)
  *                                  [--with-explore-fixtures]   (local only)
+ *                                  [--with-offer-fixtures]     (local only; upselling demo of TEST)
  *                                  [--with-journey-fixtures]   (local only; sample key box
  *                                                               code only if ACCESS_CODE_KEY is set)
  *
@@ -31,6 +32,7 @@ import { MIGRATIONS_FOLDER } from "../migrations-folder";
 import { seedExploreFixtures } from "../seed/explore-fixtures";
 import { seedGuideFixtures } from "../seed/guide-fixtures";
 import { seedJourneyFixtures } from "../seed/journey-fixtures";
+import { seedOfferFixtures } from "../seed/offer-fixtures";
 import { previewFixturesSeed } from "../seed/preview-fixtures";
 import { seedTenant } from "../seed/seed-tenant";
 import { uniquePlacesSeed } from "../seed/unique-places";
@@ -71,6 +73,11 @@ async function main(): Promise<void> {
   const withExploreFixtures = args.includes("--with-explore-fixtures");
   if (withExploreFixtures && options.target !== "local") {
     throw new CliUsageError("--with-explore-fixtures is only allowed with --target local");
+  }
+  // Upselling demo offers with placeholder photos: local databases only (staging: script U).
+  const withOfferFixtures = args.includes("--with-offer-fixtures");
+  if (withOfferFixtures && options.target !== "local") {
+    throw new CliUsageError("--with-offer-fixtures is only allowed with --target local");
   }
   // Sample online check-in settings and key box code: local databases only.
   const withJourneyFixtures = args.includes("--with-journey-fixtures");
@@ -131,6 +138,14 @@ async function main(): Promise<void> {
       if (withGuideFixtures) {
         const guide = await seedGuideFixtures(db, { tenantId: uniquePlacesSeed.tenant.id });
         console.log("✓ GUIDE development fixtures (local only) – topics written:", guide.written);
+      }
+      if (withOfferFixtures) {
+        const count = await seedOfferFixtures(
+          db,
+          { tenantId: uniquePlacesSeed.tenant.id },
+          { withImages: true },
+        );
+        console.log("✓ Upselling demo offers for TEST (local only) – offers written:", count);
       }
       if (withExploreFixtures) {
         const explore = await seedExploreFixtures(db, { tenantId: uniquePlacesSeed.tenant.id });

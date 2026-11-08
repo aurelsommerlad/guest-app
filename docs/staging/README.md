@@ -105,3 +105,24 @@ unverändert, Hash = SHA-256 der Datei, `created_at` = `when` aus `meta/_journal
   verfügbar“ und blockiert nicht. Ein echter Versand über Resend oder seven.io braucht eine
   ausdrückliche Freigabe.
 - Angewendet am 2026-11-06. Danach `applied_migrations` = 17.
+
+## Upselling „Services & Erlebnisse“ (Konzept Phase 1)
+
+| Schritt | Skript                           | Wann                                                  |
+| ------- | -------------------------------- | ----------------------------------------------------- |
+| 1       | `T-migration-0017.sql`           | nur wenn `applied_migrations` = 17 (Voraussetzung: S) |
+| 2       | `U-upselling-beispiele-test.sql` | danach; nur für das Testobjekt `test-run` (Skript N)  |
+
+- **T** legt fünf Tabellen an: `partners`, `offers`, `offer_properties`, `offer_metrics_daily`
+  (Tagessummen ohne Personenbezug) und `offer_requests` (für Phase 2 vorbereitet). RLS ist
+  aktiv, die Data-API gesperrt. Das Skript gleicht vorher die ID-Sequenz an.
+- **U** enthält nur Beispielinhalte für TEST, ohne Bilder:
+  - zwei fiktive Partner mit example.org-Adressen;
+  - fünf eigene Services mit Verweis auf die Apaleo-Services des Testobjekts (`TEST-ECI`,
+    `TEST-LCO`, `TEST-HUND`, `TEST-PKW`, `TEST-EXTRPERSON`);
+  - drei Partnerangebote.
+
+  Das Skript fügt nur ein und überschreibt nichts. Bilder kommen über die STAY-Bildverwaltung;
+  lokal gibt es dafür `pnpm db:seed --with-offer-fixtures`.
+
+- Angewendet am 2026-11-08. Danach `applied_migrations` = 18, 8 Angebote für `test-run`.

@@ -12,6 +12,14 @@
 import {
   ADDRESS_STATUSES,
   BILLING_KINDS,
+  type CancellationPolicy,
+  type CommissionModel,
+  FULFILLMENT_TYPES,
+  OFFER_CATEGORIES,
+  OFFER_KINDS,
+  OFFER_PLACEMENTS,
+  type OfferAvailability,
+  type OfferPrice,
   CONTACT_VERIFICATION_EVENTS,
   OTP_CHALLENGE_STATUSES,
   OTP_CHANNELS,
@@ -58,6 +66,7 @@ import {
 import { sql, type SQL } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  bigint,
   boolean,
   check,
   date,
@@ -505,6 +514,279 @@ export const explorePlaceProperties = pgTable(
       foreignColumns: [properties.tenantId, properties.id],
     }).onDelete("restrict"),
     index("explore_place_properties_property_idx").on(t.tenantId, t.propertyId),
+  ],
+).enableRLS();
+
+/* ------------------------------------------------------------------------------------------
+ * Upselling: "Services & Erlebnisse" (concept docs/concepts/upselling-plattform.md, Phase 1)
+ * ---------------------------------------------------------------------------------------- */
+
+const commissionShape = (column: AnyPgColumn) =>
+  sql`coalesce((${column}->>'type' = 'none')
+    OR (${column}->>'type' = 'percent' AND (${column}->>'basisPoints')::int BETWEEN 1 AND 5000)
+    OR (${column}->>'type' = 'fixed' AND (${column}->>'amountCents')::int > 0
+      AND ${column}->>'currency' ~ '^[A-Z]{3}$'), false)`;
+
+/**
+ * Local partners (restaurants, activities …). Optionally the EXPLORE place they are, so
+ * address and map are maintained once. Business contacts only – no guest data.
+ */
+export const partners = pgTable(
+  "partners",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+    status: text("status", { enum: ["active", "inactive"] })
+      .notNull()
+      .default("active"),
+    explorePlaceId: uuid("explore_place_id"),
+    websiteUrl: text("website_url"),
+    /** Default commission of the partner's offers. */
+    commission: jsonb("commission").$type<CommissionModel>().notNull().default({ type: "none" }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("partners_tenant_id_id_key").on(t.tenantId, t.id),
+    foreignKey({
+      name: "partners_explore_place_fkey",
+      columns: [t.tenantId, t.explorePlaceId],
+      foreignColumns: [explorePlaces.tenantId, explorePlaces.id],
+    }).onDelete("set null"),
+    check("partners_status_valid", sql`${t.status} IN ('active', 'inactive')`),
+    check(
+      "partners_name_length",
+      sql`char_length(${t.name}) BETWEEN 2 AND 120 AND ${t.name} !~ '[<>]'`,
+    ),
+    check("partners_website_url_valid", isHttpUrl(t.websiteUrl)),
+    check("partners_commission_valid", commissionShape(t.commission)),
+  ],
+).enableRLS();
+
+/**
+ * One catalog for own services and partner offers. Own services keep only the editorial
+ * presentation here – price, availability and booking come from the Extras catalog (the
+ * only service writing to Apaleo), referenced per property in `offer_properties`.
+ */
+export const offers = pgTable(
+  "offers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    kind: text("kind", { enum: OFFER_KINDS }).notNull(),
+    partnerId: uuid("partner_id"),
+    category: text("category", { enum: OFFER_CATEGORIES }).notNull(),
+    status: text("status", { enum: GUIDE_STATUSES }).notNull().default("draft"),
+    slug: jsonb("slug").$type<LocalizedText>().notNull(),
+    title: jsonb("title").$type<LocalizedText>().notNull(),
+    teaser: jsonb("teaser").$type<LocalizedText>().notNull(),
+    body: jsonb("body").$type<LocalizedText>(),
+    details: jsonb("details").$type<LocalizedText>(),
+    heroImage: jsonb("hero_image").$type<ContentImage>(),
+    gallery: jsonb("gallery").$type<ContentImage[]>().notNull().default([]),
+    fulfillment: text("fulfillment", { enum: FULFILLMENT_TYPES }).notNull(),
+    bookingUrl: text("booking_url"),
+    price: jsonb("price").$type<OfferPrice>(),
+    durationMinutes: integer("duration_minutes"),
+    cancellation: jsonb("cancellation").$type<CancellationPolicy>().notNull(),
+    commission: jsonb("commission").$type<CommissionModel>(),
+    availability: jsonb("availability").$type<OfferAvailability>().notNull(),
+    featured: boolean("featured").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+    sourceLocale: text("source_locale").notNull().default("de"),
+    translationState: jsonb("translation_state").$type<TranslationState>().notNull().default({}),
+    firstPublishedAt: timestamp("first_published_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("offers_tenant_id_id_key").on(t.tenantId, t.id),
+    index("offers_tenant_status_idx").on(t.tenantId, t.status),
+    foreignKey({
+      name: "offers_partner_fkey",
+      columns: [t.tenantId, t.partnerId],
+      foreignColumns: [partners.tenantId, partners.id],
+    }).onDelete("restrict"),
+    check("offers_kind_valid", oneOf(t.kind, OFFER_KINDS)),
+    check("offers_category_valid", oneOf(t.category, OFFER_CATEGORIES)),
+    check("offers_status_valid", oneOf(t.status, GUIDE_STATUSES)),
+    check("offers_fulfillment_valid", oneOf(t.fulfillment, FULFILLMENT_TYPES)),
+    check("offers_source_locale_valid", oneOf(t.sourceLocale, CONTENT_LOCALES)),
+    check(
+      "offers_kind_shape",
+      sql`(${t.kind} = 'partner' AND ${t.partnerId} IS NOT NULL AND ${t.price} IS NOT NULL
+          AND ${t.fulfillment} IN ('request', 'link'))
+        OR (${t.kind} = 'house-service' AND ${t.partnerId} IS NULL AND ${t.price} IS NULL
+          AND ${t.commission} IS NULL AND ${t.bookingUrl} IS NULL AND ${t.fulfillment} IN ('instant', 'request'))`,
+    ),
+    check("offers_link_has_url", sql`${t.fulfillment} <> 'link' OR ${t.bookingUrl} IS NOT NULL`),
+    check("offers_booking_url_valid", isHttpUrl(t.bookingUrl)),
+    check(
+      "offers_texts_present",
+      sql`jsonb_typeof(${t.title}) = 'object' AND ${t.title} ? 'de'
+        AND jsonb_typeof(${t.teaser}) = 'object' AND ${t.teaser} ? 'de'
+        AND jsonb_typeof(${t.slug}) = 'object' AND ${t.slug} ? 'de'`,
+    ),
+    check(
+      "offers_price_valid",
+      sql`coalesce(${t.price} IS NULL OR ${t.price}->>'model' = 'on-request'
+        OR (${t.price}->>'model' IN ('fixed', 'from', 'per-person')
+          AND (${t.price}->>'amountCents')::int >= 0 AND ${t.price}->>'currency' ~ '^[A-Z]{3}$'), false)`,
+    ),
+    check(
+      "offers_cancellation_valid",
+      sql`coalesce(${t.cancellation}->>'type' IN ('non-refundable', 'on-request', 'partner-terms')
+        OR (${t.cancellation}->>'type' = 'free-until' AND (${t.cancellation}->>'hoursBefore')::int BETWEEN 0 AND 720), false)`,
+    ),
+    check(
+      "offers_commission_valid",
+      sql`${t.commission} IS NULL OR ${commissionShape(t.commission)}`,
+    ),
+    check(
+      "offers_duration_valid",
+      sql`${t.durationMinutes} IS NULL OR ${t.durationMinutes} BETWEEN 5 AND 20160`,
+    ),
+    check(
+      "offers_gallery_valid",
+      sql`jsonb_typeof(${t.gallery}) = 'array' AND jsonb_array_length(${t.gallery}) <= 8`,
+    ),
+  ],
+).enableRLS();
+
+/** Which properties an offer is shown for; own services carry the Extras reference per property. */
+export const offerProperties = pgTable(
+  "offer_properties",
+  {
+    tenantId: text("tenant_id").notNull(),
+    offerId: uuid("offer_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    /** Apaleo service id in this property's Extras catalog (own services). */
+    extrasServiceId: text("extras_service_id"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: "offer_properties_pkey", columns: [t.offerId, t.propertyId] }),
+    foreignKey({
+      name: "offer_properties_offer_fkey",
+      columns: [t.tenantId, t.offerId],
+      foreignColumns: [offers.tenantId, offers.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "offer_properties_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    index("offer_properties_property_idx").on(t.tenantId, t.propertyId),
+    check(
+      "offer_properties_extras_service_id_valid",
+      sql`${t.extrasServiceId} IS NULL OR ${t.extrasServiceId} ~ '^[A-Za-z0-9_-]{1,120}$'`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Success measurement: daily totals per offer, property and placement – never per guest
+ * (no reservation, session or IP), so no profiles can arise.
+ */
+export const offerMetricsDaily = pgTable(
+  "offer_metrics_daily",
+  {
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    offerId: uuid("offer_id").notNull(),
+    day: date("day").notNull(),
+    placement: text("placement", { enum: OFFER_PLACEMENTS }).notNull(),
+    impressions: integer("impressions").notNull().default(0),
+    views: integer("views").notNull().default(0),
+    clickOuts: integer("click_outs").notNull().default(0),
+    requests: integer("requests").notNull().default(0),
+    bookings: integer("bookings").notNull().default(0),
+    revenueCents: bigint("revenue_cents", { mode: "number" }).notNull().default(0),
+    commissionCents: bigint("commission_cents", { mode: "number" }).notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({
+      name: "offer_metrics_daily_pkey",
+      columns: [t.tenantId, t.propertyId, t.offerId, t.day, t.placement],
+    }),
+    foreignKey({
+      name: "offer_metrics_daily_offer_fkey",
+      columns: [t.tenantId, t.offerId],
+      foreignColumns: [offers.tenantId, offers.id],
+    }).onDelete("cascade"),
+    check("offer_metrics_daily_placement_valid", oneOf(t.placement, OFFER_PLACEMENTS)),
+    check(
+      "offer_metrics_daily_counts_valid",
+      sql`${t.impressions} >= 0 AND ${t.views} >= 0 AND ${t.clickOuts} >= 0 AND ${t.requests} >= 0
+        AND ${t.bookings} >= 0 AND ${t.revenueCents} >= 0 AND ${t.commissionCents} >= 0`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Requests for an offer (partner offers via UNIQUE PLACES, own services "auf Anfrage") –
+ * prepared in Phase 1, used from Phase 2 on. Personal data limited to what handling needs;
+ * removed with the stay's retention (`purge_after`).
+ */
+export const OFFER_REQUEST_STATUSES = ["pending", "confirmed", "declined", "cancelled"] as const;
+
+export const offerRequests = pgTable(
+  "offer_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    offerId: uuid("offer_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    status: text("status", { enum: OFFER_REQUEST_STATUSES }).notNull().default("pending"),
+    requestedDate: date("requested_date"),
+    requestedTime: text("requested_time"),
+    people: integer("people"),
+    note: text("note"),
+    placement: text("placement", { enum: OFFER_PLACEMENTS }),
+    /** Price shown to the guest when requesting (cents) – for the overview, not a charge. */
+    quotedCents: integer("quoted_cents"),
+    currency: text("currency"),
+    handledBy: uuid("handled_by"),
+    handledAt: timestamp("handled_at", { withTimezone: true }),
+    slackNotifiedAt: timestamp("slack_notified_at", { withTimezone: true }),
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "offer_requests_offer_fkey",
+      columns: [t.tenantId, t.offerId],
+      foreignColumns: [offers.tenantId, offers.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "offer_requests_handled_by_fkey",
+      columns: [t.tenantId, t.handledBy],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("restrict"),
+    index("offer_requests_reservation_idx").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+    ),
+    index("offer_requests_status_idx").on(t.tenantId, t.status, t.createdAt),
+    index("offer_requests_purge_idx").on(t.purgeAfter),
+    check("offer_requests_status_valid", oneOf(t.status, OFFER_REQUEST_STATUSES)),
+    check(
+      "offer_requests_values_valid",
+      sql`(${t.people} IS NULL OR ${t.people} BETWEEN 1 AND 50)
+        AND (${t.requestedTime} IS NULL OR ${t.requestedTime} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        AND (${t.note} IS NULL OR (char_length(${t.note}) <= 500 AND ${t.note} !~ '[<>]'))
+        AND (${t.quotedCents} IS NULL OR ${t.quotedCents} >= 0)
+        AND (${t.currency} IS NULL OR ${t.currency} ~ '^[A-Z]{3}$')
+        AND ((${t.handledBy} IS NULL) = (${t.handledAt} IS NULL))`,
+    ),
   ],
 ).enableRLS();
 
@@ -1711,6 +1993,11 @@ export const schema = {
   guestRegistrationGuests,
   guestRegistrationContacts,
   guestRegistrationBilling,
+  partners,
+  offers,
+  offerProperties,
+  offerMetricsDaily,
+  offerRequests,
   contactVerificationChallenges,
   contactVerificationEvents,
   guestRegistrationSyncs,

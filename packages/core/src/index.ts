@@ -465,3 +465,73 @@ export { registrationStatus } from "./check-in-status/registration-status";
 
 // Official guest registration (Meldewesen, ADR 0022, phase F1 – simulated targets only).
 export * from "./official-registration";
+
+export {
+  categoriesFor,
+  chapterOf,
+  commissionCents,
+  type CancellationPolicy,
+  type CancellationType,
+  CANCELLATION_TYPES,
+  type CommissionModel,
+  type CommissionType,
+  COMMISSION_TYPES,
+  DEFAULT_AVAILABILITY,
+  effectiveCommission,
+  FULFILLMENT_TYPES,
+  type FulfillmentType,
+  fulfillmentsFor,
+  HOUSE_SERVICE_CATEGORIES,
+  type Offer,
+  type OfferAvailability,
+  type OfferCategory,
+  type OfferChapter,
+  type OfferKind,
+  type OfferPrice,
+  type OfferStatus,
+  OFFER_CATEGORIES,
+  OFFER_CHAPTERS,
+  OFFER_KINDS,
+  type Partner,
+  PARTNER_CATEGORIES,
+  PRICE_MODELS,
+  type PriceModel,
+  type PropertyOffer,
+} from "./upsell/offer-model";
+export { isOfferAvailable, type StayFacts } from "./upsell/availability";
+export {
+  eligibleOffers,
+  type Recommendation,
+  type RecommendationContext,
+  selectRecommendations,
+} from "./upsell/recommendation";
+export {
+  CLIENT_REPORTABLE_EVENTS,
+  metricDelta,
+  metricRates,
+  type OfferMetricCounters,
+  type OfferMetricEvent,
+  type OfferMetricIncrement,
+  type OfferPlacement,
+  OFFER_METRIC_EVENTS,
+  OFFER_PLACEMENTS,
+} from "./upsell/metrics";
+export {
+  type BookedItem,
+  type BookedItemSource,
+  type BookedItemStatus,
+  BOOKED_ITEM_SOURCES,
+  BOOKED_ITEM_STATUSES,
+  sortBookedItems,
+  takenOfferIds,
+} from "./upsell/booked-overview";
+export {
+  cancellationPolicySchema,
+  commissionModelSchema,
+  offerAvailabilitySchema,
+  type OfferInput,
+  offerPriceSchema,
+  offerSchema,
+  type PartnerInput,
+  partnerSchema,
+} from "./upsell/offer-schema";
