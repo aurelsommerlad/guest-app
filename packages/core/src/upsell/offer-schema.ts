@@ -110,7 +110,9 @@ export function offerSchema(isAllowedImageSrc: (src: string) => boolean) {
         .max(100),
     })
     .superRefine((offer, ctx) => {
-      const issue = (path: string, message: string) => { ctx.addIssue({ code: "custom", path: [path], message }); };
+      const issue = (path: string, message: string) => {
+        ctx.addIssue({ code: "custom", path: [path], message });
+      };
       if (!categoriesFor(offer.kind).includes(offer.category)) {
         issue("category", "category does not fit the kind");
       }

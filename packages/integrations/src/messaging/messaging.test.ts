@@ -68,7 +68,7 @@ describe("ResendEmailSender", () => {
     expect(await outcome(503)).toEqual({ ok: false, reason: "unavailable" });
     const broken = new ResendEmailSender({
       ...options,
-      fetch: (() => Promise.reject(new Error("network"))),
+      fetch: () => Promise.reject(new Error("network")),
     });
     expect(await broken.sendVerificationCode(message)).toEqual({
       ok: false,
