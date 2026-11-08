@@ -36,13 +36,22 @@ export async function saveExtensionSettingsAction(
 export async function decideRequestAction(
   requestId: string,
   decision: "confirm" | "decline",
+  formData?: FormData,
 ): Promise<void> {
   const admin = await requireAdmin();
+  const accepted = formData?.get("acceptedPriceCents");
+  const reason = formData?.get("reason");
   const result = await decideRequest(
     operationsDeps(),
     admin,
     requestId,
     decision === "confirm" ? "confirm" : "decline",
+    {
+      ...(typeof accepted === "string" && /^\d{1,9}$/.test(accepted)
+        ? { acceptedPriceCents: Number(accepted) }
+        : {}),
+      ...(typeof reason === "string" ? { reason: reason.slice(0, 600) } : {}),
+    },
   );
   const key = result.ok ? "notice" : "error";
   const text = result.ok ? result.message : result.error;

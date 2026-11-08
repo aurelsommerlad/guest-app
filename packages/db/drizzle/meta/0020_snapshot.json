@@ -1,5 +1,5 @@
 {
-  "id": "13645349-c538-427b-94c9-c5a775c2757b",
+  "id": "3d1c676b-1620-40b5-870a-b31e7e50382f",
   "prevId": "f53d5382-c165-455e-9af0-e00103fe69b1",
   "version": "7",
   "dialect": "postgresql",
@@ -3744,6 +3744,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "delivery_mode": {
+          "name": "delivery_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -3820,7 +3826,7 @@
         },
         "notification_outbox_values_valid": {
           "name": "notification_outbox_values_valid",
-          "value": "\"notification_outbox\".\"template\" ~ '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$' AND char_length(\"notification_outbox\".\"template\") <= 80\n        AND \"notification_outbox\".\"dedup_key\" ~ '^[A-Za-z0-9_:.-]{1,200}$'\n        AND \"notification_outbox\".\"attempts\" BETWEEN 0 AND 50\n        AND (\"notification_outbox\".\"last_error_code\" IS NULL OR \"notification_outbox\".\"last_error_code\" ~ '^[a-z0-9_]{1,60}$')\n        AND (\"notification_outbox\".\"property_id\" IS NULL OR \"notification_outbox\".\"property_id\" ~ '^[a-z0-9][a-z0-9-]{0,63}$')\n        AND jsonb_typeof(\"notification_outbox\".\"payload\") = 'object' AND pg_column_size(\"notification_outbox\".\"payload\") <= 16384\n        AND ((\"notification_outbox\".\"status\" = 'sent') = (\"notification_outbox\".\"sent_at\" IS NOT NULL))"
+          "value": "\"notification_outbox\".\"template\" ~ '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$' AND char_length(\"notification_outbox\".\"template\") <= 80\n        AND \"notification_outbox\".\"dedup_key\" ~ '^[A-Za-z0-9_:.-]{1,200}$'\n        AND \"notification_outbox\".\"attempts\" BETWEEN 0 AND 50\n        AND (\"notification_outbox\".\"last_error_code\" IS NULL OR \"notification_outbox\".\"last_error_code\" ~ '^[a-z0-9_]{1,60}$')\n        AND (\"notification_outbox\".\"property_id\" IS NULL OR \"notification_outbox\".\"property_id\" ~ '^[a-z0-9][a-z0-9-]{0,63}$')\n        AND jsonb_typeof(\"notification_outbox\".\"payload\") = 'object' AND pg_column_size(\"notification_outbox\".\"payload\") <= 16384\n        AND ((\"notification_outbox\".\"status\" = 'sent') = (\"notification_outbox\".\"sent_at\" IS NOT NULL))\n        AND (\"notification_outbox\".\"delivery_mode\" IS NULL OR \"notification_outbox\".\"delivery_mode\" IN ('simulated', 'live'))"
         }
       },
       "isRLSEnabled": true
@@ -6930,6 +6936,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "slack_decision_updates": {
+          "name": "slack_decision_updates",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "imported_hash": {
           "name": "imported_hash",

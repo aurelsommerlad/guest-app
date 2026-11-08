@@ -108,3 +108,4 @@ export {
   type StayExtensionOffer,
 } from "./services/booking-engine";
 export * from "./services/ports";
+export * from "./slack/slack-notifications";

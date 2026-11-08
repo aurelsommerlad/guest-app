@@ -2234,6 +2234,8 @@ export const propertyServiceSettings = pgTable(
     minSellableStayNights: integer("min_sellable_stay_nights").notNull().default(2),
     /** Name of the Slack route (resolved to a webhook from the environment – never stored). */
     slackRoute: text("slack_route"),
+    /** M4: also post a status message when a request is confirmed or declined. */
+    slackDecisionUpdates: boolean("slack_decision_updates").notNull().default(false),
     importedHash: text("imported_hash"),
     importedAt: timestamp("imported_at", { withTimezone: true }),
     updatedBy: uuid("updated_by"),
@@ -2673,6 +2675,8 @@ export const notificationOutbox = pgTable(
     nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
     lastErrorCode: text("last_error_code"),
     sentAt: timestamp("sent_at", { withTimezone: true }),
+    /** M4: how a sent notification was delivered – "simulated" until Slack is approved. */
+    deliveryMode: text("delivery_mode"),
     ...timestamps,
   },
   (t) => [
@@ -2688,7 +2692,8 @@ export const notificationOutbox = pgTable(
         AND (${t.lastErrorCode} IS NULL OR ${t.lastErrorCode} ~ '^[a-z0-9_]{1,60}$')
         AND (${t.propertyId} IS NULL OR ${isKey(t.propertyId)})
         AND jsonb_typeof(${t.payload}) = 'object' AND pg_column_size(${t.payload}) <= 16384
-        AND ((${t.status} = 'sent') = (${t.sentAt} IS NOT NULL))`,
+        AND ((${t.status} = 'sent') = (${t.sentAt} IS NOT NULL))
+        AND (${t.deliveryMode} IS NULL OR ${t.deliveryMode} IN ('simulated', 'live'))`,
     ),
   ],
 ).enableRLS();

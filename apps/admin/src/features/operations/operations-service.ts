@@ -229,6 +229,7 @@ export async function decideRequest(
   admin: AdminContext,
   requestId: string,
   decision: "confirm" | "decline",
+  options: { acceptedPriceCents?: number | null; reason?: string | null } = {},
 ): Promise<DecisionOutcome> {
   const request = await getOfferRequestForAdmin(deps.db, tenantOf(admin), requestId);
   if (!request || !isAllowed(admin, "requests.read", { propertyId: request.propertyId })) {
@@ -246,16 +247,40 @@ export async function decideRequest(
     return { ok: false, error: "Diese Anfrage ist bereits entschieden." };
   const now = deps.now();
 
+  const reason = options.reason?.trim() ? options.reason.trim() : null;
+  if (reason && (reason.length > 500 || /[<>]/.test(reason)))
+    return { ok: false, error: "Die Begründung darf höchstens 500 Zeichen ohne < und > haben." };
   if (decision === "decline") {
-    const result = await decideOfferRequest(deps.db, tenantOf(admin), {
-      requestId,
-      decision: "declined",
-      actorAdminId: admin.adminUserId,
-      now,
-    });
-    return result.ok
-      ? { ok: true, message: "Anfrage abgelehnt." }
-      : { ok: false, error: "Die Anfrage konnte nicht abgelehnt werden." };
+    const apaleoId = await deps.apaleoPropertyIdOf(admin.tenantId, request.propertyId);
+    const engine = apaleoId ? await deps.engine?.(deps.gateway()) : undefined;
+    // Through the engine where available (queues the team notification), else directly.
+    const result =
+      engine && apaleoId
+        ? await engine.rejectRequest(
+            {
+              tenantId: admin.tenantId,
+              propertyId: request.propertyId,
+              apaleoPropertyId: apaleoId,
+            },
+            requestId,
+            admin.adminUserId,
+            reason,
+          )
+        : await decideOfferRequest(deps.db, tenantOf(admin), {
+            requestId,
+            decision: "declined",
+            actorAdminId: admin.adminUserId,
+            now,
+            decisionReason: reason,
+          });
+    if (result.ok) return { ok: true, message: "Anfrage abgelehnt." };
+    return {
+      ok: false,
+      error:
+        result.reason === "not-pending" || result.reason === "not_pending"
+          ? "Diese Anfrage ist bereits entschieden."
+          : "Die Anfrage konnte nicht abgelehnt werden.",
+    };
   }
 
   const apaleoPropertyId = await deps.apaleoPropertyIdOf(admin.tenantId, request.propertyId);
@@ -299,6 +324,9 @@ export async function decideRequest(
     { tenantId: admin.tenantId, propertyId: request.propertyId, apaleoPropertyId },
     request.id,
     admin.adminUserId,
+    options.acceptedPriceCents === undefined
+      ? {}
+      : { acceptedPriceCents: options.acceptedPriceCents },
   );
   if (result.ok) {
     return {
@@ -311,6 +339,19 @@ export async function decideRequest(
     };
   }
   await blocked(result.reason.replace(/[^a-z0-9_]/g, "_").slice(0, 60));
+  if (result.reason === "price_changed") {
+    const current =
+      result.currentCents === null || result.currentCents === undefined
+        ? "unbekannt"
+        : new Intl.NumberFormat("de-DE", {
+            style: "currency",
+            currency: request.currency ?? "EUR",
+          }).format(result.currentCents / 100);
+    return {
+      ok: false,
+      error: `Der Preis hat sich geändert (jetzt ${current}). Nicht bestätigt – bitte den neuen Preis ausdrücklich übernehmen oder ablehnen.`,
+    };
+  }
   return { ok: false, error: `${approvalError(result.reason)} Die Anfrage bleibt offen.` };
 }
 
@@ -413,4 +454,30 @@ export async function loadImports(deps: OperationsDeps, admin: AdminContext) {
 export async function loadImport(deps: OperationsDeps, admin: AdminContext, runId: string) {
   if (!isAllowed(admin, "migration.run")) return undefined;
   return getMigrationRun(deps.db, tenantOf(admin), runId);
+}
+
+export type RequestPreview =
+  | Extract<Awaited<ReturnType<ServiceBookingEngine["previewRequestApproval"]>>, { ok: true }>
+  | { ok: false; error: string };
+
+/** Live preview of what a confirmation would book (no write) – for pending STAY requests. */
+export async function previewRequest(
+  deps: OperationsDeps,
+  admin: AdminContext,
+  requestId: string,
+): Promise<RequestPreview> {
+  const request = await getOfferRequestForAdmin(deps.db, tenantOf(admin), requestId);
+  if (!request || !isAllowed(admin, "requests.read", { propertyId: request.propertyId }))
+    return { ok: false, error: "Diese Anfrage gibt es nicht." };
+  if (request.source === "extras" || request.status !== "pending")
+    return { ok: false, error: "Keine Vorschau für diese Anfrage." };
+  const apaleoPropertyId = await deps.apaleoPropertyIdOf(admin.tenantId, request.propertyId);
+  const engine = apaleoPropertyId ? await deps.engine?.(deps.gateway()) : undefined;
+  if (!engine || !apaleoPropertyId)
+    return { ok: false, error: "Apaleo ist für STAY nicht eingerichtet – keine Vorschau möglich." };
+  const preview = await engine.previewRequestApproval(
+    { tenantId: admin.tenantId, propertyId: request.propertyId, apaleoPropertyId },
+    requestId,
+  );
+  return preview.ok ? preview : { ok: false, error: approvalError(preview.reason) };
 }

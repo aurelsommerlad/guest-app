@@ -17,6 +17,7 @@ import {
   loadImports,
   loadRequest,
   loadRequests,
+  previewRequest,
   type PropertyOption,
 } from "../operations-service";
 import { operationsDeps } from "../server";
@@ -86,7 +87,7 @@ function Badge({
 
 function Rows({ items }: { items: readonly { label: string; value: ReactNode }[] }) {
   return (
-    <dl className="grid gap-x-6 gap-y-3 rounded-card border border-border bg-surface-raised p-5 sm:grid-cols-[12rem_1fr] md:p-8">
+    <dl className="grid gap-x-6 gap-y-3 rounded-card border border-border bg-surface-raised p-5 sm:grid-cols-2 md:p-8">
       {items.map((item) => (
         <div key={item.label} className="contents">
           <dt className="type-small text-text-muted">{item.label}</dt>
@@ -272,6 +273,7 @@ export async function RequestDetailView({
   const loaded = await loadRequest(operationsDeps(), admin, requestId);
   if (!loaded.ok) notFound();
   const { request, canDecide, property } = loaded;
+  const preview = canDecide ? await previewRequest(operationsDeps(), admin, requestId) : undefined;
   return (
     <div className="flex max-w-224 flex-col gap-8">
       <PageHeader
@@ -321,30 +323,129 @@ export async function RequestDetailView({
           Diese Anfrage wird bis zum gemeinsamen Go-live in der Extras-App bestätigt oder abgelehnt.
         </p>
       )}
+      {request.decisionReason && (
+        <Rows items={[{ label: "Interne Begründung", value: request.decisionReason }]} />
+      )}
+      {canDecide && preview && (
+        <section
+          aria-label="Vorschau der Buchung"
+          className="flex flex-col gap-3 rounded-card border border-border bg-surface-raised p-5 md:p-8"
+        >
+          <h2 className="type-eyebrow text-text">Vorschau der Buchung</h2>
+          {preview.ok ? (
+            <>
+              <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+                {[
+                  ["Daten", preview.dates.map(fmtDay).join(", ") || "–"],
+                  ["Menge", String(preview.quantity)],
+                  ["Angezeigter Preis (je Stück)", money(preview.quotedCents, preview.currency)],
+                  [
+                    "Aktueller Apaleo-Preis (je Stück)",
+                    money(preview.currentCents, preview.currency),
+                  ],
+                  [
+                    "Bereits in Apaleo",
+                    preview.existing === "complete"
+                      ? "ja, vollständig – es wird nichts zusätzlich gebucht"
+                      : preview.existing === "conflict"
+                        ? "mit anderen Daten oder anderer Menge"
+                        : "nein",
+                  ],
+                ].map(([label, value]) => (
+                  <div key={label} className="contents">
+                    <dt className="type-small text-text-muted">{label}</dt>
+                    <dd className="type-body text-text">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {preview.blocker && (
+                <Notice
+                  tone="error"
+                  text={`Nicht bestätigbar: ${BLOCKER_TEXT[preview.blocker] ?? preview.blocker}`}
+                />
+              )}
+              {preview.priceChanged && !preview.blocker && (
+                <Notice
+                  tone="error"
+                  text={`Der Preis hat sich seit der Anfrage geändert: ${money(preview.quotedCents, preview.currency)} → ${money(preview.currentCents, preview.currency)}. Eine Bestätigung ist nur mit ausdrücklicher Übernahme des neuen Preises möglich.`}
+                />
+              )}
+            </>
+          ) : (
+            <Notice tone="error" text={preview.error} />
+          )}
+        </section>
+      )}
       {canDecide && (
-        <div className="flex flex-col gap-3 rounded-card border border-border bg-surface-raised p-5 md:p-8">
+        <div className="flex flex-col gap-5 rounded-card border border-border bg-surface-raised p-5 md:p-8">
           <p className="type-small text-text-muted">
-            Bestätigen bucht den Service über die zentrale Apaleo-Schnittstelle. Solange Buchungen
-            aus STAY nicht freigegeben sind, bleibt die Anfrage offen und der Versuch wird
-            protokolliert.
+            Bestätigen prüft Verfügbarkeit und Preis erneut live und bucht über die zentrale
+            Apaleo-Schnittstelle. Solange Buchungen aus STAY nicht freigegeben sind, bleibt die
+            Anfrage offen und der Versuch wird protokolliert.
           </p>
-          <div className="flex flex-wrap gap-2">
-            <form action={decideRequestAction.bind(null, request.id, "confirm")}>
-              <button type="submit" className={buttonStyles("primary")}>
+          <form
+            action={decideRequestAction.bind(null, request.id, "confirm")}
+            className="flex flex-col gap-3"
+          >
+            {preview?.ok && preview.priceChanged && preview.currentCents !== null && (
+              <label className="type-body flex min-h-11 items-center gap-3">
+                <input
+                  type="checkbox"
+                  name="acceptedPriceCents"
+                  value={preview.currentCents}
+                  required
+                />
+                Neuen Preis {money(preview.currentCents, preview.currency)} übernehmen
+              </label>
+            )}
+            <div>
+              <button
+                type="submit"
+                className={buttonStyles("primary")}
+                disabled={preview?.ok === true && preview.blocker !== null}
+              >
                 Bestätigen
               </button>
-            </form>
-            <form action={decideRequestAction.bind(null, request.id, "decline")}>
+            </div>
+          </form>
+          <form
+            action={decideRequestAction.bind(null, request.id, "decline")}
+            className="flex flex-col gap-3"
+          >
+            <label htmlFor="reason" className="type-eyebrow text-text">
+              Interne Begründung (optional, nur für das Team)
+            </label>
+            <textarea
+              id="reason"
+              name="reason"
+              maxLength={500}
+              className="type-body min-h-20 w-full rounded-control border border-text-muted bg-background px-3 py-2 text-text"
+            />
+            <div>
               <button type="submit" className={buttonStyles("secondary")}>
                 Ablehnen
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       )}
     </div>
   );
 }
+
+const BLOCKER_TEXT: Record<string, string> = {
+  not_pending: "bereits entschieden",
+  existing_booking_conflict: "der Service ist in Apaleo mit anderen Daten oder Mengen gebucht",
+  past_stay: "der Aufenthalt liegt in der Vergangenheit",
+  no_offer: "Apaleo bietet den Service für diese Reservierung nicht mehr an",
+  inactive: "der Service ist im Katalog nicht mehr aktiv",
+  dog_limit_exceeded: "pro Apartment ist maximal ein Hund möglich",
+  unit_group_restricted: "für diesen Apartmenttyp nicht verfügbar",
+  capacity_exceeded: "keine Personenkapazität mehr",
+  incomplete_dates: "nicht an allen Tagen verfügbar",
+  requested_date_unavailable: "das angefragte Datum ist nicht mehr verfügbar",
+  insufficient_availability: "nicht genügend Verfügbarkeit für die Menge",
+};
 
 /* ── Orders ───────────────────────────────────────────────────────────────────────────── */
 

@@ -152,6 +152,15 @@ export const adminModules: readonly AdminModule[] = [
     permission: "settings.read",
   },
   {
+    id: "notifications",
+    label: "Benachrichtigungen",
+    group: "admin",
+    segment: "notifications",
+    icon: "bell",
+    scope: { kind: "tenant" },
+    permission: "settings.read",
+  },
+  {
     id: "imports",
     label: "Datenimport",
     group: "admin",

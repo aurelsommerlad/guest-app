@@ -35,6 +35,7 @@ describe("admin navigation registry", () => {
       "Objekte",
       "Team",
       "Protokoll",
+      "Benachrichtigungen",
       "Datenimport",
     ]);
     expect(navigationGroups.map((group) => group.label)).toEqual([

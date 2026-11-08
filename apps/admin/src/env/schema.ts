@@ -55,6 +55,8 @@ export const serverEnvSchema = z
      * no live mode in this code base. Productive writes need the go-live approval.
      */
     APALEO_SERVICE_WRITES: z.enum(["disabled", "simulated"]).default("disabled"),
+    /** M4: Slack notifications – "off" (default) or "simulated"; there is no live delivery yet. */
+    SLACK_DELIVERY: z.enum(["off", "simulated"]).default("off"),
     /** Apaleo property ids the (simulated) gateway may target, comma-separated, e.g. TEST. */
     APALEO_SERVICE_WRITE_PROPERTIES: z
       .string()

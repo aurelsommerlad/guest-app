@@ -772,6 +772,7 @@ export class ServiceBookingEngine {
           dedupKey: `service-request:${created.id}`,
           payload: {
             requestId: created.id,
+            reservationId: reservation.id,
             serviceId: item.serviceId,
             serviceTitle: item.displayName.de,
             quantity,

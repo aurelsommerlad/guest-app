@@ -330,3 +330,14 @@ export {
   planImageMigration,
   readImageHeader,
 } from "./extras-import/images";
+export {
+  claimDueNotifications,
+  completeNotification,
+  getSlackSettings,
+  listNotifications,
+  NOTIFICATION_BACKOFF_MINUTES,
+  NOTIFICATION_SENDING_TIMEOUT_MS,
+  type OutboxJob,
+  saveSlackSettings,
+  type SlackPropertySettings,
+} from "./repositories/notification-repository";
