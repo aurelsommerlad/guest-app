@@ -42,7 +42,9 @@ function finite(value: unknown): number | null {
  * discounts existed: new field → legacy flat field (extensionDiscountOneNightGap /
  * extensionDiscountStandard) → default.
  */
-export function resolveStayExtensionSettings(stored: Record<string, unknown> | null | undefined): StayExtensionSettings {
+export function resolveStayExtensionSettings(
+  stored: Record<string, unknown> | null | undefined,
+): StayExtensionSettings {
   const s = stored ?? {};
   const legacyOneNight = finite(s.extensionDiscountOneNightGap);
   const legacyStandard = finite(s.extensionDiscountStandard);
@@ -50,11 +52,21 @@ export function resolveStayExtensionSettings(stored: Record<string, unknown> | n
     finite(s[key]) ?? legacy ?? (DEFAULT_STAY_EXTENSION_SETTINGS[key] as number);
   return {
     extensionNightEnabled: s.extensionNightEnabled === true,
-    extensionDiscountPreArrivalOneNightGap: pick("extensionDiscountPreArrivalOneNightGap", legacyOneNight),
-    extensionDiscountPreArrivalStandard: pick("extensionDiscountPreArrivalStandard", legacyStandard),
-    extensionDiscountInHouseOneNightGap: pick("extensionDiscountInHouseOneNightGap", legacyOneNight),
+    extensionDiscountPreArrivalOneNightGap: pick(
+      "extensionDiscountPreArrivalOneNightGap",
+      legacyOneNight,
+    ),
+    extensionDiscountPreArrivalStandard: pick(
+      "extensionDiscountPreArrivalStandard",
+      legacyStandard,
+    ),
+    extensionDiscountInHouseOneNightGap: pick(
+      "extensionDiscountInHouseOneNightGap",
+      legacyOneNight,
+    ),
     extensionDiscountInHouseStandard: pick("extensionDiscountInHouseStandard", legacyStandard),
-    minSellableStayNights: finite(s.minSellableStayNights) ?? DEFAULT_STAY_EXTENSION_SETTINGS.minSellableStayNights,
+    minSellableStayNights:
+      finite(s.minSellableStayNights) ?? DEFAULT_STAY_EXTENSION_SETTINGS.minSellableStayNights,
   };
 }
 
@@ -67,7 +79,9 @@ export function addOneDay(dateStr: unknown): string | null {
 }
 
 /** Average of the accommodation time slices (services never included). */
-export function computeAverageNightlyRate(timeSlices: readonly TimeSliceLike[] | null | undefined): number | null {
+export function computeAverageNightlyRate(
+  timeSlices: readonly TimeSliceLike[] | null | undefined,
+): number | null {
   if (!timeSlices?.length) return null;
   let sum = 0;
   for (const slice of timeSlices) {
@@ -80,7 +94,10 @@ export function computeAverageNightlyRate(timeSlices: readonly TimeSliceLike[] |
 
 export type ExtensionDecision =
   | { offer: true; discountPercent: number; reason: "closes_gap" | "remaining_gap_sellable" }
-  | { offer: false; reason: "invalid_gap" | "invalid_config" | "no_availability" | "would_leave_unsellable_gap" };
+  | {
+      offer: false;
+      reason: "invalid_gap" | "invalid_config" | "no_availability" | "would_leave_unsellable_gap";
+    };
 
 /** gap 1 → one-night discount; gap > min → standard; otherwise no offer. */
 export function decideExtensionOffer(input: {
@@ -94,10 +111,15 @@ export function decideExtensionOffer(input: {
   const standard = Number(input.discountStandard);
   if (!Number.isInteger(input.gap) || input.gap < 0) return { offer: false, reason: "invalid_gap" };
   if (!Number.isFinite(min) || min < 1) return { offer: false, reason: "invalid_config" };
-  if (!Number.isFinite(oneNight) || !Number.isFinite(standard)) return { offer: false, reason: "invalid_config" };
+  if (!Number.isFinite(oneNight) || !Number.isFinite(standard))
+    return { offer: false, reason: "invalid_config" };
   if (input.gap === 1) return { offer: true, discountPercent: oneNight, reason: "closes_gap" };
-  if (input.gap > min) return { offer: true, discountPercent: standard, reason: "remaining_gap_sellable" };
-  return { offer: false, reason: input.gap === 0 ? "no_availability" : "would_leave_unsellable_gap" };
+  if (input.gap > min)
+    return { offer: true, discountPercent: standard, reason: "remaining_gap_sellable" };
+  return {
+    offer: false,
+    reason: input.gap === 0 ? "no_availability" : "would_leave_unsellable_gap",
+  };
 }
 
 export type ExtensionPhase = "before_arrival" | "in_house";
@@ -113,7 +135,9 @@ export function determineStayExtensionPhase(input: {
   const today = input.today.toISOString().slice(0, 10);
   const arrival = input.arrivalDate ? input.arrivalDate.slice(0, 10) : null;
   const departure = input.departureDate ? input.departureDate.slice(0, 10) : null;
-  return arrival && departure && arrival <= today && departure > today ? "in_house" : "before_arrival";
+  return arrival && departure && arrival <= today && departure > today
+    ? "in_house"
+    : "before_arrival";
 }
 
 export function buildExtensionOffer(input: {
@@ -138,7 +162,8 @@ export function buildExtensionOffer(input: {
   const average = computeAverageNightlyRate(input.timeSlices);
   if (average === null) return null;
   const departure = input.reservation.departure;
-  const currentDeparture = typeof departure === "string" && departure ? departure.slice(0, 10) : null;
+  const currentDeparture =
+    typeof departure === "string" && departure ? departure.slice(0, 10) : null;
   const newDeparture = addOneDay(departure);
   if (!currentDeparture || !newDeparture) return null;
   const currency = input.timeSlices[0]?.totalGrossAmount?.currency || "EUR";
@@ -153,7 +178,10 @@ export function buildExtensionOffer(input: {
   };
 }
 
-function nightsBetween(arrival: string | null | undefined, departure: string | null | undefined): string[] {
+function nightsBetween(
+  arrival: string | null | undefined,
+  departure: string | null | undefined,
+): string[] {
   if (!arrival || !departure) return [];
   const nights: string[] = [];
   const cursor = new Date(`${arrival.slice(0, 10)}T00:00:00Z`);
@@ -201,9 +229,14 @@ export function findExtendableServices(input: {
     if (!matchesOriginal && !matchesExtended) continue;
     const serviceId = entry.service?.id;
     if (!serviceId) continue;
-    const sorted = [...dates].sort((a, b) => String(a.serviceDate).localeCompare(String(b.serviceDate)));
+    const sorted = [...dates].sort((a, b) =>
+      String(a.serviceDate).localeCompare(String(b.serviceDate)),
+    );
     const last = sorted[sorted.length - 1];
-    const normal = { amount: Number(last?.amount?.grossAmount), currency: last?.amount?.currency || "EUR" };
+    const normal = {
+      amount: Number(last?.amount?.grossAmount),
+      currency: last?.amount?.currency || "EUR",
+    };
     if (!Number.isFinite(normal.amount)) continue;
     const item: ExtendableService = {
       serviceId,
@@ -227,7 +260,11 @@ export function buildServiceExtensionDates(input: {
 }) {
   const lastCount = input.existingDates[input.existingDates.length - 1]?.count ?? 1;
   return [
-    ...input.existingDates.map((d) => ({ serviceDate: d.serviceDate, count: d.count, amount: d.amount })),
+    ...input.existingDates.map((d) => ({
+      serviceDate: d.serviceDate,
+      count: d.count,
+      amount: d.amount,
+    })),
     { serviceDate: input.newDate, count: lastCount, amount: input.normalPricePerNight },
   ];
 }
@@ -237,11 +274,22 @@ export function findDepartureDateCandidates(input: {
   services: readonly ApaleoBookedService[] | null | undefined;
   oldDepartureDate: string;
 }) {
-  const candidates: { serviceId: string; name: unknown; count: number | undefined; amount: Money }[] = [];
+  const candidates: {
+    serviceId: string;
+    name: unknown;
+    count: number | undefined;
+    amount: Money;
+  }[] = [];
   for (const entry of input.services ?? []) {
     const dates = Array.isArray(entry.dates) ? entry.dates : [];
     const [only] = dates;
-    if (dates.length !== 1 || !only || only.isMandatory || only.serviceDate !== input.oldDepartureDate) continue;
+    if (
+      dates.length !== 1 ||
+      !only ||
+      only.isMandatory ||
+      only.serviceDate !== input.oldDepartureDate
+    )
+      continue;
     const serviceId = entry.service?.id;
     if (!serviceId) continue;
     const amount = Number(only.amount?.grossAmount);
@@ -257,11 +305,17 @@ export function findDepartureDateCandidates(input: {
 }
 
 /** A candidate moves only if Apaleo defines it as Departure + postNextDay. */
-export function isLateCheckoutMoveEligible(definition: { availability?: { mode?: string }; postNextDay?: boolean } | null | undefined): boolean {
+export function isLateCheckoutMoveEligible(
+  definition: { availability?: { mode?: string }; postNextDay?: boolean } | null | undefined,
+): boolean {
   return definition?.availability?.mode === "Departure" && definition.postNextDay === true;
 }
 
-export function buildLateCheckoutMoveDates(input: { newDepartureDate: string; count: number | undefined; amount: Money }) {
+export function buildLateCheckoutMoveDates(input: {
+  newDepartureDate: string;
+  count: number | undefined;
+  amount: Money;
+}) {
   return [{ serviceDate: input.newDepartureDate, count: input.count, amount: input.amount }];
 }
 
@@ -277,17 +331,25 @@ export function verifyLateCheckoutMove(input: {
   const dates = Array.isArray(entry?.dates) ? entry.dates : [];
   const [date] = dates;
   if (dates.length !== 1 || !date) return false;
-  if (date.serviceDate !== input.newDepartureDate || date.serviceDate === input.oldDepartureDate) return false;
+  if (date.serviceDate !== input.newDepartureDate || date.serviceDate === input.oldDepartureDate)
+    return false;
   if (Number(date.count) !== Number(input.expectedCount)) return false;
   return Number(date.amount?.grossAmount) === Number(input.expectedAmount);
 }
 
 export type FolioLike = {
-  charges?: { type?: string; serviceDate?: string; amount?: { grossAmount?: number; currency?: string } }[];
+  charges?: {
+    type?: string;
+    serviceDate?: string;
+    amount?: { grossAmount?: number; currency?: string };
+  }[];
 };
 
 /** City tax only ever from the posted folio charge – never computed from configuration. */
-export function findCityTaxAmount(folios: readonly FolioLike[] | null | undefined, serviceDate: string): Money | null {
+export function findCityTaxAmount(
+  folios: readonly FolioLike[] | null | undefined,
+  serviceDate: string,
+): Money | null {
   for (const folio of folios ?? []) {
     for (const charge of folio.charges ?? []) {
       if (charge.type !== "CityTax" || charge.serviceDate !== serviceDate) continue;
@@ -313,8 +375,13 @@ export function buildExtensionPricePreview(input: {
 /** Completed-extension total; null rather than a guess when data is missing or unverified. */
 export function computeExtensionAdditionalTotal(input: {
   extensionPrice: Money | null | undefined;
-  extras?: readonly { extended?: boolean; alreadyDone?: boolean; amount?: { amount?: number } }[] | null;
-  cityTax?: { applicable?: boolean; verified?: boolean | null; amount?: { amount?: number } | null } | null;
+  extras?:
+    readonly { extended?: boolean; alreadyDone?: boolean; amount?: { amount?: number } }[] | null;
+  cityTax?: {
+    applicable?: boolean;
+    verified?: boolean | null;
+    amount?: { amount?: number } | null;
+  } | null;
 }): Money | null {
   const base = Number(input.extensionPrice?.amount);
   if (!input.extensionPrice || !Number.isFinite(base)) return null;
@@ -350,7 +417,10 @@ export function buildStayExtensionAmendmentPayload(input: {
     const ratePlanId = slice.ratePlan?.id;
     const amount = Number(slice.totalGrossAmount?.amount);
     if (!ratePlanId || !Number.isFinite(amount)) return null;
-    next.push({ ratePlanId, totalGrossAmount: { amount, currency: slice.totalGrossAmount?.currency ?? currency } });
+    next.push({
+      ratePlanId,
+      totalGrossAmount: { amount, currency: slice.totalGrossAmount?.currency ?? currency },
+    });
   }
   const lastRatePlan = input.timeSlices[input.timeSlices.length - 1]?.ratePlan?.id;
   if (!lastRatePlan) return null;
@@ -361,7 +431,9 @@ export function buildStayExtensionAmendmentPayload(input: {
     arrival: input.reservation.arrival,
     departure: newDeparture,
     adults: getAdultsCount(input.reservation),
-    childrenAges: Array.isArray(input.reservation.childrenAges) ? input.reservation.childrenAges : null,
+    childrenAges: Array.isArray(input.reservation.childrenAges)
+      ? input.reservation.childrenAges
+      : null,
     timeSlices: next,
     requote: false,
   };

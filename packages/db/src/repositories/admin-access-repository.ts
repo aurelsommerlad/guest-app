@@ -215,15 +215,13 @@ export async function updateAdminAccess(
         ),
       );
     if (propertyIds.length) {
-      await tx
-        .insert(adminUserProperties)
-        .values(
-          propertyIds.map((propertyId) => ({
-            tenantId: context.tenantId,
-            adminUserId: current.id,
-            propertyId,
-          })),
-        );
+      await tx.insert(adminUserProperties).values(
+        propertyIds.map((propertyId) => ({
+          tenantId: context.tenantId,
+          adminUserId: current.id,
+          propertyId,
+        })),
+      );
     }
     await recordAdminAuditEvent(tx, context, {
       actorType: "admin",
@@ -576,15 +574,13 @@ export async function acceptAdminInvitation(
       .returning();
     if (!user) throw new Error("Admin user was not created");
     if (propertyIds.length) {
-      await tx
-        .insert(adminUserProperties)
-        .values(
-          propertyIds.map((propertyId) => ({
-            tenantId: invitation.tenantId,
-            adminUserId: user.id,
-            propertyId,
-          })),
-        );
+      await tx.insert(adminUserProperties).values(
+        propertyIds.map((propertyId) => ({
+          tenantId: invitation.tenantId,
+          adminUserId: user.id,
+          propertyId,
+        })),
+      );
     }
     await tx
       .update(adminInvitations)

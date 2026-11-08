@@ -124,7 +124,11 @@ const PHASE_CONFIG = {
   extensionDiscountInHouseStandard: 15,
 };
 
-function configArgs(config: { minSellableStayNights: number; extensionDiscountOneNightGap: number; extensionDiscountStandard: number }) {
+function configArgs(config: {
+  minSellableStayNights: number;
+  extensionDiscountOneNightGap: number;
+  extensionDiscountStandard: number;
+}) {
   return {
     minSellableStayNights: config.minSellableStayNights,
     discountOneNightGap: config.extensionDiscountOneNightGap,
@@ -175,7 +179,10 @@ describe("stay-extension.test.mjs", () => {
   });
 
   it("decideExtensionOffer: gap 3 (remaining == minSellableStayNights, still 'at least' sellable) -> offer at the standard discount", () => {
-    expect(decideExtensionOffer({ gap: 3, ...configArgs(CONFIG) })).toMatchObject({ offer: true, discountPercent: 15 });
+    expect(decideExtensionOffer({ gap: 3, ...configArgs(CONFIG) })).toMatchObject({
+      offer: true,
+      discountPercent: 15,
+    });
   });
 
   it("decideExtensionOffer: gap 4 (> minSellableStayNights) -> offer at the standard discount", () => {
@@ -188,7 +195,10 @@ describe("stay-extension.test.mjs", () => {
 
   it("decideExtensionOffer: longer gaps (10, 100) still offer exactly the standard discount", () => {
     for (const gap of [10, 100]) {
-      expect(decideExtensionOffer({ gap, ...configArgs(CONFIG) })).toMatchObject({ offer: true, discountPercent: 15 });
+      expect(decideExtensionOffer({ gap, ...configArgs(CONFIG) })).toMatchObject({
+        offer: true,
+        discountPercent: 15,
+      });
     }
   });
 
@@ -202,20 +212,28 @@ describe("stay-extension.test.mjs", () => {
       [5, true],
     ];
     for (const [gap, offer] of cases) {
-      expect(decideExtensionOffer({ gap, ...configArgs(config) }).offer, `gap ${String(gap)}`).toBe(offer);
+      expect(decideExtensionOffer({ gap, ...configArgs(config) }).offer, `gap ${String(gap)}`).toBe(
+        offer,
+      );
     }
   });
 
   it("computeAverageNightlyRate: task's worked example (uniform 160 EUR/night)", () => {
-    expect(computeAverageNightlyRate([slice("RP1", 160), slice("RP1", 160), slice("RP1", 160)])).toBe(160);
+    expect(
+      computeAverageNightlyRate([slice("RP1", 160), slice("RP1", 160), slice("RP1", 160)]),
+    ).toBe(160);
   });
 
   it("computeAverageNightlyRate: varying nightly prices average correctly", () => {
-    expect(computeAverageNightlyRate([slice("RP1", 140), slice("RP1", 160), slice("RP1", 180)])).toBe(160);
+    expect(
+      computeAverageNightlyRate([slice("RP1", 140), slice("RP1", 160), slice("RP1", 180)]),
+    ).toBe(160);
   });
 
   it("computeAverageNightlyRate: rounds to EUR cents", () => {
-    expect(computeAverageNightlyRate([slice("RP1", 100), slice("RP1", 100), slice("RP1", 100.01)])).toBe(100);
+    expect(
+      computeAverageNightlyRate([slice("RP1", 100), slice("RP1", 100), slice("RP1", 100.01)]),
+    ).toBe(100);
   });
 
   it("computeAverageNightlyRate: refuses (null) on empty/missing timeSlices", () => {
@@ -238,7 +256,13 @@ describe("stay-extension.test.mjs", () => {
 
   it("buildExtensionOffer: task's worked example end to end (160 EUR average, 1-night gap -> 20% off -> 128.00)", () => {
     const timeSlices = [slice("RP1", 160), slice("RP1", 160), slice("RP1", 160), slice("RP1", 160)];
-    const offer = buildExtensionOffer({ reservation: { departure: DEPARTURE }, timeSlices, gap: 1, config: CONFIG, phase: "in_house" });
+    const offer = buildExtensionOffer({
+      reservation: { departure: DEPARTURE },
+      timeSlices,
+      gap: 1,
+      config: CONFIG,
+      phase: "in_house",
+    });
     expect(offer).not.toBeNull();
     expect(offer?.averageNightlyRate).toEqual({ amount: 160, currency: "EUR" });
     expect(offer?.extensionPrice).toEqual({ amount: 128, currency: "EUR" });
@@ -264,20 +288,56 @@ describe("stay-extension.test.mjs", () => {
   it("buildExtensionOffer: returns null (no offer shown at all) when the gap doesn't qualify", () => {
     const reservation = { departure: DEPARTURE };
     const timeSlices = [slice("RP1", 160)];
-    expect(buildExtensionOffer({ reservation, timeSlices, gap: 0, config: CONFIG, phase: "before_arrival" })).toBeNull();
-    expect(buildExtensionOffer({ reservation, timeSlices, gap: 2, config: CONFIG, phase: "in_house" })).toBeNull();
+    expect(
+      buildExtensionOffer({
+        reservation,
+        timeSlices,
+        gap: 0,
+        config: CONFIG,
+        phase: "before_arrival",
+      }),
+    ).toBeNull();
+    expect(
+      buildExtensionOffer({ reservation, timeSlices, gap: 2, config: CONFIG, phase: "in_house" }),
+    ).toBeNull();
   });
 
   // Phase-specific discount selection: only WHICH discount gets plugged into the unchanged
   // gap decision depends on the phase.
   it.each([
-    ["buildExtensionOffer: pre-arrival, gap 1 (closes the gap) -> pre-arrival one-night-gap discount (15%)", "before_arrival", 1, 15],
-    ["buildExtensionOffer: pre-arrival, standard gap (> minSellableStayNights) -> pre-arrival standard discount (10%)", "before_arrival", 4, 10],
-    ["buildExtensionOffer: in_house, gap 1 (closes the gap) -> in-house one-night-gap discount (20%)", "in_house", 1, 20],
-    ["buildExtensionOffer: in_house, standard gap (> minSellableStayNights) -> in-house standard discount (15%)", "in_house", 4, 15],
+    [
+      "buildExtensionOffer: pre-arrival, gap 1 (closes the gap) -> pre-arrival one-night-gap discount (15%)",
+      "before_arrival",
+      1,
+      15,
+    ],
+    [
+      "buildExtensionOffer: pre-arrival, standard gap (> minSellableStayNights) -> pre-arrival standard discount (10%)",
+      "before_arrival",
+      4,
+      10,
+    ],
+    [
+      "buildExtensionOffer: in_house, gap 1 (closes the gap) -> in-house one-night-gap discount (20%)",
+      "in_house",
+      1,
+      20,
+    ],
+    [
+      "buildExtensionOffer: in_house, standard gap (> minSellableStayNights) -> in-house standard discount (15%)",
+      "in_house",
+      4,
+      15,
+    ],
   ] as const)("%s", (_name, phase, gap, discountPercent) => {
     const timeSlices = [slice("RP1", 200), slice("RP1", 200)];
-    const offer = buildExtensionOffer({ reservation: { departure: DEPARTURE }, timeSlices, gap, config: PHASE_CONFIG, phase });
+    const offer = buildExtensionOffer({
+      reservation: { departure: DEPARTURE },
+      timeSlices,
+      gap,
+      config: PHASE_CONFIG,
+      phase,
+    });
     expect(offer).not.toBeNull();
     expect(offer?.discountPercent).toBe(discountPercent);
     expect(offer?.phase).toBe(phase);
@@ -286,17 +346,38 @@ describe("stay-extension.test.mjs", () => {
   it("buildExtensionOffer: the same gap produces different discountPercent depending only on phase, config held constant", () => {
     const reservation = { departure: DEPARTURE };
     const timeSlices = [slice("RP1", 200), slice("RP1", 200)];
-    const preArrival = buildExtensionOffer({ reservation, timeSlices, gap: 1, config: PHASE_CONFIG, phase: "before_arrival" });
-    const inHouse = buildExtensionOffer({ reservation, timeSlices, gap: 1, config: PHASE_CONFIG, phase: "in_house" });
+    const preArrival = buildExtensionOffer({
+      reservation,
+      timeSlices,
+      gap: 1,
+      config: PHASE_CONFIG,
+      phase: "before_arrival",
+    });
+    const inHouse = buildExtensionOffer({
+      reservation,
+      timeSlices,
+      gap: 1,
+      config: PHASE_CONFIG,
+      phase: "in_house",
+    });
     expect(preArrival?.discountPercent).toBe(15);
     expect(inHouse?.discountPercent).toBe(20);
     expect(preArrival?.discountPercent).not.toBe(inHouse?.discountPercent);
   });
 
   it("buildStayExtensionAmendmentPayload: existing time slice prices are resent completely unchanged", () => {
-    const reservation = { arrival: "2026-10-10T14:00:00+02:00", departure: DEPARTURE, adults: 2, childrenAges: [7] };
+    const reservation = {
+      arrival: "2026-10-10T14:00:00+02:00",
+      departure: DEPARTURE,
+      adults: 2,
+      childrenAges: [7],
+    };
     const timeSlices = [slice("RP1", 150), slice("RP1", 160), slice("RP1", 170)];
-    const payload = buildStayExtensionAmendmentPayload({ reservation, timeSlices, extensionPrice: 128 });
+    const payload = buildStayExtensionAmendmentPayload({
+      reservation,
+      timeSlices,
+      extensionPrice: 128,
+    });
 
     expect(payload?.timeSlices.length, "existing 3 nights + 1 new extension night").toBe(4);
     expect(
@@ -307,18 +388,39 @@ describe("stay-extension.test.mjs", () => {
   });
 
   it("buildStayExtensionAmendmentPayload: the new time slice uses ONLY the calculated extension price, never the average or a hard-coded number", () => {
-    const reservation = { arrival: "2026-10-10T14:00:00+02:00", departure: DEPARTURE, adults: 2, childrenAges: null };
+    const reservation = {
+      arrival: "2026-10-10T14:00:00+02:00",
+      departure: DEPARTURE,
+      adults: 2,
+      childrenAges: null,
+    };
     const timeSlices = [slice("RP1", 200), slice("RP1", 200)];
-    const payload = buildStayExtensionAmendmentPayload({ reservation, timeSlices, extensionPrice: 128 });
+    const payload = buildStayExtensionAmendmentPayload({
+      reservation,
+      timeSlices,
+      extensionPrice: 128,
+    });
 
     const newSlice = payload?.timeSlices.at(-1);
     expect(newSlice?.totalGrossAmount.amount).toBe(128);
-    expect(newSlice?.ratePlanId, "reuses the reservation's own rate plan, never a different one").toBe("RP1");
+    expect(
+      newSlice?.ratePlanId,
+      "reuses the reservation's own rate plan, never a different one",
+    ).toBe("RP1");
   });
 
   it("buildStayExtensionAmendmentPayload: preserves arrival/adults/childrenAges, extends departure by exactly one night, and never reprices (requote:false)", () => {
-    const reservation = { arrival: "2026-10-10T14:00:00+02:00", departure: DEPARTURE, adults: 3, childrenAges: [4, 9] };
-    const payload = buildStayExtensionAmendmentPayload({ reservation, timeSlices: [slice("RP1", 100)], extensionPrice: 80 });
+    const reservation = {
+      arrival: "2026-10-10T14:00:00+02:00",
+      departure: DEPARTURE,
+      adults: 3,
+      childrenAges: [4, 9],
+    };
+    const payload = buildStayExtensionAmendmentPayload({
+      reservation,
+      timeSlices: [slice("RP1", 100)],
+      extensionPrice: 80,
+    });
 
     expect(payload?.arrival).toBe(reservation.arrival);
     expect(payload?.departure).toBe("2026-10-17");
@@ -337,9 +439,20 @@ describe("stay-extension.test.mjs", () => {
       source: "Booking.com",
       externalCode: "1234567890-1",
     };
-    const payload = buildStayExtensionAmendmentPayload({ reservation, timeSlices: [slice("RP1", 150)], extensionPrice: 120 });
+    const payload = buildStayExtensionAmendmentPayload({
+      reservation,
+      timeSlices: [slice("RP1", 150)],
+      extensionPrice: 120,
+    });
 
-    expect(Object.keys(payload ?? {}).sort()).toEqual(["adults", "arrival", "childrenAges", "departure", "requote", "timeSlices"]);
+    expect(Object.keys(payload ?? {}).sort()).toEqual([
+      "adults",
+      "arrival",
+      "childrenAges",
+      "departure",
+      "requote",
+      "timeSlices",
+    ]);
   });
 
   it("buildStayExtensionAmendmentPayload: refuses (null) on a time slice missing ratePlan.id", () => {
@@ -354,7 +467,13 @@ describe("stay-extension.test.mjs", () => {
 
   it("buildStayExtensionAmendmentPayload: refuses on a negative extension price", () => {
     const reservation = { arrival: "2026-10-10T14:00:00+02:00", departure: DEPARTURE, adults: 2 };
-    expect(buildStayExtensionAmendmentPayload({ reservation, timeSlices: [slice("RP1", 100)], extensionPrice: -1 })).toBeNull();
+    expect(
+      buildStayExtensionAmendmentPayload({
+        reservation,
+        timeSlices: [slice("RP1", 100)],
+        extensionPrice: -1,
+      }),
+    ).toBeNull();
   });
 
   /* 1b. per-night extras, city tax preview/verification, total price preview */
@@ -362,7 +481,13 @@ describe("stay-extension.test.mjs", () => {
   const STAY = { arrivalDate: "2026-10-10", oldDepartureDate: "2026-10-13", newDate: "2026-10-13" };
 
   it("findExtendableServices: a per-night extra covering every original night is eligible for extension", () => {
-    const services = [serviceEntry("HUND", [["2026-10-10", 15], ["2026-10-11", 15], ["2026-10-12", 15]])];
+    const services = [
+      serviceEntry("HUND", [
+        ["2026-10-10", 15],
+        ["2026-10-11", 15],
+        ["2026-10-12", 15],
+      ]),
+    ];
     const { toExtend, alreadyExtended } = findExtendableServices({ services, ...STAY });
     expect(toExtend).toHaveLength(1);
     expect(alreadyExtended).toHaveLength(0);
@@ -373,17 +498,31 @@ describe("stay-extension.test.mjs", () => {
 
   it("findExtendableServices: a mandatory service (e.g. final cleaning) is never touched, even if dated at the old departure", () => {
     const services = [serviceEntry("FINALCLEAN", [["2026-10-13", 119]], { mandatory: true })];
-    expect(findExtendableServices({ services, ...STAY })).toEqual({ toExtend: [], alreadyExtended: [] });
+    expect(findExtendableServices({ services, ...STAY })).toEqual({
+      toExtend: [],
+      alreadyExtended: [],
+    });
   });
 
   it("findExtendableServices: a single-date arrival/departure-tied service (early check-in, late check-out) is never touched", () => {
-    const services = [serviceEntry("ECI", [["2026-10-10", 25]]), serviceEntry("LCO", [["2026-10-13", 20]])];
-    expect(findExtendableServices({ services, ...STAY })).toEqual({ toExtend: [], alreadyExtended: [] });
+    const services = [
+      serviceEntry("ECI", [["2026-10-10", 25]]),
+      serviceEntry("LCO", [["2026-10-13", 20]]),
+    ];
+    expect(findExtendableServices({ services, ...STAY })).toEqual({
+      toExtend: [],
+      alreadyExtended: [],
+    });
   });
 
   it("findExtendableServices: a service whose dates already include the new night is reported as already extended, not re-extended", () => {
     const services = [
-      serviceEntry("HUND", [["2026-10-10", 15], ["2026-10-11", 15], ["2026-10-12", 15], ["2026-10-13", 15]]),
+      serviceEntry("HUND", [
+        ["2026-10-10", 15],
+        ["2026-10-11", 15],
+        ["2026-10-12", 15],
+        ["2026-10-13", 15],
+      ]),
     ];
     const { toExtend, alreadyExtended } = findExtendableServices({ services, ...STAY });
     expect(toExtend).toHaveLength(0);
@@ -393,11 +532,20 @@ describe("stay-extension.test.mjs", () => {
 
   it("findExtendableServices: a partial subset of nights (a genuine one-off booking) is never touched", () => {
     const services = [serviceEntry("HUND", [["2026-10-11", 15]])]; // only the middle night
-    expect(findExtendableServices({ services, ...STAY })).toEqual({ toExtend: [], alreadyExtended: [] });
+    expect(findExtendableServices({ services, ...STAY })).toEqual({
+      toExtend: [],
+      alreadyExtended: [],
+    });
   });
 
   it("findExtendableServices: supports any future per-night extra without hardcoding service ids", () => {
-    const services = [serviceEntry("SOME-FUTURE-EXTRA", [["2026-10-10", 9], ["2026-10-11", 9], ["2026-10-12", 9]])];
+    const services = [
+      serviceEntry("SOME-FUTURE-EXTRA", [
+        ["2026-10-10", 9],
+        ["2026-10-11", 9],
+        ["2026-10-12", 9],
+      ]),
+    ];
     const { toExtend } = findExtendableServices({ services, ...STAY });
     expect(toExtend).toHaveLength(1);
     expect(toExtend[0]?.serviceId).toBe("SOME-FUTURE-EXTRA");
@@ -415,16 +563,32 @@ describe("stay-extension.test.mjs", () => {
     });
     expect(dates).toHaveLength(3);
     expect(dates.slice(0, 2)).toEqual(existingDates);
-    expect(dates[2]).toEqual({ serviceDate: "2026-10-12", count: 1, amount: { amount: 15, currency: "EUR" } });
+    expect(dates[2]).toEqual({
+      serviceDate: "2026-10-12",
+      count: 1,
+      amount: { amount: 15, currency: "EUR" },
+    });
   });
 
   it("findCityTaxAmount: finds the CityTax charge for a specific night among mixed folio charge types", () => {
     const folios = [
       {
         charges: [
-          { type: "TimeSlice", serviceDate: "2026-10-12", amount: { grossAmount: 91.13, currency: "EUR" } },
-          { type: "CityTax", serviceDate: "2026-10-12", amount: { grossAmount: 4, currency: "EUR" } },
-          { type: "ExtraService", serviceDate: "2026-10-12", amount: { grossAmount: 15, currency: "EUR" } },
+          {
+            type: "TimeSlice",
+            serviceDate: "2026-10-12",
+            amount: { grossAmount: 91.13, currency: "EUR" },
+          },
+          {
+            type: "CityTax",
+            serviceDate: "2026-10-12",
+            amount: { grossAmount: 4, currency: "EUR" },
+          },
+          {
+            type: "ExtraService",
+            serviceDate: "2026-10-12",
+            amount: { grossAmount: 15, currency: "EUR" },
+          },
         ],
       },
     ];
@@ -432,7 +596,17 @@ describe("stay-extension.test.mjs", () => {
   });
 
   it("findCityTaxAmount: returns null when no CityTax charge exists for that night (not subject, or verification failure)", () => {
-    const folios = [{ charges: [{ type: "TimeSlice", serviceDate: "2026-10-12", amount: { grossAmount: 91.13, currency: "EUR" } }] }];
+    const folios = [
+      {
+        charges: [
+          {
+            type: "TimeSlice",
+            serviceDate: "2026-10-12",
+            amount: { grossAmount: 91.13, currency: "EUR" },
+          },
+        ],
+      },
+    ];
     expect(findCityTaxAmount(folios, "2026-10-12")).toBeNull();
     expect(findCityTaxAmount([], "2026-10-12")).toBeNull();
   });
@@ -440,14 +614,21 @@ describe("stay-extension.test.mjs", () => {
   it("buildExtensionPricePreview: sums accommodation (already discounted) + extras (normal price) + city tax", () => {
     const total = buildExtensionPricePreview({
       extensionPrice: { amount: 93.5, currency: "EUR" },
-      extras: [{ amount: { amount: 15, currency: "EUR" } }, { amount: { amount: 15, currency: "EUR" } }],
+      extras: [
+        { amount: { amount: 15, currency: "EUR" } },
+        { amount: { amount: 15, currency: "EUR" } },
+      ],
       cityTax: { amount: 8, currency: "EUR" },
     });
     expect(total).toEqual({ amount: 131.5, currency: "EUR" });
   });
 
   it("buildExtensionPricePreview: with no extras and no city tax, the total equals the accommodation price alone", () => {
-    const total = buildExtensionPricePreview({ extensionPrice: { amount: 93.5, currency: "EUR" }, extras: [], cityTax: null });
+    const total = buildExtensionPricePreview({
+      extensionPrice: { amount: 93.5, currency: "EUR" },
+      extras: [],
+      cityTax: null,
+    });
     expect(total).toEqual({ amount: 93.5, currency: "EUR" });
   });
 
@@ -464,19 +645,32 @@ describe("stay-extension.test.mjs", () => {
     const extras = [
       { serviceId: "DOG", extended: true, amount: { amount: 15, currency: "EUR" } },
       // "alreadyDone" extras were already billed before this extension — never counted as additional.
-      { serviceId: "PARKING", extended: true, alreadyDone: true, amount: { amount: 10, currency: "EUR" } },
+      {
+        serviceId: "PARKING",
+        extended: true,
+        alreadyDone: true,
+        amount: { amount: 10, currency: "EUR" },
+      },
       // A failed extension attempt never added a charge either.
       { serviceId: "BREAKFAST", extended: false, error: "boom" },
     ];
     const cityTax = { applicable: true, verified: true, amount: { amount: 3.5, currency: "EUR" } };
-    const total = computeExtensionAdditionalTotal({ extensionPrice: { amount: 100, currency: "EUR" }, extras, cityTax });
+    const total = computeExtensionAdditionalTotal({
+      extensionPrice: { amount: 100, currency: "EUR" },
+      extras,
+      cityTax,
+    });
     expect(total).toEqual({ amount: 118.5, currency: "EUR" });
   });
 
   it("computeExtensionAdditionalTotal: an extended extra missing its amount -> null (never guesses)", () => {
     const extras = [{ serviceId: "DOG", extended: true }];
     expect(
-      computeExtensionAdditionalTotal({ extensionPrice: { amount: 100, currency: "EUR" }, extras, cityTax: null }),
+      computeExtensionAdditionalTotal({
+        extensionPrice: { amount: 100, currency: "EUR" },
+        extras,
+        cityTax: null,
+      }),
     ).toBeNull();
   });
 
@@ -490,7 +684,9 @@ describe("stay-extension.test.mjs", () => {
   });
 
   it("computeExtensionAdditionalTotal: missing extensionPrice -> null", () => {
-    expect(computeExtensionAdditionalTotal({ extensionPrice: null, extras: [], cityTax: null })).toBeNull();
+    expect(
+      computeExtensionAdditionalTotal({ extensionPrice: null, extras: [], cityTax: null }),
+    ).toBeNull();
   });
 
   it("determineStayExtensionPhase: status 'InHouse' -> in_house (immediate-CTA compact card), regardless of dates", () => {
@@ -506,9 +702,21 @@ describe("stay-extension.test.mjs", () => {
   });
 
   it.each([
-    ["determineStayExtensionPhase: not yet InHouse, but arrival has passed and departure is still in the future -> in_house (date fallback)", "2026-10-11T00:00:00Z", "in_house"],
-    ["determineStayExtensionPhase: arrival is today -> already in_house (arrival inclusive)", "2026-10-10T00:00:00Z", "in_house"],
-    ["determineStayExtensionPhase: departure is today -> no longer in_house (departure exclusive)", "2026-10-13T00:00:00Z", "before_arrival"],
+    [
+      "determineStayExtensionPhase: not yet InHouse, but arrival has passed and departure is still in the future -> in_house (date fallback)",
+      "2026-10-11T00:00:00Z",
+      "in_house",
+    ],
+    [
+      "determineStayExtensionPhase: arrival is today -> already in_house (arrival inclusive)",
+      "2026-10-10T00:00:00Z",
+      "in_house",
+    ],
+    [
+      "determineStayExtensionPhase: departure is today -> no longer in_house (departure exclusive)",
+      "2026-10-13T00:00:00Z",
+      "before_arrival",
+    ],
   ] as const)("%s", (_name, today, phase) => {
     expect(
       determineStayExtensionPhase({
@@ -529,7 +737,9 @@ describe("stay-extension.test.mjs", () => {
         today: new Date("2026-10-05T00:00:00Z"),
       }),
     ).toBe("before_arrival");
-    expect(determineStayExtensionPhase({ status: "CheckedOut", today: TODAY })).toBe("before_arrival");
+    expect(determineStayExtensionPhase({ status: "CheckedOut", today: TODAY })).toBe(
+      "before_arrival",
+    );
     // Extras also calls it with `{}` and with no argument at all; `today` is mandatory in STAY.
     expect(determineStayExtensionPhase({ today: TODAY })).toBe("before_arrival");
   });
@@ -546,33 +756,70 @@ describe("stay-extension.test.mjs", () => {
   });
 
   it.each([
-    ["findDepartureDateCandidates: a mandatory single-date service at the old departure is never a candidate", serviceEntry("FINALCLEAN", [["2026-10-13", 119]], { mandatory: true })],
-    ["findDepartureDateCandidates: a multi-date service is never a candidate, even if one date matches the old departure", serviceEntry("HUND", [["2026-10-12", 15], ["2026-10-13", 15]])],
+    [
+      "findDepartureDateCandidates: a mandatory single-date service at the old departure is never a candidate",
+      serviceEntry("FINALCLEAN", [["2026-10-13", 119]], { mandatory: true }),
+    ],
+    [
+      "findDepartureDateCandidates: a multi-date service is never a candidate, even if one date matches the old departure",
+      serviceEntry("HUND", [
+        ["2026-10-12", 15],
+        ["2026-10-13", 15],
+      ]),
+    ],
     // already on the new departure
-    ["findDepartureDateCandidates: a single-date service NOT at the old departure is never a candidate (idempotency: already-moved services are naturally excluded)", serviceEntry("LCO", [["2026-10-14", 20]])],
+    [
+      "findDepartureDateCandidates: a single-date service NOT at the old departure is never a candidate (idempotency: already-moved services are naturally excluded)",
+      serviceEntry("LCO", [["2026-10-14", 20]]),
+    ],
   ] as const)("%s", (_name, service) => {
-    expect(findDepartureDateCandidates({ services: [service], oldDepartureDate: "2026-10-13" })).toHaveLength(0);
+    expect(
+      findDepartureDateCandidates({ services: [service], oldDepartureDate: "2026-10-13" }),
+    ).toHaveLength(0);
   });
 
   it("buildLateCheckoutMoveDates: exactly one entry, for the new departure date, with the preserved count/amount", () => {
-    const dates = buildLateCheckoutMoveDates({ newDepartureDate: "2026-10-14", count: 1, amount: { amount: 20, currency: "EUR" } });
-    expect(dates).toEqual([{ serviceDate: "2026-10-14", count: 1, amount: { amount: 20, currency: "EUR" } }]);
+    const dates = buildLateCheckoutMoveDates({
+      newDepartureDate: "2026-10-14",
+      count: 1,
+      amount: { amount: 20, currency: "EUR" },
+    });
+    expect(dates).toEqual([
+      { serviceDate: "2026-10-14", count: 1, amount: { amount: 20, currency: "EUR" } },
+    ]);
   });
 
-  const MOVE = { serviceId: "LCO", oldDepartureDate: "2026-10-13", newDepartureDate: "2026-10-14", expectedAmount: 20, expectedCount: 1 };
+  const MOVE = {
+    serviceId: "LCO",
+    oldDepartureDate: "2026-10-13",
+    newDepartureDate: "2026-10-14",
+    expectedAmount: 20,
+    expectedCount: 1,
+  };
 
   it("verifyLateCheckoutMove: true when exactly one date exists, at the new departure, with the exact preserved amount/count", () => {
-    expect(verifyLateCheckoutMove({ services: [serviceEntry("LCO", [["2026-10-14", 20]])], ...MOVE })).toBe(true);
+    expect(
+      verifyLateCheckoutMove({ services: [serviceEntry("LCO", [["2026-10-14", 20]])], ...MOVE }),
+    ).toBe(true);
   });
 
   it("verifyLateCheckoutMove: false when the old date is still present, or the amount/count doesn't match, or there's more than one date", () => {
     const cases: [string, [string, number][]][] = [
       ["still on the old date", [["2026-10-13", 20]]],
       ["amount changed", [["2026-10-14", 25]]],
-      ["a second date was added instead of replacing the first", [["2026-10-13", 20], ["2026-10-14", 20]]],
+      [
+        "a second date was added instead of replacing the first",
+        [
+          ["2026-10-13", 20],
+          ["2026-10-14", 20],
+        ],
+      ],
     ];
     for (const [message, dates] of cases) {
-      expect(verifyLateCheckoutMove({ services: [serviceEntry("LCO", dates)], ...MOVE }), message).toBe(false);
+      expect(
+        verifyLateCheckoutMove({ services: [serviceEntry("LCO", dates)], ...MOVE }),
+        message,
+      ).toBe(false);
     }
   });
 });

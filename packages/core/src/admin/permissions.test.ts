@@ -14,7 +14,11 @@ const owner: AdminPrincipal = { role: "owner", propertyScope: "all", propertyIds
 const admin: AdminPrincipal = { role: "admin", propertyScope: "all", propertyIds: [] };
 const manager: AdminPrincipal = { role: "manager", propertyScope: "all", propertyIds: [] };
 const viewer: AdminPrincipal = { role: "viewer", propertyScope: "all", propertyIds: [] };
-const hovManager: AdminPrincipal = { role: "manager", propertyScope: "selected", propertyIds: ["hov"] };
+const hovManager: AdminPrincipal = {
+  role: "manager",
+  propertyScope: "selected",
+  propertyIds: ["hov"],
+};
 const hovAdmin: AdminPrincipal = { role: "admin", propertyScope: "selected", propertyIds: ["hov"] };
 
 describe("role matrix", () => {
@@ -24,7 +28,8 @@ describe("role matrix", () => {
 
   it("only owners switch the production writer", () => {
     expect(can(owner, "writer.switch")).toBe(true);
-    for (const principal of [admin, manager, viewer]) expect(can(principal, "writer.switch")).toBe(false);
+    for (const principal of [admin, manager, viewer])
+      expect(can(principal, "writer.switch")).toBe(false);
   });
 
   it("managers edit the catalog and decide requests, but neither settings nor users", () => {
@@ -36,7 +41,9 @@ describe("role matrix", () => {
 
   it("viewers read only – no action button may ever be authorized for them", () => {
     for (const permission of ADMIN_PERMISSIONS) {
-      expect(can(viewer, permission, { propertyId: "hov" })).toBe(permission.endsWith(".read") && permission !== "users.read");
+      expect(can(viewer, permission, { propertyId: "hov" })).toBe(
+        permission.endsWith(".read") && permission !== "users.read",
+      );
     }
   });
 });
@@ -62,9 +69,15 @@ describe("property scope", () => {
   });
 
   it("owners always see every property", () => {
-    expect(canAccessProperty({ role: "owner", propertyScope: "selected", propertyIds: [] }, "x")).toBe(true);
-    expect(isValidPrincipalShape({ role: "owner", propertyScope: "selected", propertyIds: ["hov"] })).toBe(false);
-    expect(isValidPrincipalShape({ role: "viewer", propertyScope: "selected", propertyIds: [] })).toBe(false);
+    expect(
+      canAccessProperty({ role: "owner", propertyScope: "selected", propertyIds: [] }, "x"),
+    ).toBe(true);
+    expect(
+      isValidPrincipalShape({ role: "owner", propertyScope: "selected", propertyIds: ["hov"] }),
+    ).toBe(false);
+    expect(
+      isValidPrincipalShape({ role: "viewer", propertyScope: "selected", propertyIds: [] }),
+    ).toBe(false);
     expect(isValidPrincipalShape(hovManager)).toBe(true);
   });
 });

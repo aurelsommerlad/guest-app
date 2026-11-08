@@ -136,7 +136,13 @@ describe("occupancy.test.mjs", () => {
 
 describe("occupancy-amendment.test.mjs", () => {
   function reservation(overrides: Record<string, unknown> = {}) {
-    return { arrival: "2026-09-01", departure: "2026-09-05", adults: 2, childrenAges: [7], ...overrides };
+    return {
+      arrival: "2026-09-01",
+      departure: "2026-09-05",
+      adults: 2,
+      childrenAges: [7],
+      ...overrides,
+    };
   }
 
   function slice(ratePlanId: string, amount: number, currency = "EUR"): TimeSliceLike {
@@ -174,7 +180,10 @@ describe("occupancy-amendment.test.mjs", () => {
   });
 
   it("buildExtraPersonPricing: zero price per night is allowed (a free additional guest is a valid config)", () => {
-    expect(buildExtraPersonPricing({ pricePerNight: 0, nights: 3 })?.price).toEqual({ amount: 0, currency: "EUR" });
+    expect(buildExtraPersonPricing({ pricePerNight: 0, nights: 3 })?.price).toEqual({
+      amount: 0,
+      currency: "EUR",
+    });
   });
 
   it("buildOccupancyAmendmentPayload: disposable-test worked example (three nights, +30 EUR each, +1 adult)", () => {
@@ -337,12 +346,17 @@ describe("unit-group-restriction.test.mjs", () => {
   });
 
   it("getReservationUnitGroupId: reads the embedded unitGroup.id (verified live Apaleo shape)", () => {
-    const reservation = { unitGroup: { id: "LAEKE-AP_L", code: "AP_L" }, unit: { unitGroupId: "LAEKE-AP_L" } };
+    const reservation = {
+      unitGroup: { id: "LAEKE-AP_L", code: "AP_L" },
+      unit: { unitGroupId: "LAEKE-AP_L" },
+    };
     expect(getReservationUnitGroupId(reservation)).toBe("LAEKE-AP_L");
   });
 
   it("getReservationUnitGroupId: falls back to unit.unitGroupId when unitGroup is absent", () => {
-    expect(getReservationUnitGroupId({ unit: { id: "LAEKE-NEE", unitGroupId: "LAEKE-AP_L" } })).toBe("LAEKE-AP_L");
+    expect(
+      getReservationUnitGroupId({ unit: { id: "LAEKE-NEE", unitGroupId: "LAEKE-AP_L" } }),
+    ).toBe("LAEKE-AP_L");
   });
 
   it("getReservationUnitGroupId: returns null when neither field is present", () => {
@@ -359,7 +373,9 @@ describe("unit-group-restriction.test.mjs", () => {
       [{ unitGroup: { id: "LAEKE-L-GARDEN" } }, true],
     ];
     for (const [reservation, allowed] of cases) {
-      expect(isUnitGroupAllowed(allowedUnitGroupIds, getReservationUnitGroupId(reservation))).toBe(allowed);
+      expect(isUnitGroupAllowed(allowedUnitGroupIds, getReservationUnitGroupId(reservation))).toBe(
+        allowed,
+      );
     }
   });
 });
@@ -370,14 +386,19 @@ describe("dog-booking.test.mjs", () => {
   it("countBookedServiceQuantity: the service isn't booked at all -> 0", () => {
     expect(countBookedServiceQuantity([], "HUESLE-HUND")).toBe(0);
     expect(
-      countBookedServiceQuantity([{ service: { id: "HUESLE-PARKPLATZ" }, dates: [{ count: 1 }] }], "HUESLE-HUND"),
+      countBookedServiceQuantity(
+        [{ service: { id: "HUESLE-PARKPLATZ" }, dates: [{ count: 1 }] }],
+        "HUESLE-HUND",
+      ),
     ).toBe(0);
     expect(countBookedServiceQuantity(null, "HUESLE-HUND")).toBe(0);
     expect(countBookedServiceQuantity(undefined, "HUESLE-HUND")).toBe(0);
   });
 
   it("countBookedServiceQuantity: booked with a single date -> that date's count", () => {
-    const services = [{ service: { id: "HUESLE-HUND" }, dates: [{ serviceDate: "2026-10-10", count: 1 }] }];
+    const services = [
+      { service: { id: "HUESLE-HUND" }, dates: [{ serviceDate: "2026-10-10", count: 1 }] },
+    ];
     expect(countBookedServiceQuantity(services, "HUESLE-HUND")).toBe(1);
   });
 
@@ -394,23 +415,36 @@ describe("dog-booking.test.mjs", () => {
 
   it("countBookedServiceQuantity: reads count off a date entry, not dates.length, even for a hypothetical count > 1", () => {
     const dates = Array.from({ length: 3 }, () => ({ serviceDate: "2026-10-10", count: 2 }));
-    expect(countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" }, dates }], "HUESLE-HUND")).toBe(2);
+    expect(
+      countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" }, dates }], "HUESLE-HUND"),
+    ).toBe(2);
   });
 
   it("countBookedServiceQuantity: a service entry with an empty dates array -> 0", () => {
-    expect(countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" }, dates: [] }], "HUESLE-HUND")).toBe(0);
+    expect(
+      countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" }, dates: [] }], "HUESLE-HUND"),
+    ).toBe(0);
   });
 
   it("countBookedServiceQuantity: malformed/missing dates never throws, resolves to 0", () => {
-    expect(() => countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" } }], "HUESLE-HUND")).not.toThrow();
+    expect(() =>
+      countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" } }], "HUESLE-HUND"),
+    ).not.toThrow();
     expect(countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" } }], "HUESLE-HUND")).toBe(0);
-    expect(countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" }, dates: [{}] }], "HUESLE-HUND")).toBe(0);
+    expect(
+      countBookedServiceQuantity([{ service: { id: "HUESLE-HUND" }, dates: [{}] }], "HUESLE-HUND"),
+    ).toBe(0);
   });
 
   it("hasReachedDogLimit: false when not booked, true once booked (>= MAX_DOGS_PER_RESERVATION)", () => {
     expect(MAX_DOGS_PER_RESERVATION).toBe(1);
     expect(hasReachedDogLimit([], "HUESLE-HUND")).toBe(false);
-    expect(hasReachedDogLimit([{ service: { id: "HUESLE-HUND" }, dates: [{ count: 1 }] }], "HUESLE-HUND")).toBe(true);
+    expect(
+      hasReachedDogLimit(
+        [{ service: { id: "HUESLE-HUND" }, dates: [{ count: 1 }] }],
+        "HUESLE-HUND",
+      ),
+    ).toBe(true);
   });
 
   it("countBookedServiceQuantity / hasReachedDogLimit: works for any property's own service id, not hardcoded to one", () => {
@@ -464,7 +498,10 @@ describe("vehicle-registration.test.mjs", () => {
   });
 
   it("normalizeVehiclePlates: a complete list is trimmed and truncated to exactly `count`", () => {
-    expect(normalizeVehiclePlates(["  LI-UP 123  ", " B-AB 456 ", "extra"], 2)).toEqual(["LI-UP 123", "B-AB 456"]);
+    expect(normalizeVehiclePlates(["  LI-UP 123  ", " B-AB 456 ", "extra"], 2)).toEqual([
+      "LI-UP 123",
+      "B-AB 456",
+    ]);
   });
 
   it("normalizeVehiclePlates: quantity 0 normalizes to an empty (valid) list", () => {
@@ -480,11 +517,17 @@ describe("vehicle-registration.test.mjs", () => {
   });
 
   it("buildPrimaryVehicleRegistration: only the first plate is ever used for the primary field", () => {
-    expect(buildPrimaryVehicleRegistration(["LI-UP 123", "B-AB 456"])).toEqual({ number: "LI-UP 123", countryCode: "DE" });
+    expect(buildPrimaryVehicleRegistration(["LI-UP 123", "B-AB 456"])).toEqual({
+      number: "LI-UP 123",
+      countryCode: "DE",
+    });
   });
 
   it("buildPrimaryVehicleRegistration: a custom country code is honored", () => {
-    expect(buildPrimaryVehicleRegistration(["AB-123", "AT"], "AT")).toEqual({ number: "AB-123", countryCode: "AT" });
+    expect(buildPrimaryVehicleRegistration(["AB-123", "AT"], "AT")).toEqual({
+      number: "AB-123",
+      countryCode: "AT",
+    });
   });
 
   it("buildPrimaryVehicleRegistration: no plates -> null, never fabricates a value", () => {
@@ -493,7 +536,9 @@ describe("vehicle-registration.test.mjs", () => {
   });
 
   it("formatVehiclePlatesComment: additional vehicles are formatted exactly per the required structure", () => {
-    expect(formatVehiclePlatesComment(["LI-UP 123", "B-AB 456"])).toBe("Parking vehicles:\n1. LI-UP 123\n2. B-AB 456");
+    expect(formatVehiclePlatesComment(["LI-UP 123", "B-AB 456"])).toBe(
+      "Parking vehicles:\n1. LI-UP 123\n2. B-AB 456",
+    );
   });
 
   it("formatVehiclePlatesComment: three or more vehicles are handled safely", () => {
@@ -513,7 +558,9 @@ describe("vehicle-registration.test.mjs", () => {
 
 describe("price-display.test.mjs", () => {
   it("resolvePriceUnitLabel: custom label wins over the bookingRule default", () => {
-    expect(resolvePriceUnitLabel("per_night", "pro Stellplatz / Nacht")).toBe("pro Stellplatz / Nacht");
+    expect(resolvePriceUnitLabel("per_night", "pro Stellplatz / Nacht")).toBe(
+      "pro Stellplatz / Nacht",
+    );
     expect(resolvePriceUnitLabel("per_stay", "pro Person")).toBe("pro Person");
   });
 
@@ -553,11 +600,15 @@ describe("price-display.test.mjs", () => {
 
   it("resolvePriceUnitLabel: per_person_per_night default (actionType increase_occupancy, e.g. 'Extra person')", () => {
     expect(resolvePriceUnitLabel("per_person_per_night", undefined)).toBe("pro Person / Nacht");
-    expect(resolvePriceUnitLabel("per_person_per_night", undefined, "en")).toBe("per person / night");
+    expect(resolvePriceUnitLabel("per_person_per_night", undefined, "en")).toBe(
+      "per person / night",
+    );
   });
 
   it("resolvePriceUnitLabel: a custom label wins regardless of requested language", () => {
-    expect(resolvePriceUnitLabel("per_night", "pro Stellplatz / Nacht", "en")).toBe("pro Stellplatz / Nacht");
+    expect(resolvePriceUnitLabel("per_night", "pro Stellplatz / Nacht", "en")).toBe(
+      "pro Stellplatz / Nacht",
+    );
   });
 
   it("computePriceBreakdown: quantity 0 shows nothing (no total before selection)", () => {
@@ -680,7 +731,9 @@ describe("catalog-localization.test.mjs", () => {
       finalFallback: "",
     });
     expect(result.de, "the DE override must win over the Apaleo DE value").toBe("Unser Parkplatz");
-    expect(result.en, "no EN override was set, so Apaleo's EN value still applies").toBe("Car park");
+    expect(result.en, "no EN override was set, so Apaleo's EN value still applies").toBe(
+      "Car park",
+    );
   });
 
   it("fallback logic: missing translation in the requested language falls back to the other Apaleo language", () => {
@@ -690,7 +743,9 @@ describe("catalog-localization.test.mjs", () => {
       genericFallback: "",
       finalFallback: "",
     });
-    expect(result.de, "falls back to the English Apaleo value rather than showing nothing").toBe("Late check-out");
+    expect(result.de, "falls back to the English Apaleo value rather than showing nothing").toBe(
+      "Late check-out",
+    );
     expect(result.en).toBe("Late check-out");
   });
 
@@ -734,7 +789,9 @@ describe("catalog-localization.test.mjs", () => {
       genericFallback: "",
       finalFallback: "",
     });
-    expect(result.de, "a whitespace-only override must not win over a real Apaleo value").toBe("Parkplatz");
+    expect(result.de, "a whitespace-only override must not win over a real Apaleo value").toBe(
+      "Parkplatz",
+    );
   });
 
   // STAY: resolveBilingualPriceUnitLabel uses the built-in resolvePriceUnitLabel (no injection).
@@ -756,7 +813,9 @@ describe("catalog-localization.test.mjs", () => {
       bookingRule: "per_night",
     });
     expect(result.de).toBe("pro Stellplatz / Nacht");
-    expect(result.en, "the generic field is used verbatim regardless of language").toBe("pro Stellplatz / Nacht");
+    expect(result.en, "the generic field is used verbatim regardless of language").toBe(
+      "pro Stellplatz / Nacht",
+    );
   });
 
   it("price unit labels: falls back to the bookingRule-based translated default per language", () => {
@@ -799,16 +858,31 @@ describe("catalog-sort.test.mjs", () => {
       { name: "Early Check-in", sortOrder: 30 },
       { name: "Baby cot", sortOrder: 50 },
     ];
-    expect(byName(items)).toEqual(["Car park", "Dog", "Early Check-in", "Late Check-out", "Baby cot"]);
+    expect(byName(items)).toEqual([
+      "Car park",
+      "Dog",
+      "Early Check-in",
+      "Late Check-out",
+      "Baby cot",
+    ]);
   });
 
   it("items without sortOrder appear after every item that has one", () => {
-    const items = [{ name: "No order A" }, { name: "Car park", sortOrder: 10 }, { name: "No order B" }, { name: "Dog", sortOrder: 20 }];
+    const items = [
+      { name: "No order A" },
+      { name: "Car park", sortOrder: 10 },
+      { name: "No order B" },
+      { name: "Dog", sortOrder: 20 },
+    ];
     expect(byName(items)).toEqual(["Car park", "Dog", "No order A", "No order B"]);
   });
 
   it("items without sortOrder preserve their original relative order (stable fallback)", () => {
-    expect(byName([{ name: "First" }, { name: "Second" }, { name: "Third" }])).toEqual(["First", "Second", "Third"]);
+    expect(byName([{ name: "First" }, { name: "Second" }, { name: "Third" }])).toEqual([
+      "First",
+      "Second",
+      "Third",
+    ]);
   });
 
   it("a null or non-numeric sortOrder is treated the same as missing", () => {
@@ -847,7 +921,11 @@ describe("request-approval.test.mjs", () => {
     expect(compareExistingBooking(services, "S", ["2030-01-01", "2030-01-02"], 3)).toBe("conflict");
     expect(compareExistingBooking(services, "S", ["2030-01-01", "2030-01-03"], 1)).toBe("conflict");
     const offer: ApaleoServiceOffer = {
-      dates: [{ serviceDate: "a", availableCount: 3 }, { serviceDate: "b", availableCount: 1 }, { serviceDate: "c" }],
+      dates: [
+        { serviceDate: "a", availableCount: 3 },
+        { serviceDate: "b", availableCount: 1 },
+        { serviceDate: "c" },
+      ],
     };
     expect(datesWithoutAvailability(offer, ["a", "b", "c"], 2)).toEqual(["b"]);
   });
@@ -856,7 +934,7 @@ describe("request-approval.test.mjs", () => {
 /* ── STAY-only: the documented deviation from Extras ─────────────────────────────────── */
 
 describe("STAY deviations from Extras", () => {
-  it("buildExtraPersonPricing: a missing price (null/undefined/\"\") is refused, not treated as free like Number(null) in Extras", () => {
+  it('buildExtraPersonPricing: a missing price (null/undefined/"") is refused, not treated as free like Number(null) in Extras', () => {
     for (const pricePerNight of [null, undefined, ""]) {
       expect(buildExtraPersonPricing({ pricePerNight, nights: 3 })).toBeNull();
     }

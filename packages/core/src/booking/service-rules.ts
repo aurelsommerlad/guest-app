@@ -26,7 +26,6 @@ export type ServiceActionType = (typeof SERVICE_ACTION_TYPES)[number];
 export const SERVICE_FULFILLMENT_MODES = ["instant", "request"] as const;
 export type ServiceFulfillmentMode = (typeof SERVICE_FULFILLMENT_MODES)[number];
 
-
 /** Minimal shapes of the Apaleo payloads the rules read (only the fields they use). */
 export type ApaleoReservationLike = {
   id?: string;
@@ -70,20 +69,27 @@ export type ApaleoBookedService = {
 
 function datePart(value: unknown): string | null {
   if (typeof value === "string") return value ? value.slice(0, 10) : null;
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.toISOString().slice(0, 10);
+  if (value instanceof Date)
+    return Number.isNaN(value.getTime()) ? null : value.toISOString().slice(0, 10);
   return null;
 }
 
 /** YYYY-MM-DD departure date, tolerant of the shapes Apaleo has used. */
-export function getDepartureDate(reservation: ApaleoReservationLike | null | undefined): string | null {
+export function getDepartureDate(
+  reservation: ApaleoReservationLike | null | undefined,
+): string | null {
   const raw =
-    (typeof reservation?.departure === "object" ? reservation.departure?.date : reservation?.departure) ??
+    (typeof reservation?.departure === "object"
+      ? reservation.departure?.date
+      : reservation?.departure) ??
     reservation?.checkOutDate ??
     null;
   return datePart(raw);
 }
 
-export function getArrivalDate(reservation: ApaleoReservationLike | null | undefined): string | null {
+export function getArrivalDate(
+  reservation: ApaleoReservationLike | null | undefined,
+): string | null {
   const raw =
     (typeof reservation?.arrival === "object" ? reservation.arrival?.date : reservation?.arrival) ??
     reservation?.checkInDate ??
@@ -98,7 +104,10 @@ export function isPastDate(dateStr: string | null | undefined, today: Date): boo
 }
 
 /** Every night of a stay: arrival inclusive, departure exclusive. */
-export function enumerateNights(arrivalDate: string | null, departureDate: string | null): string[] {
+export function enumerateNights(
+  arrivalDate: string | null,
+  departureDate: string | null,
+): string[] {
   if (!arrivalDate || !departureDate) return [];
   const nights: string[] = [];
   const cursor = new Date(`${arrivalDate.slice(0, 10)}T00:00:00Z`);
@@ -156,7 +165,10 @@ export function resolveRequiredDates(
 }
 
 /** Gross price of the selected date, falling back to the offer's total amount. */
-export function extractOfferPrice(offer: ApaleoServiceOffer | undefined, serviceDate: string | undefined): Money | null {
+export function extractOfferPrice(
+  offer: ApaleoServiceOffer | undefined,
+  serviceDate: string | undefined,
+): Money | null {
   const entry = (offer?.dates ?? []).find((d) => d.serviceDate === serviceDate);
   const amount = entry?.amount?.grossAmount ?? offer?.totalAmount?.grossAmount ?? null;
   if (amount === null) return null;
@@ -173,7 +185,9 @@ export function priceForItem(unitPrice: Money | null, bookingRule: string, dateC
   const nights = bookingRule === "per_night" ? dateCount : 1;
   return {
     nights,
-    price: unitPrice ? { amount: round2(unitPrice.amount * nights), currency: unitPrice.currency } : null,
+    price: unitPrice
+      ? { amount: round2(unitPrice.amount * nights), currency: unitPrice.currency }
+      : null,
   };
 }
 
@@ -192,7 +206,9 @@ export function getTotalOccupancy(reservation: ApaleoReservationLike | null | un
   return getAdultsCount(reservation) + getChildrenCount(reservation);
 }
 
-export function getUnitGroupMaxOccupancy(unitGroup: { maxPersons?: unknown } | null | undefined): number | null {
+export function getUnitGroupMaxOccupancy(
+  unitGroup: { maxPersons?: unknown } | null | undefined,
+): number | null {
   return typeof unitGroup?.maxPersons === "number" && Number.isFinite(unitGroup.maxPersons)
     ? unitGroup.maxPersons
     : null;
@@ -209,7 +225,9 @@ export function getRemainingCapacity(
   return remaining > 0 ? remaining : 0;
 }
 
-export function getReservationUnitGroupId(reservation: ApaleoReservationLike | null | undefined): string | null {
+export function getReservationUnitGroupId(
+  reservation: ApaleoReservationLike | null | undefined,
+): string | null {
   return reservation?.unitGroup?.id || reservation?.unit?.unitGroupId || null;
 }
 
@@ -225,7 +243,10 @@ export function isUnitGroupAllowed(
 /* ── Max one per reservation (dog) ───────────────────────────────────────────────────── */
 
 /** Booked quantity of a service: `count` of ONE date entry, never the number of dates. */
-export function countBookedServiceQuantity(services: readonly ApaleoBookedService[] | null | undefined, serviceId: string): number {
+export function countBookedServiceQuantity(
+  services: readonly ApaleoBookedService[] | null | undefined,
+  serviceId: string,
+): number {
   const entry = (services ?? []).find((s) => s.service?.id === serviceId);
   const dates = entry?.dates;
   if (!Array.isArray(dates) || !dates.length) return 0;
@@ -235,7 +256,10 @@ export function countBookedServiceQuantity(services: readonly ApaleoBookedServic
 
 export const MAX_DOGS_PER_RESERVATION = 1;
 
-export function hasReachedDogLimit(services: readonly ApaleoBookedService[] | null | undefined, serviceId: string): boolean {
+export function hasReachedDogLimit(
+  services: readonly ApaleoBookedService[] | null | undefined,
+  serviceId: string,
+): boolean {
   return countBookedServiceQuantity(services, serviceId) >= MAX_DOGS_PER_RESERVATION;
 }
 
@@ -243,7 +267,10 @@ export function hasReachedDogLimit(services: readonly ApaleoBookedService[] | nu
 
 export const DEFAULT_VEHICLE_COUNTRY_CODE = "DE";
 
-export function hasCompleteVehiclePlates(plates: readonly unknown[] | null | undefined, count: number): boolean {
+export function hasCompleteVehiclePlates(
+  plates: readonly unknown[] | null | undefined,
+  count: number,
+): boolean {
   if (!(count > 0)) return true;
   const list: readonly unknown[] = plates ?? [];
   for (let i = 0; i < count; i++) {
@@ -254,7 +281,10 @@ export function hasCompleteVehiclePlates(plates: readonly unknown[] | null | und
 }
 
 /** Exactly `count` trimmed plates, or null if incomplete (extra entries are ignored). */
-export function normalizeVehiclePlates(plates: readonly unknown[] | null | undefined, count: number): string[] | null {
+export function normalizeVehiclePlates(
+  plates: readonly unknown[] | null | undefined,
+  count: number,
+): string[] | null {
   if (!hasCompleteVehiclePlates(plates, count)) return null;
   const list = plates ?? [];
   return Array.from({ length: count }, (_, i) => String(list[i]).trim());
@@ -269,7 +299,9 @@ export function buildPrimaryVehicleRegistration(
 }
 
 /** Apaleo has one vehicle field – further plates go into a structured comment. */
-export function formatVehiclePlatesComment(plates: readonly string[] | null | undefined): string | null {
+export function formatVehiclePlatesComment(
+  plates: readonly string[] | null | undefined,
+): string | null {
   if (!plates || plates.length < 2) return null;
   return `Parking vehicles:\n${plates.map((p, i) => `${String(i + 1)}. ${p}`).join("\n")}`;
 }
@@ -296,7 +328,11 @@ export const DEFAULT_PRICE_UNIT_LABELS: Record<"de" | "en", Record<LabelRule, st
 };
 
 /** The admin's text if set, otherwise the default for the booking rule. */
-export function resolvePriceUnitLabel(bookingRule: string, priceUnitLabel: unknown, language: "de" | "en" = "de"): string {
+export function resolvePriceUnitLabel(
+  bookingRule: string,
+  priceUnitLabel: unknown,
+  language: "de" | "en" = "de",
+): string {
   const trimmed = typeof priceUnitLabel === "string" ? priceUnitLabel.trim() : "";
   if (trimmed) return trimmed;
   const table = DEFAULT_PRICE_UNIT_LABELS[language];
@@ -339,27 +375,48 @@ export function resolveBilingualPriceUnitLabel(input: {
 }
 
 /** Ascending sort order; missing values last (stable with Array.prototype.sort). */
-export function compareBySortOrder(a: { sortOrder?: number | null }, b: { sortOrder?: number | null }): number {
-  const aOrder = typeof a.sortOrder === "number" && Number.isFinite(a.sortOrder) ? a.sortOrder : Infinity;
-  const bOrder = typeof b.sortOrder === "number" && Number.isFinite(b.sortOrder) ? b.sortOrder : Infinity;
+export function compareBySortOrder(
+  a: { sortOrder?: number | null },
+  b: { sortOrder?: number | null },
+): number {
+  const aOrder =
+    typeof a.sortOrder === "number" && Number.isFinite(a.sortOrder) ? a.sortOrder : Infinity;
+  const bOrder =
+    typeof b.sortOrder === "number" && Number.isFinite(b.sortOrder) ? b.sortOrder : Infinity;
   return aOrder === bOrder ? 0 : aOrder - bOrder;
 }
 
 /** "unit × nights × count = total" for the selected quantity (null if nothing to break down). */
-export function computePriceBreakdown(input: { unitPrice: Money | null; nights: number; price: Money | null; count: number }) {
+export function computePriceBreakdown(input: {
+  unitPrice: Money | null;
+  nights: number;
+  price: Money | null;
+  count: number;
+}) {
   const { unitPrice, nights, price, count } = input;
   if (!(count >= 1) || !(nights > 1 || count > 1) || !price) return null;
-  const total = count > 1 ? { amount: round2(price.amount * count), currency: price.currency } : price;
+  const total =
+    count > 1 ? { amount: round2(price.amount * count), currency: price.currency } : price;
   return { unitPrice, nights: nights > 1 ? nights : null, count: count > 1 ? count : null, total };
 }
 
 /* ── Additional guests (increase_occupancy) ──────────────────────────────────────────── */
 
-export function buildExtraPersonPricing(input: { pricePerNight: unknown; nights: number; currency?: string }) {
+export function buildExtraPersonPricing(input: {
+  pricePerNight: unknown;
+  nights: number;
+  currency?: string;
+}) {
   const price = Number(input.pricePerNight);
   const currency = input.currency || "EUR";
-  if (input.pricePerNight === null || input.pricePerNight === undefined || input.pricePerNight === "") return null;
-  if (!Number.isFinite(price) || price < 0 || !Number.isFinite(input.nights) || input.nights <= 0) return null;
+  if (
+    input.pricePerNight === null ||
+    input.pricePerNight === undefined ||
+    input.pricePerNight === ""
+  )
+    return null;
+  if (!Number.isFinite(price) || price < 0 || !Number.isFinite(input.nights) || input.nights <= 0)
+    return null;
   return {
     unitPrice: { amount: price, currency },
     nights: input.nights,
@@ -406,7 +463,9 @@ export function buildOccupancyAmendmentPayload(input: {
     arrival: input.reservation.arrival,
     departure: input.reservation.departure,
     adults: getAdultsCount(input.reservation) + count,
-    childrenAges: Array.isArray(input.reservation.childrenAges) ? input.reservation.childrenAges : null,
+    childrenAges: Array.isArray(input.reservation.childrenAges)
+      ? input.reservation.childrenAges
+      : null,
     timeSlices: nextTimeSlices,
     requote: false,
   };

@@ -48,3 +48,26 @@ export {
   SimulatedSmsSender,
   VerificationOutbox,
 } from "./messaging/simulated-senders";
+export {
+  type ApaleoBookedServiceRecord,
+  type ApaleoServiceDefinition,
+  type ApaleoServiceOfferRecord,
+  ApaleoServiceReader,
+  type ApaleoUnitGroup,
+  type ReservationForServices,
+} from "./apaleo/services/service-reader";
+export {
+  parseServiceWriteMode,
+  type ReservationLookup,
+  SERVICE_WRITE_MODES,
+  type ServiceWriteCommand,
+  type ServiceWriteExecutor,
+  ServiceWriteGateway,
+  type ServiceWriteGatewayOptions,
+  type ServiceWriteMode,
+  type ServiceWriteOutcome,
+  type ServiceWriteRequest,
+  serviceWriteRequestHash,
+  type ServiceWriteStore,
+  simulatedExecutor,
+} from "./apaleo/services/write-gateway";

@@ -13,6 +13,7 @@ import { createAdminUser } from "./admin-repository";
 import { listAdminAuditEvents, recordAdminAuditEvent } from "./audit-repository";
 import {
   completeApaleoWrite,
+  createServiceWriteStore,
   enqueueNotification,
   getPropertyServiceSettings,
   getServiceWriterState,
@@ -223,6 +224,35 @@ describe("Apaleo write log", () => {
       reserveApaleoWrite(db, up, { ...base, idempotencyKey: "max.mustermann@example.test", now }),
       "apaleo_write_operations_values_valid",
     );
+  });
+});
+
+describe("gateway store adapter", () => {
+  it("reports Extras as writer and records a blocked command", async () => {
+    const store = createServiceWriteStore(db);
+    expect(await store.getServiceWriter("unique-places")).toBe("extras");
+    const reserved = await store.reserve({
+      tenantId: "unique-places",
+      propertyId: "hov",
+      externalReservationId: "ABCDEF-2",
+      operation: "book-service",
+      idempotencyKey: "adapter:1:svc",
+      requestHash: HASH_A,
+      trigger: "system",
+      now,
+    });
+    if (reserved.kind !== "acquired") throw new Error("expected acquisition");
+    await store.complete({
+      tenantId: "unique-places",
+      id: reserved.id,
+      status: "blocked",
+      resultCode: "writes_disabled",
+      now,
+    });
+    const rows = await client.query<{ status: string; result_code: string }>(
+      `SELECT status, result_code FROM apaleo_write_operations WHERE idempotency_key = 'adapter:1:svc'`,
+    );
+    expect(rows.rows).toEqual([{ status: "blocked", result_code: "writes_disabled" }]);
   });
 });
 

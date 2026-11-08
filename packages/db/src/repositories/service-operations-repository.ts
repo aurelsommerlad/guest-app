@@ -388,3 +388,18 @@ export async function enqueueNotification(
     .returning({ id: notificationOutbox.id });
   return { created: rows.length > 0 };
 }
+
+/**
+ * Persistence adapter for the Apaleo service write gateway (@up/integrations
+ * `ServiceWriteStore`, structurally typed): writer state, reservation and completion.
+ */
+export function createServiceWriteStore(db: Database) {
+  return {
+    getServiceWriter: async (tenantId: string): Promise<ServiceWriter> =>
+      (await getServiceWriterState(db, { tenantId })).serviceWriter,
+    reserve: (input: Parameters<typeof reserveApaleoWrite>[2] & { tenantId: string }) =>
+      reserveApaleoWrite(db, { tenantId: input.tenantId }, input),
+    complete: (input: Parameters<typeof completeApaleoWrite>[2] & { tenantId: string }) =>
+      completeApaleoWrite(db, { tenantId: input.tenantId }, input),
+  };
+}

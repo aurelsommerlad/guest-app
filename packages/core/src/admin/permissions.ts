@@ -131,7 +131,11 @@ export function can(
  * Who may assign which role: owners assign every role; admins assign admin/manager/viewer
  * but never owner and never change an owner. Nobody else manages users.
  */
-export function canAssignRole(actor: AdminPrincipal, current: AdminRole | null, next: AdminRole): boolean {
+export function canAssignRole(
+  actor: AdminPrincipal,
+  current: AdminRole | null,
+  next: AdminRole,
+): boolean {
   if (!can(actor, "users.manage")) return false;
   if (actor.role === "owner") return true;
   return next !== "owner" && current !== "owner";

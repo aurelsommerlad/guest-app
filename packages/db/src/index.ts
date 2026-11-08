@@ -106,6 +106,7 @@ export {
   type ApaleoWriteStatus,
   type ApaleoWriteTrigger,
   completeApaleoWrite,
+  createServiceWriteStore,
   enqueueNotification,
   getPropertyServiceSettings,
   getServiceWriterState,
