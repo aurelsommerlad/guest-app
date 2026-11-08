@@ -76,6 +76,7 @@ import {
   type EngineContext,
   type ServiceLockStore,
   type ServiceRecordStore,
+  type StoredRequest,
 } from "./ports";
 
 export const LOCK_TTL_MS = 120_000;
@@ -218,6 +219,39 @@ export class ServiceBookingEngine {
 
   get mode() {
     return this.#gateway.mode;
+  }
+
+  /**
+   * Runs `run` under an exclusive claim (e.g. one guest order per reservation and service, as
+   * the Extras bridge does); "in_progress" when another attempt holds it.
+   */
+  async exclusive<T>(
+    context: EngineContext,
+    key: string,
+    run: () => Promise<T>,
+  ): Promise<T | "in_progress"> {
+    const holder = this.#newId();
+    if (!(await this.#claim(context, key, holder))) return "in_progress";
+    try {
+      return await run();
+    } finally {
+      await this.#locks.release({ tenantId: context.tenantId, key, holder });
+    }
+  }
+
+  /** The property's configured own services (texts, rules) – read-only. */
+  getConfiguredCatalog(context: { tenantId: string; propertyId: string }) {
+    return this.#records.loadCatalog(context);
+  }
+
+  /** Services booked on the reservation in Apaleo, from any source (read-only). */
+  bookedServices(reservationId: string): Promise<ApaleoBookedService[]> {
+    return this.#reader.getBookedServices(reservationId) as Promise<ApaleoBookedService[]>;
+  }
+
+  /** Apaleo's localized service name (read-only, never throws). */
+  async serviceName(serviceId: string): Promise<Bilingual | null> {
+    return (await this.#reader.getServiceLocalized(serviceId))?.name ?? null;
   }
 
   /** Reads a reservation (read-only); unknown → null. */
@@ -673,11 +707,23 @@ export class ServiceBookingEngine {
 
   async createRequest(
     context: EngineContext,
-    input: { reservationId: string; serviceId: string; quantity: unknown },
-  ): Promise<{ ok: true; requestId: string } | { ok: false; reason: string }> {
+    input: { reservationId: string; serviceId: string; quantity: unknown; idempotencyKey?: string },
+  ): Promise<{ ok: true; requestId: string; replayed: boolean } | { ok: false; reason: string }> {
     const quantity = Number(input.quantity) || 1;
-    if (quantity <= 0) return { ok: false, reason: "invalid_quantity" };
+    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > 50)
+      return { ok: false, reason: "invalid_quantity" };
+    const holder = this.#newId();
+    const lockKey = `reqnew:${input.reservationId}:${input.serviceId}`;
+    if (!(await this.#claim(context, lockKey, holder))) return { ok: false, reason: "in_progress" };
     try {
+      if (input.idempotencyKey) {
+        const previous = await this.#records.findRequestByKey(context, input.idempotencyKey);
+        if (previous)
+          return previous.externalReservationId === input.reservationId &&
+            previous.apaleoServiceId === input.serviceId
+            ? { ok: true, requestId: previous.id, replayed: true }
+            : { ok: false, reason: "idempotency_conflict" };
+      }
       const reservation = await this.#reader.getReservation(input.reservationId);
       if (reservation.property.id !== context.apaleoPropertyId)
         return { ok: false, reason: "reservation_property_mismatch" };
@@ -687,7 +733,25 @@ export class ServiceBookingEngine {
       );
       if (!item) return { ok: false, reason: "not_available" };
       if (item.unitGroupRestricted) return { ok: false, reason: "unit_group_restricted" };
-      const { id } = await this.#records.createRequest({
+      // M4: quantity, limits and availability are checked when the request is made, not only
+      // at approval (Extras checks them at approval only).
+      if (await this.#records.hasOpenRequest(context, reservation.id, item.serviceId))
+        return { ok: false, reason: "already_requested" };
+      if (item.alreadyBooked) return { ok: false, reason: "already_booked" };
+      if (item.maxOnePerReservation && quantity !== 1)
+        return { ok: false, reason: "dog_limit_exceeded" };
+      if (item.maxQuantity !== null && quantity > item.maxQuantity)
+        return { ok: false, reason: "capacity_exceeded" };
+      const { items: offers } = await this.#reader.getServiceOffersForStay(
+        reservation.id,
+        getDepartureDate(reservation),
+        this.#now(),
+      );
+      const offer = offers.find((o) => o.service.id === item.serviceId) as
+        ApaleoServiceOffer | undefined;
+      if (datesWithoutAvailability(offer, item.serviceDates ?? [], quantity).length)
+        return { ok: false, reason: "insufficient_availability" };
+      const created = await this.#records.createRequest({
         tenantId: context.tenantId,
         propertyId: context.propertyId,
         externalReservationId: reservation.id,
@@ -697,16 +761,158 @@ export class ServiceBookingEngine {
         requestedDates: item.serviceDates ?? [],
         quotedCents: cents(item.price ?? item.unitPrice),
         currency: (item.price ?? item.unitPrice)?.currency ?? null,
+        idempotencyKey: input.idempotencyKey ?? null,
         now: this.#now(),
       });
-      await this.#records.notify({
-        tenantId: context.tenantId,
-        propertyId: context.propertyId,
-        template: "service.request",
-        dedupKey: `service-request:${id}`,
-        payload: { requestId: id, serviceId: item.serviceId, quantity },
-      });
-      return { ok: true, requestId: id };
+      if (!created.replayed) {
+        await this.#records.notify({
+          tenantId: context.tenantId,
+          propertyId: context.propertyId,
+          template: "service.request",
+          dedupKey: `service-request:${created.id}`,
+          payload: {
+            requestId: created.id,
+            serviceId: item.serviceId,
+            serviceTitle: item.displayName.de,
+            quantity,
+            dates: item.serviceDates ?? [],
+            quotedCents: cents(item.price ?? item.unitPrice),
+            currency: (item.price ?? item.unitPrice)?.currency ?? "EUR",
+          },
+        });
+      }
+      return { ok: true, requestId: created.id, replayed: created.replayed };
+    } catch (error) {
+      return { ok: false, reason: errorReason(error) };
+    } finally {
+      await this.#locks.release({ tenantId: context.tenantId, key: lockKey, holder });
+    }
+  }
+
+  /**
+   * Live re-verification of a pending request exactly like Extras approveRequest, plus the
+   * current price for one count (to compare with the price the guest saw). Never writes.
+   */
+  async #verifyRequest(context: EngineContext, request: StoredRequest) {
+    const serviceId = request.apaleoServiceId;
+    const quantity = request.quantity ?? 1;
+    if (!serviceId) return { ok: false as const, reason: "not_a_service_request" };
+    const reservation = await this.#reader.getReservation(request.externalReservationId);
+    if (reservation.property.id !== context.apaleoPropertyId)
+      return { ok: false as const, reason: "reservation_property_mismatch" };
+    const { items: offers, pastStay } = await this.#reader.getServiceOffersForStay(
+      reservation.id,
+      getDepartureDate(reservation),
+      this.#now(),
+    );
+    if (pastStay) return { ok: false as const, reason: "past_stay" };
+    const offer = offers.find((o) => o.service.id === serviceId) as ApaleoServiceOffer | undefined;
+    if (!offer) return { ok: false as const, reason: "no_offer" };
+    const item = (await this.#records.loadCatalog(context)).find((i) => i.serviceId === serviceId);
+    if (!item?.active) return { ok: false as const, reason: "inactive" };
+    if (item.maxOnePerReservation && quantity !== 1)
+      return { ok: false as const, reason: "dog_limit_exceeded" };
+    const unitGroupId = getReservationUnitGroupId(reservation);
+    if (!isUnitGroupAllowed(item.allowedUnitGroupIds, unitGroupId))
+      return { ok: false as const, reason: "unit_group_restricted" };
+    if (item.requiresRemainingCapacity) {
+      const unitGroup = unitGroupId ? await this.#unitGroupOrNull(unitGroupId) : null;
+      if (quantity > getRemainingCapacity(unitGroup, reservation))
+        return { ok: false as const, reason: "capacity_exceeded" };
+    }
+    const resolved = resolveRequiredDates(item.bookingRule, offer, reservation);
+    if (!resolved.complete) return { ok: false as const, reason: "incomplete_dates" };
+    const firstRequested = request.requestedDates?.[0];
+    if (firstRequested && !resolved.dates.includes(firstRequested))
+      return { ok: false as const, reason: "requested_date_unavailable" };
+    if (datesWithoutAvailability(offer, resolved.dates, quantity).length)
+      return { ok: false as const, reason: "insufficient_availability" };
+    const unit = extractOfferPrice(offer, resolved.dates[0]);
+    const nights = item.bookingRule === "per_night" ? resolved.dates.length : 1;
+    const currentCents = unit
+      ? cents({ amount: round2(unit.amount * nights), currency: unit.currency })
+      : null;
+    return {
+      ok: true as const,
+      reservation,
+      item,
+      serviceId,
+      quantity,
+      requiredDates: resolved.dates,
+      currentCents,
+      currency: unit?.currency ?? request.currency ?? "EUR",
+    };
+  }
+
+  /** What an approval would book right now – for the team, before deciding. Never writes. */
+  async previewRequestApproval(
+    context: EngineContext,
+    requestId: string,
+  ): Promise<
+    | {
+        ok: true;
+        bookable: boolean;
+        blocker: string | null;
+        dates: string[];
+        quantity: number;
+        quotedCents: number | null;
+        currentCents: number | null;
+        currency: string;
+        priceChanged: boolean;
+        existing: "none" | "complete" | "conflict" | null;
+      }
+    | { ok: false; reason: string }
+  > {
+    const request = await this.#records.getRequest(context, requestId);
+    if (!request || request.propertyId !== context.propertyId)
+      return { ok: false, reason: "not_found" };
+    if (request.source === "extras") return { ok: false, reason: "handled_in_extras" };
+    const base = {
+      quantity: request.quantity ?? 1,
+      quotedCents: request.quotedCents,
+      currency: request.currency ?? "EUR",
+    };
+    try {
+      const verified = await this.#verifyRequest(context, request);
+      if (!verified.ok)
+        return {
+          ok: true,
+          ...base,
+          bookable: false,
+          blocker: verified.reason,
+          dates: request.requestedDates ?? [],
+          currentCents: null,
+          priceChanged: false,
+          existing: null,
+        };
+      const services = (await this.#reader.getBookedServices(
+        verified.reservation.id,
+      )) as ApaleoBookedService[];
+      const existing = compareExistingBooking(
+        services,
+        verified.serviceId,
+        verified.requiredDates,
+        verified.quantity,
+      );
+      const priceChanged =
+        request.quotedCents !== null && verified.currentCents !== request.quotedCents;
+      const blocker =
+        request.status !== "pending"
+          ? "not_pending"
+          : existing === "conflict"
+            ? "existing_booking_conflict"
+            : null;
+      return {
+        ok: true,
+        ...base,
+        currency: verified.currency,
+        bookable: blocker === null,
+        blocker,
+        dates: verified.requiredDates,
+        currentCents: verified.currentCents,
+        priceChanged,
+        existing,
+      };
     } catch (error) {
       return { ok: false, reason: errorReason(error) };
     }
@@ -714,14 +920,18 @@ export class ServiceBookingEngine {
 
   /**
    * Staff approval: re-verifies against live Apaleo exactly like Extras approveRequest, then one
-   * book-service with every required date (no amount: Apaleo's price, as in Extras).
+   * book-service with every required date (no amount: Apaleo's price, as in Extras). M4: a price
+   * that differs from the price the guest saw is never confirmed silently – the team must accept
+   * exactly the current price (`acceptedPriceCents`).
    */
   async approveRequest(
     context: EngineContext,
     requestId: string,
     actorAdminId: string | null,
+    options: { acceptedPriceCents?: number | null } = {},
   ): Promise<
-    { ok: true; alreadyBooked: boolean; simulated: boolean } | { ok: false; reason: string }
+    | { ok: true; alreadyBooked: boolean; simulated: boolean; priceCents: number | null }
+    | { ok: false; reason: string; currentCents?: number | null }
   > {
     const holder = this.#newId();
     const processKey = `reqproc:${requestId}`;
@@ -733,51 +943,22 @@ export class ServiceBookingEngine {
         return { ok: false, reason: "not_found" };
       if (request.source === "extras") return { ok: false, reason: "handled_in_extras" };
       if (request.status !== "pending") return { ok: false, reason: "not_pending" };
-      const serviceId = request.apaleoServiceId;
-      const quantity = request.quantity ?? 1;
-      if (!serviceId) return { ok: false, reason: "not_a_service_request" };
 
-      let reservation: ReservationForServices;
-      let requiredDates: string[];
-      let item: EngineCatalogItem | undefined;
+      let verified: Awaited<ReturnType<typeof this.verifyForApproval>>;
       try {
-        reservation = await this.#reader.getReservation(request.externalReservationId);
-        if (reservation.property.id !== context.apaleoPropertyId)
-          return { ok: false, reason: "reservation_property_mismatch" };
-        const { items: offers, pastStay } = await this.#reader.getServiceOffersForStay(
-          reservation.id,
-          getDepartureDate(reservation),
-          this.#now(),
-        );
-        if (pastStay) return { ok: false, reason: "past_stay" };
-        const offer = offers.find((o) => o.service.id === serviceId) as
-          ApaleoServiceOffer | undefined;
-        if (!offer) return { ok: false, reason: "no_offer" };
-        item = (await this.#records.loadCatalog(context)).find((i) => i.serviceId === serviceId);
-        if (!item?.active) return { ok: false, reason: "inactive" };
-        if (item.maxOnePerReservation && quantity !== 1)
-          return { ok: false, reason: "dog_limit_exceeded" };
-        const unitGroupId = getReservationUnitGroupId(reservation);
-        if (!isUnitGroupAllowed(item.allowedUnitGroupIds, unitGroupId))
-          return { ok: false, reason: "unit_group_restricted" };
-        if (item.requiresRemainingCapacity) {
-          const unitGroup = unitGroupId ? await this.#unitGroupOrNull(unitGroupId) : null;
-          if (quantity > getRemainingCapacity(unitGroup, reservation))
-            return { ok: false, reason: "capacity_exceeded" };
-        }
-        const resolved = resolveRequiredDates(item.bookingRule, offer, reservation);
-        requiredDates = resolved.dates;
-        if (!resolved.complete) return { ok: false, reason: "incomplete_dates" };
-        const firstRequested = request.requestedDates?.[0];
-        if (firstRequested && !requiredDates.includes(firstRequested))
-          return { ok: false, reason: "requested_date_unavailable" };
-        if (datesWithoutAvailability(offer, requiredDates, quantity).length)
-          return { ok: false, reason: "insufficient_availability" };
+        verified = await this.verifyForApproval(context, request);
       } catch (error) {
         return { ok: false, reason: errorReason(error) };
       }
-
-      const catalogItem = item;
+      if (!verified.ok) return { ok: false, reason: verified.reason };
+      if (request.quotedCents !== null && verified.currentCents !== request.quotedCents) {
+        if (
+          options.acceptedPriceCents === undefined ||
+          options.acceptedPriceCents !== verified.currentCents
+        )
+          return { ok: false, reason: "price_changed", currentCents: verified.currentCents };
+      }
+      const { reservation, item: catalogItem, serviceId, quantity, requiredDates } = verified;
       const state = { alreadyBooked: false, simulated: false };
       const book = async (): Promise<string | null> => {
         const fresh = (await this.#reader.getBookedServices(
@@ -841,28 +1022,57 @@ export class ServiceBookingEngine {
         now: this.#now(),
       });
       if (!done.ok) return { ok: false, reason: done.reason.replace(/-/g, "_") };
-      return { ok: true, alreadyBooked: state.alreadyBooked, simulated: state.simulated };
+      await this.#records.notify({
+        tenantId: context.tenantId,
+        propertyId: context.propertyId,
+        template: "service.request_confirmed",
+        dedupKey: `service-request-confirmed:${requestId}`,
+        payload: { requestId, serviceTitle: request.serviceName, quantity },
+      });
+      return {
+        ok: true,
+        alreadyBooked: state.alreadyBooked,
+        simulated: state.simulated,
+        priceCents: verified.currentCents,
+      };
     } finally {
       await this.#locks.release({ tenantId: context.tenantId, key: processKey, holder });
     }
+  }
+
+  /** Exposed for the approval flow (and tests); same checks as the preview. */
+  verifyForApproval(context: EngineContext, request: StoredRequest) {
+    return this.#verifyRequest(context, request);
   }
 
   async rejectRequest(
     context: EngineContext,
     requestId: string,
     actorAdminId: string | null,
+    reason?: string | null,
   ): Promise<{ ok: true } | { ok: false; reason: string }> {
     const request = await this.#records.getRequest(context, requestId);
     if (!request || request.propertyId !== context.propertyId)
       return { ok: false, reason: "not_found" };
+    const text = reason?.trim() ? reason.trim().slice(0, 500) : null;
+    if (text && /[<>]/.test(text)) return { ok: false, reason: "invalid_reason" };
     const done = await this.#records.completeRequest({
       tenantId: context.tenantId,
       requestId,
       decision: "decline",
+      decisionReason: text,
       actorAdminId,
       now: this.#now(),
     });
-    return done.ok ? done : { ok: false, reason: done.reason.replace(/-/g, "_") };
+    if (!done.ok) return { ok: false, reason: done.reason.replace(/-/g, "_") };
+    await this.#records.notify({
+      tenantId: context.tenantId,
+      propertyId: context.propertyId,
+      template: "service.request_declined",
+      dedupKey: `service-request-declined:${requestId}`,
+      payload: { requestId, serviceTitle: request.serviceName, quantity: request.quantity ?? 1 },
+    });
+    return done;
   }
 
   /* ── Stay extension (Extras getStayExtensionOffer / confirmStayExtension) ─────────────── */

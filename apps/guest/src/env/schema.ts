@@ -111,6 +111,14 @@ export const serverEnvSchema = clientEnvSchema
      * secret, sent as x-vercel-protection-bypass. Never needed for a public domain.
      */
     EXTRAS_BRIDGE_PROTECTION_BYPASS: z.string().min(16).optional(),
+    /**
+     * M4: own STAY booking engine in the guest app instead of the Extras bridge. "test" only
+     * affects test properties mapped to the Apaleo TEST property (config/upsell.ts); every
+     * other property keeps the Extras bridge. Not allowed in production.
+     */
+    GUEST_SERVICE_ENGINE: z.enum(["off", "test"]).default("off"),
+    /** Engine writes: "disabled" (default) or "simulated" – there is no live mode. */
+    APALEO_SERVICE_WRITES: z.enum(["disabled", "simulated"]).default("disabled"),
     /** Server secret for code and contact hashes (HMAC pepper, ADR 0021). */
     OTP_PEPPER: z.string().min(32).optional(),
     EMAIL_DELIVERY: z.enum(EMAIL_DELIVERY_MODES).default("off"),
@@ -149,6 +157,13 @@ export const serverEnvSchema = clientEnvSchema
           code: "custom",
           path: ["APALEO_PREVIEW_RESERVATION_ID"],
           message: "a preview reservation must never be configured in production",
+        });
+      }
+      if (env.GUEST_SERVICE_ENGINE !== "off") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["GUEST_SERVICE_ENGINE"],
+          message: "the STAY service engine is not approved for production",
         });
       }
     }

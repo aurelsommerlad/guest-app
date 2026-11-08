@@ -16,7 +16,27 @@ describe("validateServerEnv", () => {
       APALEO_REGISTRATION_WRITEBACK: "disabled",
       EMAIL_DELIVERY: "off",
       SMS_DELIVERY: "off",
+      GUEST_SERVICE_ENGINE: "off",
+      APALEO_SERVICE_WRITES: "disabled",
     });
+  });
+
+  it("keeps the STAY service engine off by default and refuses it in production (M4)", () => {
+    const staging = { APP_ENV: "staging", NEXT_PUBLIC_APP_URL: "https://stay.unique-places.com" };
+    expect(validateServerEnv({ ...staging, GUEST_SERVICE_ENGINE: "test" })).toMatchObject({
+      GUEST_SERVICE_ENGINE: "test",
+      APALEO_SERVICE_WRITES: "disabled",
+    });
+    expect(() =>
+      validateServerEnv({
+        APP_ENV: "production",
+        NEXT_PUBLIC_APP_URL: "https://stay.unique-places.com",
+        GUEST_SERVICE_ENGINE: "test",
+      }),
+    ).toThrow(EnvValidationError);
+    expect(() => validateServerEnv({ ...staging, APALEO_SERVICE_WRITES: "live" })).toThrow(
+      EnvValidationError,
+    );
   });
 
   it("keeps verification messages off by default and guards each delivery mode (C4/C5)", () => {

@@ -108,13 +108,11 @@ describe("M4: texts and 0 € additional guest", () => {
       amount: 0,
       currency: "EUR",
     });
-    const result = await env
-      .engine()
-      .placeOrder(CONTEXT, {
-        reservationId: id,
-        idempotencyKey: key("free-guest"),
-        lines: [{ serviceId: "TEST-EXTRPERSON", count: 1 }],
-      });
+    const result = await env.engine().placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("free-guest"),
+      lines: [{ serviceId: "TEST-EXTRPERSON", count: 1 }],
+    });
     expect(result.status).toBe("completed");
     expect(env.apaleo.reservation(id).adults).toBe(3);
     expect(env.apaleo.reservation(id).timeSlices.map((t) => t.totalGrossAmount.amount)).toEqual([
@@ -516,7 +514,7 @@ describe("requests", () => {
       serviceId: "TEST-BABY",
       quantity: 1,
     });
-    expect(created.ok).toBe(true);
+    expect(created).toMatchObject({ ok: true });
     const requestId = created.ok ? created.requestId : "";
     expect(
       await engine.createRequest(CONTEXT, {
@@ -526,7 +524,7 @@ describe("requests", () => {
       }),
     ).toEqual({ ok: false, reason: "not_available" });
     const approved = await engine.approveRequest(CONTEXT, requestId, env.ownerId);
-    expect(approved).toEqual({ ok: true, alreadyBooked: false, simulated: true });
+    expect(approved).toMatchObject({ ok: true, alreadyBooked: false, simulated: true });
     expect(
       env.apaleo
         .booked(id)
@@ -549,7 +547,7 @@ describe("requests", () => {
     expect(outbox.rows).toEqual([{ template: "service.request", status: "pending" }]);
   });
 
-  it("rejection, insufficient availability and disabled writes keep Apaleo untouched", async () => {
+  it("rejection with reason, insufficient availability and disabled writes keep Apaleo untouched", async () => {
     const id = freshReservation();
     const engine = env.engine();
     const a = await engine.createRequest(CONTEXT, {
@@ -557,39 +555,163 @@ describe("requests", () => {
       serviceId: "TEST-BABY",
       quantity: 1,
     });
+    if (!a.ok) throw new Error("request a not created");
+    // A second open request for the same service is refused when it is made (M4).
+    expect(
+      await engine.createRequest(CONTEXT, {
+        reservationId: id,
+        serviceId: "TEST-BABY",
+        quantity: 1,
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "already_requested",
+    });
+    expect(
+      await engine.rejectRequest(CONTEXT, a.requestId, env.ownerId, "Kein Babybett frei"),
+    ).toEqual({ ok: true });
     const b = await engine.createRequest(CONTEXT, {
       reservationId: id,
       serviceId: "TEST-BABY",
       quantity: 2,
     });
-    const c = await engine.createRequest(CONTEXT, {
-      reservationId: id,
-      serviceId: "TEST-BABY",
-      quantity: 1,
-    });
-    if (!a.ok || !b.ok || !c.ok) throw new Error("requests not created");
-    expect(await engine.rejectRequest(CONTEXT, a.requestId, env.ownerId)).toEqual({ ok: true });
+    if (!b.ok) throw new Error("request b not created");
     env.apaleo.state.availability["TEST-BABY"] = { "2027-01-12": 1 };
     expect(await engine.approveRequest(CONTEXT, b.requestId, env.ownerId)).toEqual({
       ok: false,
       reason: "insufficient_availability",
     });
     expect(
-      await env.engine({ mode: "disabled" }).approveRequest(CONTEXT, c.requestId, env.ownerId),
+      await env.engine({ mode: "disabled" }).approveRequest(CONTEXT, b.requestId, env.ownerId),
+    ).toEqual({
+      ok: false,
+      reason: "insufficient_availability",
+    });
+    env.apaleo.state.availability = {};
+    expect(
+      await env.engine({ mode: "disabled" }).approveRequest(CONTEXT, b.requestId, env.ownerId),
     ).toEqual({
       ok: false,
       reason: "booking_failed:writes_disabled",
     });
-    const statuses = await env.test.client.query<{ id: string; status: string }>(
-      `SELECT id, status FROM offer_requests WHERE external_reservation_id = $1`,
+    const rows = await env.test.client.query<{
+      id: string;
+      status: string;
+      decision_reason: string | null;
+    }>(
+      `SELECT id, status, decision_reason FROM offer_requests WHERE external_reservation_id = $1`,
       [id],
     );
-    expect(Object.fromEntries(statuses.rows.map((r) => [r.id, r.status]))).toEqual({
-      [a.requestId]: "declined",
-      [b.requestId]: "pending",
-      [c.requestId]: "pending",
-    });
+    expect(Object.fromEntries(rows.rows.map((r) => [r.id, [r.status, r.decision_reason]]))).toEqual(
+      {
+        [a.requestId]: ["declined", "Kein Babybett frei"],
+        [b.requestId]: ["pending", null],
+      },
+    );
     expect(env.apaleo.booked(id).some((s) => s.service.id === "TEST-BABY")).toBe(false);
+    const audit = await env.test.client.query<{ action: string; details: Record<string, unknown> }>(
+      `SELECT action, details FROM admin_audit_events WHERE entity_id = $1`,
+      [a.requestId],
+    );
+    expect(audit.rows).toEqual([{ action: "request.declined", details: { reasonGiven: true } }]);
+  });
+
+  it("checks quantity and availability when the request is made; a repeated submit returns the same request", async () => {
+    const id = freshReservation();
+    const engine = env.engine();
+    env.apaleo.state.availability["TEST-BABY"] = { "2027-01-12": 1 };
+    expect(
+      await engine.createRequest(CONTEXT, {
+        reservationId: id,
+        serviceId: "TEST-BABY",
+        quantity: 2,
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "insufficient_availability",
+    });
+    const keyA = `req-${String(counter)}-same-key`;
+    const first = await engine.createRequest(CONTEXT, {
+      reservationId: id,
+      serviceId: "TEST-BABY",
+      quantity: 1,
+      idempotencyKey: keyA,
+    });
+    const again = await engine.createRequest(CONTEXT, {
+      reservationId: id,
+      serviceId: "TEST-BABY",
+      quantity: 1,
+      idempotencyKey: keyA,
+    });
+    expect(first).toMatchObject({ ok: true, replayed: false });
+    expect(again).toMatchObject({
+      ok: true,
+      replayed: true,
+      requestId: first.ok ? first.requestId : "",
+    });
+    const outbox = await env.test.client.query<{ n: number }>(
+      `SELECT count(*)::int AS n FROM notification_outbox WHERE dedup_key = $1`,
+      [`service-request:${first.ok ? first.requestId : ""}`],
+    );
+    expect(outbox.rows[0]?.n).toBe(1);
+  });
+
+  it("never confirms a changed price silently; the team must accept the current price", async () => {
+    const id = freshReservation();
+    const engine = env.engine();
+    const created = await engine.createRequest(CONTEXT, {
+      reservationId: id,
+      serviceId: "TEST-BABY",
+      quantity: 1,
+    });
+    if (!created.ok) throw new Error("not created");
+    env.apaleo.state.priceOverrides["TEST-BABY"] = 18;
+    const preview = await engine.previewRequestApproval(CONTEXT, created.requestId);
+    expect(preview).toMatchObject({
+      ok: true,
+      bookable: true,
+      priceChanged: true,
+      quotedCents: 1500,
+      currentCents: 1800,
+      dates: ["2027-01-12"],
+      existing: "none",
+    });
+    expect(await engine.approveRequest(CONTEXT, created.requestId, env.ownerId)).toEqual({
+      ok: false,
+      reason: "price_changed",
+      currentCents: 1800,
+    });
+    expect(
+      await engine.approveRequest(CONTEXT, created.requestId, env.ownerId, {
+        acceptedPriceCents: 1500,
+      }),
+    ).toEqual({ ok: false, reason: "price_changed", currentCents: 1800 });
+    expect(env.apaleo.booked(id).some((s) => s.service.id === "TEST-BABY")).toBe(false);
+    expect(
+      await engine.approveRequest(CONTEXT, created.requestId, env.ownerId, {
+        acceptedPriceCents: 1800,
+      }),
+    ).toMatchObject({ ok: true, priceCents: 1800 });
+    expect(
+      env.apaleo.booked(id).find((s) => s.service.id === "TEST-BABY")?.dates[0]?.amount.grossAmount,
+    ).toBe(18);
+  });
+
+  it("parallel decisions: exactly one approval books, the other is refused", async () => {
+    const id = freshReservation();
+    const created = await env
+      .engine()
+      .createRequest(CONTEXT, { reservationId: id, serviceId: "TEST-BABY", quantity: 1 });
+    if (!created.ok) throw new Error("not created");
+    const results = await Promise.all([
+      env.engine().approveRequest(CONTEXT, created.requestId, env.ownerId),
+      env.engine().approveRequest(CONTEXT, created.requestId, env.ownerId),
+      env.engine().rejectRequest(CONTEXT, created.requestId, env.ownerId),
+    ]);
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect(
+      env.apaleo.state.calls.filter((c) => c.method === "SIM:book-service").length,
+    ).toBeLessThanOrEqual(1);
   });
 
   it("imported Extras requests cannot be decided in STAY", async () => {

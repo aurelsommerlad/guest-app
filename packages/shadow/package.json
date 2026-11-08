@@ -6,7 +6,8 @@
   "description": "Shadow operation (M3): in-memory Apaleo double, simulated booking flows and the Extras parity harness. Never used by the apps at runtime.",
   "exports": {
     ".": "./src/index.ts",
-    "./apaleo-double": "./src/apaleo-double.ts"
+    "./apaleo-double": "./src/apaleo-double.ts",
+    "./simulator-state": "./src/parity/simulator-state.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

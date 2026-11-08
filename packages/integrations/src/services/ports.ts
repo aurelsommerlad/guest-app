@@ -80,6 +80,9 @@ export type StoredRequest = {
   status: string;
   source: "stay" | "extras";
   serviceName: string;
+  /** Price shown to the guest for one count (cents). */
+  quotedCents: number | null;
+  currency: string | null;
 };
 
 export type ServiceRecordStore = {
@@ -128,14 +131,26 @@ export type ServiceRecordStore = {
     requestedDates: readonly string[];
     quotedCents: number | null;
     currency: string | null;
+    idempotencyKey: string | null;
     now: Date;
-  }): Promise<{ id: string }>;
+  }): Promise<{ id: string; replayed: boolean }>;
+  findRequestByKey(
+    context: { tenantId: string },
+    idempotencyKey: string,
+  ): Promise<{ id: string; externalReservationId: string; apaleoServiceId: string | null } | null>;
+  /** A pending or confirmed STAY request for this service on the reservation. */
+  hasOpenRequest(
+    context: { tenantId: string },
+    externalReservationId: string,
+    apaleoServiceId: string,
+  ): Promise<boolean>;
   getRequest(context: { tenantId: string }, requestId: string): Promise<StoredRequest | null>;
   completeRequest(input: {
     tenantId: string;
     requestId: string;
     decision: "confirm" | "decline";
     bookedServiceDates?: readonly string[];
+    decisionReason?: string | null;
     actorAdminId: string | null;
     now: Date;
   }): Promise<

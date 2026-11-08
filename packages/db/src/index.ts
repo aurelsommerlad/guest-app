@@ -315,6 +315,8 @@ export {
   createServiceRecordStore,
   finishServiceBooking,
   getEngineRequest,
+  getServiceBookingByKey,
+  loadReservationServiceRecords,
   loadEngineCatalog,
   releaseServiceLock,
   saveServiceBookingItem,

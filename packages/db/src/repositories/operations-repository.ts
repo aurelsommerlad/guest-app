@@ -163,6 +163,8 @@ export async function decideOfferRequest(
     now: Date;
     bookedServiceDates?: readonly string[];
     writeResult?: string;
+    /** Optional internal reason (team only); the audit records only that one was given. */
+    decisionReason?: string | null;
   },
 ): Promise<RequestDecisionResult> {
   assertTenantContext(context);
@@ -185,6 +187,7 @@ export async function decideOfferRequest(
         handledBy: input.actorAdminId,
         handledAt: input.now,
         ...(input.bookedServiceDates ? { bookedServiceDates: [...input.bookedServiceDates] } : {}),
+        ...(input.decisionReason ? { decisionReason: input.decisionReason } : {}),
         updatedAt: input.now,
       })
       .where(
@@ -197,7 +200,10 @@ export async function decideOfferRequest(
       action: input.decision === "confirmed" ? "request.confirmed" : "request.declined",
       entityType: "offer_request",
       entityId: input.requestId,
-      details: input.writeResult ? { writeResult: input.writeResult } : {},
+      details: {
+        ...(input.writeResult ? { writeResult: input.writeResult } : {}),
+        ...(input.decisionReason ? { reasonGiven: true } : {}),
+      },
     });
     return { ok: true } as const;
   });

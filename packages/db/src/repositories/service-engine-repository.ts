@@ -5,7 +5,7 @@
  * `ServiceLockStore` of @up/integrations. No guest names or e-mail addresses are stored.
  */
 import { isEntityKey, type StayExtensionSettings, type TenantContext } from "@up/core";
-import { and, asc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, lt, sql } from "drizzle-orm";
 
 import { type Database } from "../client";
 import {
@@ -327,6 +327,8 @@ export async function getEngineRequest(db: Database, context: TenantContext, req
     requestedDates: r.requestedDates,
     status: r.status,
     source: r.source,
+    quotedCents: r.quotedCents,
+    currency: r.currency,
     serviceName: row.title.de ?? "",
   };
 }
@@ -364,9 +366,10 @@ export function createServiceRecordStore(db: Database) {
       requestedDates: readonly string[];
       quotedCents: number | null;
       currency: string | null;
+      idempotencyKey: string | null;
       now: Date;
     }) => {
-      const [row] = await db
+      const rows = await db
         .insert(offerRequests)
         .values({
           tenantId: input.tenantId,
@@ -382,13 +385,62 @@ export function createServiceRecordStore(db: Database) {
           quotedCents: input.quotedCents,
           currency: input.currency,
           source: "stay",
+          idempotencyKey: input.idempotencyKey,
           purgeAfter: new Date(input.now.getTime() + REQUEST_RETENTION_DAYS * DAY_MS),
           createdAt: input.now,
           updatedAt: input.now,
         })
+        .onConflictDoNothing({ target: [offerRequests.tenantId, offerRequests.idempotencyKey] })
         .returning({ id: offerRequests.id });
-      if (!row) throw new Error("Request was not stored");
-      return { id: row.id };
+      if (rows[0]) return { id: rows[0].id, replayed: false };
+      if (!input.idempotencyKey) throw new Error("Request was not stored");
+      const [existing] = await db
+        .select({ id: offerRequests.id })
+        .from(offerRequests)
+        .where(
+          and(
+            eq(offerRequests.tenantId, input.tenantId),
+            eq(offerRequests.idempotencyKey, input.idempotencyKey),
+          ),
+        );
+      if (!existing) throw new Error("Request was not stored");
+      return { id: existing.id, replayed: true };
+    },
+    findRequestByKey: async (c: { tenantId: string }, idempotencyKey: string) => {
+      const [row] = await db
+        .select({
+          id: offerRequests.id,
+          externalReservationId: offerRequests.externalReservationId,
+          apaleoServiceId: offerRequests.apaleoServiceId,
+        })
+        .from(offerRequests)
+        .where(
+          and(
+            eq(offerRequests.tenantId, c.tenantId),
+            eq(offerRequests.idempotencyKey, idempotencyKey),
+          ),
+        );
+      return row ?? null;
+    },
+    hasOpenRequest: async (
+      c: { tenantId: string },
+      externalReservationId: string,
+      apaleoServiceId: string,
+    ) => {
+      const [row] = await db
+        .select({ id: offerRequests.id })
+        .from(offerRequests)
+        .where(
+          and(
+            eq(offerRequests.tenantId, c.tenantId),
+            eq(offerRequests.externalReservationId, externalReservationId),
+            eq(offerRequests.apaleoServiceId, apaleoServiceId),
+            eq(offerRequests.source, "stay"),
+            inArray(offerRequests.status, ["pending", "confirmed"]),
+          ),
+        )
+        .limit(1);
+      return Boolean(row);
     },
     getRequest: (c: { tenantId: string }, requestId: string) =>
       getEngineRequest(db, { tenantId: c.tenantId }, requestId),
@@ -397,6 +449,7 @@ export function createServiceRecordStore(db: Database) {
       requestId: string;
       decision: "confirm" | "decline";
       bookedServiceDates?: readonly string[];
+      decisionReason?: string | null;
       actorAdminId: string | null;
       now: Date;
     }) => {
@@ -410,6 +463,7 @@ export function createServiceRecordStore(db: Database) {
           actorAdminId: input.actorAdminId,
           now: input.now,
           bookedServiceDates: input.bookedServiceDates,
+          decisionReason: input.decisionReason ?? null,
         },
       );
     },
@@ -467,5 +521,118 @@ export function createServiceRecordStore(db: Database) {
         },
       );
     },
+  };
+}
+
+/* ── Guest view (M4) ──────────────────────────────────────────────────────────────────── */
+
+/** The STAY order stored under a guest's idempotency key (double submit / retry). */
+export async function getServiceBookingByKey(
+  db: Database,
+  context: TenantContext,
+  idempotencyKey: string,
+) {
+  assertTenantContext(context);
+  const [booking] = await db
+    .select()
+    .from(serviceBookings)
+    .where(
+      and(
+        eq(serviceBookings.tenantId, context.tenantId),
+        eq(serviceBookings.idempotencyKey, idempotencyKey),
+      ),
+    );
+  if (!booking) return null;
+  const items = await db
+    .select()
+    .from(serviceBookingItems)
+    .where(
+      and(
+        eq(serviceBookingItems.tenantId, context.tenantId),
+        eq(serviceBookingItems.bookingId, booking.id),
+      ),
+    );
+  return { ...booking, items };
+}
+
+/**
+ * What STAY knows about a reservation for "Gebucht & angefragt": its requests (with status),
+ * additional guests booked through STAY and stay extensions. No guest data.
+ */
+export async function loadReservationServiceRecords(
+  db: Database,
+  context: TenantContext,
+  input: { propertyId: string; externalReservationId: string },
+) {
+  assertTenantContext(context);
+  const requests = await db
+    .select({ request: offerRequests, title: offers.title })
+    .from(offerRequests)
+    .innerJoin(
+      offers,
+      and(eq(offers.tenantId, offerRequests.tenantId), eq(offers.id, offerRequests.offerId)),
+    )
+    .where(
+      and(
+        eq(offerRequests.tenantId, context.tenantId),
+        eq(offerRequests.propertyId, input.propertyId),
+        eq(offerRequests.externalReservationId, input.externalReservationId),
+      ),
+    )
+    .orderBy(sql`${offerRequests.createdAt} DESC`);
+  const amendments = await db
+    .select({ item: serviceBookingItems, createdAt: serviceBookings.createdAt })
+    .from(serviceBookingItems)
+    .innerJoin(
+      serviceBookings,
+      and(
+        eq(serviceBookings.tenantId, serviceBookingItems.tenantId),
+        eq(serviceBookings.id, serviceBookingItems.bookingId),
+      ),
+    )
+    .where(
+      and(
+        eq(serviceBookingItems.tenantId, context.tenantId),
+        eq(serviceBookings.propertyId, input.propertyId),
+        eq(serviceBookings.externalReservationId, input.externalReservationId),
+        eq(serviceBookingItems.actionType, "increase_occupancy"),
+        eq(serviceBookingItems.status, "booked"),
+      ),
+    );
+  const extensions = await db
+    .select()
+    .from(stayExtensions)
+    .where(
+      and(
+        eq(stayExtensions.tenantId, context.tenantId),
+        eq(stayExtensions.propertyId, input.propertyId),
+        eq(stayExtensions.externalReservationId, input.externalReservationId),
+      ),
+    );
+  return {
+    requests: requests.map(({ request, title }) => ({
+      id: request.id,
+      serviceId: request.apaleoServiceId,
+      title,
+      quantity: request.quantity,
+      status: request.status,
+      source: request.source,
+      createdAt: request.createdAt,
+      decidedAt: request.handledAt,
+    })),
+    amendments: amendments.map(({ item, createdAt }) => ({
+      serviceId: item.apaleoServiceId,
+      offerId: item.offerId,
+      displayName: item.displayName,
+      quantity: item.quantity,
+      amountCents: item.amountCents,
+      currency: item.currency,
+      createdAt,
+    })),
+    extensions: extensions.map((e) => ({
+      newDeparture: e.newDeparture,
+      status: e.status,
+      createdAt: e.createdAt,
+    })),
   };
 }

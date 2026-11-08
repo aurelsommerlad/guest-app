@@ -31,6 +31,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@up/config": "workspace:*",
+    "@up/shadow": "workspace:*",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15"
   }

@@ -127,6 +127,9 @@ importers:
       '@up/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@up/shadow':
+        specifier: workspace:*
+        version: link:../../packages/shadow
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3

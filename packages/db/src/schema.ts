@@ -867,10 +867,20 @@ export const offerRequests = pgTable(
     /** stay = created in STAY · extras = imported from the Extras app. */
     source: text("source", { enum: RECORD_SOURCES }).notNull().default("stay"),
     legacyId: text("legacy_id"),
+    /** Client key of the guest submit (M4): a repeated submit returns the same request. */
+    idempotencyKey: text("idempotency_key"),
+    /** Optional internal reason of a decision (M4), shown to the team only. */
+    decisionReason: text("decision_reason"),
     ...timestamps,
   },
   (t) => [
     uniqueIndex("offer_requests_legacy_id_idx").on(t.tenantId, t.legacyId),
+    uniqueIndex("offer_requests_idempotency_idx").on(t.tenantId, t.idempotencyKey),
+    check(
+      "offer_requests_m4_values_valid",
+      sql`(${t.idempotencyKey} IS NULL OR ${t.idempotencyKey} ~ '^[A-Za-z0-9_:.-]{8,200}$')
+        AND (${t.decisionReason} IS NULL OR (char_length(${t.decisionReason}) BETWEEN 1 AND 500 AND ${t.decisionReason} !~ '[<>]'))`,
+    ),
     check("offer_requests_source_valid", oneOf(t.source, RECORD_SOURCES)),
     check(
       "offer_requests_service_valid",
