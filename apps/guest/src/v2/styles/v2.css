@@ -920,3 +920,220 @@ select.v2-input {
   cursor: default;
   opacity: 0.6;
 }
+
+/* ── Services & Erlebnisse (upselling, Phase 1) ───────────────────────
+   Editorial, not a shop: one large photograph per chapter, the rest as hairline rows with
+   a number; square corners, no cards, no shadows, prices as quiet text. */
+
+.v2-chapter {
+  margin-top: 56px;
+}
+
+.v2-chapter-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+  align-items: baseline;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--v2-ink);
+}
+
+.v2-chapter-number {
+  font-size: 30px;
+  font-weight: 200;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.v2-chapter-title {
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+}
+
+.v2-chapter-intro {
+  grid-column: 2;
+  margin-top: 6px;
+}
+
+/* Large photograph with the text below it (no overlay: the photograph stays clean). */
+.v2-offer-feature {
+  display: block;
+  margin-top: 22px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.v2-offer-media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--v2-paper-deep);
+}
+
+.v2-offer-media--wide {
+  aspect-ratio: 3 / 2;
+}
+
+.v2-offer-media img {
+  transition: transform 900ms var(--v2-ease);
+}
+
+.v2-offer-feature:hover .v2-offer-media img {
+  transform: scale(1.015);
+}
+
+/* Without a photograph: a typographic field instead of an empty box. */
+.v2-offer-media--empty {
+  display: flex;
+  align-items: flex-end;
+  padding: 22px;
+  aspect-ratio: 3 / 2;
+  border-top: 1px solid var(--v2-line);
+  border-bottom: 1px solid var(--v2-line);
+  background: transparent;
+}
+
+.v2-offer-media--empty span {
+  font-size: 44px;
+  font-weight: 200;
+  line-height: 0.95;
+  color: var(--v2-ink-muted);
+}
+
+.v2-offer-text {
+  display: grid;
+  gap: 8px;
+  padding: 18px calc(var(--v2-margin) - var(--v2-inset)) 0;
+}
+
+.v2-offer-title {
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.06;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+.v2-offer-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Numbered hairline rows */
+.v2-offer-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v2-offer-row {
+  border-bottom: 1px solid var(--v2-line);
+}
+
+.v2-offer-row a {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 18px 0 19px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.v2-offer-row-number {
+  font-size: 15px;
+  font-weight: 200;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--v2-ink-muted);
+}
+
+.v2-offer-row-title {
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.15;
+}
+
+.v2-offer-row-price {
+  font-size: 13px;
+  white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.v2-offer-row .v2-eyebrow {
+  grid-column: 2 / -1;
+  font-size: 9.5px;
+  color: var(--v2-ink-soft);
+}
+
+/* Detail page */
+.v2-offer-hero {
+  position: relative;
+  margin-top: 24px;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--v2-paper-deep);
+}
+
+.v2-offer-paragraphs {
+  display: grid;
+  gap: 14px;
+  max-width: 34em;
+}
+
+.v2-offer-action {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 20px 0 22px;
+  border-top: 1px solid var(--v2-ink);
+  border-bottom: 1px solid var(--v2-line);
+}
+
+.v2-offer-action-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.v2-offer-action-amount {
+  font-size: 26px;
+  font-weight: 200;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.v2-button[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.v2-preview-mark {
+  display: inline-block;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--v2-ink-muted);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--v2-ink-muted);
+}
+
+@media (width >= 768px) {
+  .v2-offer-media,
+  .v2-offer-hero {
+    aspect-ratio: 3 / 2;
+  }
+
+  .v2-chapter-title,
+  .v2-offer-title {
+    font-size: 28px;
+  }
+}

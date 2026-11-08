@@ -52,6 +52,11 @@ export type RegisteredProperty = {
    */
   design?: "v2";
   /**
+   * Test properties only: "Services & Erlebnisse" (upselling concept, Phase 1). Real
+   * properties keep the Extras card until it is approved (see upsell.ts).
+   */
+  upsell?: "v1";
+  /**
    * Test properties only (Phase 12 A): payment settings until they live in the database /
    * Admin (C5). Real properties are always "off" – see payment.ts.
    */
@@ -125,6 +130,8 @@ export const propertyRegistry: readonly RegisteredProperty[] = [
     contentSource: { propertyId: "hov", units: { "test-ap-1": "ros" } },
     // Design V2 is active for the test property (and only there) until it is approved.
     design: "v2",
+    // Upselling Phase 1: "Services & Erlebnisse" only for TEST.
+    upsell: "v1",
     // Phase 12 A: read-only payment overview (no links, no locking) for TEST only.
     payment: {
       mode: "inform",

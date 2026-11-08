@@ -9,7 +9,8 @@
     "guide": "Guide",
     "extras": "Extras",
     "explore": "Explore",
-    "checkIn": "Online check-in"
+    "checkIn": "Online check-in",
+    "services": "Services & experiences"
   },
   "navigation": {
     "label": "Main navigation",
@@ -522,5 +523,95 @@
       "accessNotice": "An amount is still open for your stay.",
       "privacy": "Card details are never stored in the app."
     }
+  },
+  "services": {
+    "eyebrow": "Services & experiences",
+    "title": "More from your stay.",
+    "lead": "Chosen by us: services for your stay and experiences in the region.",
+    "chapters": {
+      "stay": "For your stay",
+      "stayIntro": "Small things that make your stay easier.",
+      "region": "Experience the region",
+      "regionIntro": "With local people we know personally."
+    },
+    "categories": {
+      "arrival-departure": "Arrival & departure",
+      "longer-stay": "Stay longer",
+      "mobility": "Getting around",
+      "pets": "With your dog",
+      "comfort": "Comfort",
+      "food": "Food",
+      "food-drink": "Food & drink",
+      "nature": "Nature & outings",
+      "activities": "Activities",
+      "wellness": "Swimming & wellness",
+      "shopping": "Shopping",
+      "sights": "Sights"
+    },
+    "price": {
+      "amount": "{amount}",
+      "from": "from {amount}",
+      "per": {
+        "stay": "{amount}",
+        "night": "{amount} per night",
+        "person": "{amount} per person",
+        "person-night": "{amount} per person and night"
+      },
+      "on-request": "Price on request",
+      "at-booking": "Price when booking",
+      "preview": "Preview"
+    },
+    "facts": {
+      "heading": "At a glance",
+      "price": "Price",
+      "duration": "Duration",
+      "partner": "With",
+      "cancellation": "Cancellation",
+      "booking": "Booking",
+      "hours": "{count, plural, one {# hour} other {# hours}}",
+      "minutes": "{count} minutes"
+    },
+    "cancellation": {
+      "free-until": "Free until {hours, plural, one {# hour} other {# hours}} before",
+      "free-until-days": "Free until {days, plural, one {# day} other {# days}} before",
+      "non-refundable": "Non-refundable",
+      "on-request": "On request",
+      "partner-terms": "According to the partner’s terms"
+    },
+    "fulfillment": {
+      "instant": "Book directly",
+      "request": "On request – we confirm personally",
+      "link": "Directly with the partner"
+    },
+    "goodToKnow": "Good to know",
+    "about": "What it’s about",
+    "actions": {
+      "extras": "Book in Extras",
+      "extrasNote": "Booking happens in our Extras app – it adds the service directly to your reservation.",
+      "extrasUnavailable": "Booking via the Extras app is not available here right now.",
+      "request": "Request",
+      "requestNote": "Requests are not yet possible in this preview. Soon you can request here directly – we arrange everything with the partner and get back to you.",
+      "link": "View offer",
+      "linkNote": "You book directly with the partner.",
+      "opensExternal": "(external page)",
+      "back": "All services & experiences"
+    },
+    "previewNote": "Preview: prices of our own services are indicative. The price in the Extras app is binding.",
+    "home": {
+      "heading": "Chosen for you",
+      "all": "All services & experiences"
+    },
+    "booked": {
+      "heading": "Booked & requested",
+      "empty": "Soon you will see everything you have booked or requested here.",
+      "status": {
+        "pending": "Requested",
+        "confirmed": "Confirmed",
+        "declined": "Unfortunately not possible",
+        "cancelled": "Cancelled"
+      }
+    },
+    "empty": "We are putting together the offers for your stay.",
+    "noOffers": "We have nothing for you here right now."
   }
 }

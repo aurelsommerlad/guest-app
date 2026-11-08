@@ -9,7 +9,8 @@
     "guide": "Guide",
     "extras": "Extras",
     "explore": "Entdecken",
-    "checkIn": "Online-Check-in"
+    "checkIn": "Online-Check-in",
+    "services": "Services & Erlebnisse"
   },
   "navigation": {
     "label": "Hauptnavigation",
@@ -522,5 +523,95 @@
       "accessNotice": "Für Deinen Aufenthalt ist noch ein Betrag offen.",
       "privacy": "Kartendaten werden nie in der App gespeichert."
     }
+  },
+  "services": {
+    "eyebrow": "Services & Erlebnisse",
+    "title": "Mehr aus Deinem Aufenthalt.",
+    "lead": "Ausgewählt von uns: Services für Deinen Aufenthalt und Erlebnisse in der Region.",
+    "chapters": {
+      "stay": "Für Deinen Aufenthalt",
+      "stayIntro": "Kleine Dinge, die Deinen Aufenthalt leichter machen.",
+      "region": "Die Region erleben",
+      "regionIntro": "Mit Menschen von hier, die wir persönlich kennen."
+    },
+    "categories": {
+      "arrival-departure": "Anreise & Abreise",
+      "longer-stay": "Länger bleiben",
+      "mobility": "Mobilität",
+      "pets": "Mit Hund",
+      "comfort": "Komfort",
+      "food": "Kulinarik",
+      "food-drink": "Essen & Trinken",
+      "nature": "Natur & Ausflüge",
+      "activities": "Aktivitäten",
+      "wellness": "Baden & Wellness",
+      "shopping": "Einkaufen",
+      "sights": "Sehenswertes"
+    },
+    "price": {
+      "amount": "{amount}",
+      "from": "ab {amount}",
+      "per": {
+        "stay": "{amount}",
+        "night": "{amount} pro Nacht",
+        "person": "{amount} pro Person",
+        "person-night": "{amount} pro Person und Nacht"
+      },
+      "on-request": "Preis auf Anfrage",
+      "at-booking": "Preis bei Buchung",
+      "preview": "Vorschau"
+    },
+    "facts": {
+      "heading": "Auf einen Blick",
+      "price": "Preis",
+      "duration": "Dauer",
+      "partner": "Mit",
+      "cancellation": "Stornierung",
+      "booking": "Buchung",
+      "hours": "{count, plural, one {# Stunde} other {# Stunden}}",
+      "minutes": "{count} Minuten"
+    },
+    "cancellation": {
+      "free-until": "Kostenfrei bis {hours, plural, one {# Stunde} other {# Stunden}} vorher",
+      "free-until-days": "Kostenfrei bis {days, plural, one {# Tag} other {# Tage}} vorher",
+      "non-refundable": "Nicht stornierbar",
+      "on-request": "Auf Anfrage",
+      "partner-terms": "Nach den Bedingungen des Partners"
+    },
+    "fulfillment": {
+      "instant": "Direkt buchbar",
+      "request": "Auf Anfrage – wir bestätigen persönlich",
+      "link": "Direkt beim Partner"
+    },
+    "goodToKnow": "Gut zu wissen",
+    "about": "Darum geht’s",
+    "actions": {
+      "extras": "In Extras buchen",
+      "extrasNote": "Gebucht wird über unsere Extras-App – sie bucht die Leistung direkt in Deine Reservierung.",
+      "extrasUnavailable": "Die Buchung über die Extras-App ist hier gerade nicht verfügbar.",
+      "request": "Anfragen",
+      "requestNote": "Anfragen sind in dieser Vorschau noch nicht möglich. Bald fragst Du hier direkt an – wir klären alles mit dem Partner und melden uns bei Dir.",
+      "link": "Zum Angebot",
+      "linkNote": "Du buchst direkt beim Partner.",
+      "opensExternal": "(externe Seite)",
+      "back": "Alle Services & Erlebnisse"
+    },
+    "previewNote": "Vorschau: Preise eigener Services sind Richtwerte. Verbindlich ist der Preis in der Extras-App.",
+    "home": {
+      "heading": "Ausgewählt für Dich",
+      "all": "Alle Services & Erlebnisse"
+    },
+    "booked": {
+      "heading": "Gebucht & angefragt",
+      "empty": "Hier siehst Du bald alles, was Du gebucht oder angefragt hast.",
+      "status": {
+        "pending": "Angefragt",
+        "confirmed": "Bestätigt",
+        "declined": "Leider nicht möglich",
+        "cancelled": "Storniert"
+      }
+    },
+    "empty": "Wir stellen die Angebote für Deinen Aufenthalt gerade zusammen.",
+    "noOffers": "Gerade haben wir hier nichts für Dich."
   }
 }

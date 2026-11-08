@@ -3,11 +3,19 @@ import { hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
+import { upsellEnabled } from "../../../../config/upsell";
+import { requireGuestContext } from "../../../../features/guest-context/server";
 import { getStay } from "../../../../features/stay/get-stay";
+import { getOfferCatalog } from "../../../../features/upsell/server";
+import { homeRecommendations } from "../../../../features/upsell/upsell-service";
+import { Link } from "../../../../i18n/navigation";
 import { routing } from "../../../../i18n/routing";
+import { V2Arrow } from "../../../../v2/components/glyphs";
 import { V2Facts } from "../../../../v2/components/V2Facts";
 import { V2Header } from "../../../../v2/components/V2Header";
 import { V2Photo } from "../../../../v2/components/V2Photo";
+import { OfferImpressions } from "../../../../v2/upsell/OfferTracking";
+import { V2OfferList } from "../../../../v2/upsell/V2Offers";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -19,7 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: t("metadata.stay") };
 }
 
-/** V2 home ("Gästemappe"): greeting, the stay at a glance, three photographs. */
+/**
+ * V2 home ("Gästemappe"): greeting, the stay at a glance, three photographs and – where
+ * "Services & Erlebnisse" is switched on – a short personal selection for the stay's phase.
+ */
 export default async function V2HomePage({ params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
@@ -42,6 +53,11 @@ export default async function V2HomePage({ params }: Props) {
   const extras = card("extras");
   const explore = card("explore");
   const sentence = (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`);
+  const context = await requireGuestContext(locale);
+  const upsell = upsellEnabled(context.property);
+  const catalog = upsell ? await getOfferCatalog(context, locale) : undefined;
+  const picks = catalog ? homeRecommendations(catalog) : [];
+  const s = await getTranslations("services");
 
   return (
     <div className="v2-page">
@@ -73,7 +89,7 @@ export default async function V2HomePage({ params }: Props) {
             {extras && (
               <V2Photo
                 variant="half"
-                href={extras.href}
+                href={upsell ? "/v2/services" : extras.href}
                 eyebrow={v2("cards.extras")}
                 title={v2("cards.extrasTitle")}
                 image={extras.image}
@@ -90,6 +106,27 @@ export default async function V2HomePage({ params }: Props) {
             )}
           </div>
         </section>
+
+        {picks.length > 0 && (
+          <section aria-labelledby="v2-picks" className="v2-section">
+            <div className="v2-margin">
+              <div className="v2-section-head">
+                <h2 id="v2-picks" className="v2-eyebrow">
+                  {s("home.heading")}
+                </h2>
+              </div>
+            </div>
+            <OfferImpressions placement="home">
+              <V2OfferList offers={picks} />
+            </OfferImpressions>
+            <div className="v2-margin">
+              <Link href="/v2/services" className="v2-link v2-text">
+                <span>{s("home.all")}</span>
+                <V2Arrow />
+              </Link>
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
