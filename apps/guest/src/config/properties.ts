@@ -57,6 +57,12 @@ export type RegisteredProperty = {
    */
   upsell?: "v1";
   /**
+   * Test properties only (upselling Phase 2): own services are loaded, booked and requested
+   * in STAY through the internal Extras bridge. Extras stays the only service that books into
+   * Apaleo; without it the Phase 1 link to the Extras app remains.
+   */
+  extras?: "bridge";
+  /**
    * Test properties only (Phase 12 A): payment settings until they live in the database /
    * Admin (C5). Real properties are always "off" – see payment.ts.
    */
@@ -132,6 +138,8 @@ export const propertyRegistry: readonly RegisteredProperty[] = [
     design: "v2",
     // Upselling Phase 1: "Services & Erlebnisse" only for TEST.
     upsell: "v1",
+    // Upselling Phase 2: own services booked in STAY through the Extras bridge (TEST only).
+    extras: "bridge",
     // Phase 12 A: read-only payment overview (no links, no locking) for TEST only.
     payment: {
       mode: "inform",

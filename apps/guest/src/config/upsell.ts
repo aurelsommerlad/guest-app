@@ -9,3 +9,10 @@ export function upsellEnabled(
 ): boolean {
   return property.testOnly === true && property.design === "v2" && property.upsell === "v1";
 }
+
+/** Booking own services inside STAY (Phase 2): test properties only, on top of Phase 1. */
+export function extrasBridgeEnabled(
+  property: Pick<RegisteredProperty, "testOnly" | "design" | "upsell" | "extras">,
+): boolean {
+  return upsellEnabled(property) && property.extras === "bridge";
+}

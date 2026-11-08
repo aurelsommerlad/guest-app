@@ -14,6 +14,7 @@ import {
   resolveLocalizedText,
 } from "@up/core";
 
+import { type ExtrasBookingView } from "./extras-merge";
 import { type HouseServiceFacts } from "./house-services";
 
 export type OfferPriceView =
@@ -48,6 +49,8 @@ export type OfferView = {
   partnerName?: string;
   locality?: string;
   cancellation: CancellationPolicy;
+  /** Phase 2: booking or request through the Extras bridge (own services only). */
+  booking?: ExtrasBookingView;
 };
 
 function text(value: PropertyOffer["title"] | undefined, locale: string): string {
@@ -76,9 +79,12 @@ export function toOfferView(
   offer: PropertyOffer,
   locale: string,
   house: HouseServiceFacts | undefined,
+  live?: { price: OfferPriceView; booking: ExtrasBookingView },
 ): OfferView {
   let price: OfferPriceView = { kind: "at-booking" };
-  if (offer.kind === "house-service") {
+  if (live) {
+    price = live.price;
+  } else if (offer.kind === "house-service") {
     if (house?.amountCents !== undefined) {
       price = {
         kind: "amount",
@@ -123,13 +129,14 @@ export function toOfferView(
         }
       : {}),
     price,
-    pricePreview: offer.kind === "house-service" && house?.preview === true,
+    pricePreview: !live && offer.kind === "house-service" && house?.preview === true,
     ...(offer.durationMinutes ? { durationMinutes: offer.durationMinutes } : {}),
     fulfillment: offer.fulfillment,
     ...(offer.bookingUrl ? { bookingUrl: offer.bookingUrl } : {}),
     ...(offer.partner ? { partnerName: offer.partner.name } : {}),
     ...(offer.partner?.locality ? { locality: offer.partner.locality } : {}),
     cancellation: offer.cancellation,
+    ...(live ? { booking: live.booking } : {}),
   };
 }
 

@@ -559,7 +559,8 @@
       },
       "on-request": "Preis auf Anfrage",
       "at-booking": "Preis bei Buchung",
-      "preview": "Vorschau"
+      "preview": "Vorschau",
+      "free": "Ohne Aufpreis"
     },
     "facts": {
       "heading": "Auf einen Blick",
@@ -608,10 +609,63 @@
         "pending": "Angefragt",
         "confirmed": "Bestätigt",
         "declined": "Leider nicht möglich",
-        "cancelled": "Storniert"
+        "cancelled": "Storniert",
+        "booked": "Gebucht"
       }
     },
     "empty": "Wir stellen die Angebote für Deinen Aufenthalt gerade zusammen.",
-    "noOffers": "Gerade haben wir hier nichts für Dich."
+    "noOffers": "Gerade haben wir hier nichts für Dich.",
+    "booking": {
+      "quantity": "Anzahl",
+      "decrease": "Weniger",
+      "increase": "Mehr",
+      "plate": "Kennzeichen {number}",
+      "plateHint": "So, wie es am Fahrzeug steht.",
+      "date": "Datum",
+      "dates": "Zeitraum",
+      "nights": "{count, plural, one {# Nacht} other {# Nächte}}",
+      "total": "Gesamt",
+      "totalNote": "Verbindlicher Preis. Der Betrag wird Deiner Reservierung hinzugefügt.",
+      "requestNote": "Wir prüfen Deine Anfrage persönlich und melden uns. Kosten entstehen erst, wenn wir bestätigen.",
+      "submitInstant": "Verbindlich buchen",
+      "submitRequest": "Anfrage senden",
+      "submitExtension": "Verbindlich verlängern",
+      "sending": "Einen Moment …",
+      "noPrice": "Für diese Leistung ist gerade kein Preis hinterlegt. Frag uns gerne direkt.",
+      "toOverview": "Gebucht & angefragt",
+      "done": {
+        "booked": "Gebucht.",
+        "bookedText": "{service} ist jetzt Teil Deiner Reservierung.",
+        "requested": "Anfrage gesendet.",
+        "requestedText": "Wir prüfen sie und melden uns bei Dir.",
+        "extended": "Verlängert.",
+        "extendedText": "Deine neue Abreise ist am {date}."
+      },
+      "state": {
+        "booked": "Bereits gebucht. Du findest es unter „Gebucht & angefragt“.",
+        "requested": "Angefragt. Wir melden uns bei Dir.",
+        "confirmed": "Deine Anfrage ist bestätigt.",
+        "declined": "Leider nicht möglich."
+      },
+      "errors": {
+        "price_changed": "Der Preis hat sich gerade geändert. Bitte prüfe den neuen Preis und bestätige erneut.",
+        "already_booked": "Diese Leistung ist für Deinen Aufenthalt bereits gebucht.",
+        "already_requested": "Du hast diese Leistung bereits angefragt.",
+        "not_available": "Diese Leistung ist gerade nicht mehr verfügbar.",
+        "limit_reached": "Pro Apartment ist nur eine Buchung dieser Leistung möglich.",
+        "capacity_exceeded": "So viele weitere Personen sind in diesem Apartment nicht möglich.",
+        "vehicle_registration_required": "Bitte gib für jedes Fahrzeug ein Kennzeichen an.",
+        "in_progress": "Deine Buchung wird gerade verarbeitet. Bitte warte einen Moment.",
+        "rate_limited": "Zu viele Versuche in kurzer Zeit. Bitte versuche es gleich noch einmal.",
+        "unavailable": "Die Buchung ist gerade nicht möglich. Bitte versuche es später noch einmal."
+      },
+      "extension": {
+        "currentDeparture": "Bisherige Abreise",
+        "newDeparture": "Neue Abreise",
+        "accommodation": "Übernachtung",
+        "cityTax": "Kurtaxe"
+      }
+    },
+    "houseUnavailable": "Unsere Services können gerade nicht geladen werden. Bitte versuche es später noch einmal."
   }
 }

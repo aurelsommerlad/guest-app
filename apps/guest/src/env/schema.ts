@@ -100,6 +100,12 @@ export const serverEnvSchema = clientEnvSchema
     PREVIEW_NOW: z.iso.datetime({ offset: true }).optional(),
     /** Separate Extras app (linked without any reservation data in the URL). */
     EXTRAS_APP_URL: z.url().optional(),
+    /**
+     * Internal STAY bridge of the Extras app (server-to-server, upselling Phase 2). Both must
+     * be set; the secret is shared with Extras' STAY_BRIDGE_SECRET and never leaves the server.
+     */
+    EXTRAS_BRIDGE_URL: z.url().optional(),
+    EXTRAS_BRIDGE_SECRET: z.string().min(32).optional(),
     /** Server secret for code and contact hashes (HMAC pepper, ADR 0021). */
     OTP_PEPPER: z.string().min(32).optional(),
     EMAIL_DELIVERY: z.enum(EMAIL_DELIVERY_MODES).default("off"),
@@ -194,6 +200,20 @@ export const serverEnvSchema = clientEnvSchema
       env.APP_ENV !== "local"
     ) {
       ctx.addIssue({ code: "custom", path: ["EXTRAS_APP_URL"], message: "must use https" });
+    }
+    if (Boolean(env.EXTRAS_BRIDGE_URL) !== Boolean(env.EXTRAS_BRIDGE_SECRET)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["EXTRAS_BRIDGE_SECRET"],
+        message: "EXTRAS_BRIDGE_URL and EXTRAS_BRIDGE_SECRET are only valid together",
+      });
+    }
+    if (
+      env.EXTRAS_BRIDGE_URL &&
+      !env.EXTRAS_BRIDGE_URL.startsWith("https://") &&
+      env.APP_ENV !== "local"
+    ) {
+      ctx.addIssue({ code: "custom", path: ["EXTRAS_BRIDGE_URL"], message: "must use https" });
     }
     if (env.APALEO_REGISTRATION_WRITEBACK === "enabled") {
       for (const key of ["APALEO_CLIENT_ID", "APALEO_CLIENT_SECRET", "DATABASE_URL"] as const) {

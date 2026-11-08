@@ -76,7 +76,11 @@ export default async function V2ServicesPage({ params }: Props) {
                     </p>
                   </div>
                 </div>
-                {chapter.offers.length > 0 ? (
+                {chapter.id === "stay" && catalog.house === "unavailable" ? (
+                  <p className="v2-notice v2-margin" style={{ marginTop: 18 }}>
+                    {t("houseUnavailable")}
+                  </p>
+                ) : chapter.offers.length > 0 ? (
                   <V2OfferList offers={chapter.offers} priority={index === 0} />
                 ) : (
                   <p className="v2-body v2-margin v2-muted" style={{ paddingTop: 18 }}>

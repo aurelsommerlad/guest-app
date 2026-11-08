@@ -559,7 +559,8 @@
       },
       "on-request": "Price on request",
       "at-booking": "Price when booking",
-      "preview": "Preview"
+      "preview": "Preview",
+      "free": "No extra charge"
     },
     "facts": {
       "heading": "At a glance",
@@ -608,10 +609,63 @@
         "pending": "Requested",
         "confirmed": "Confirmed",
         "declined": "Unfortunately not possible",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "booked": "Booked"
       }
     },
     "empty": "We are putting together the offers for your stay.",
-    "noOffers": "We have nothing for you here right now."
+    "noOffers": "We have nothing for you here right now.",
+    "booking": {
+      "quantity": "Quantity",
+      "decrease": "Fewer",
+      "increase": "More",
+      "plate": "Licence plate {number}",
+      "plateHint": "As shown on the vehicle.",
+      "date": "Date",
+      "dates": "Period",
+      "nights": "{count, plural, one {# night} other {# nights}}",
+      "total": "Total",
+      "totalNote": "Binding price. The amount is added to your reservation.",
+      "requestNote": "We check your request personally and get back to you. You are only charged once we confirm.",
+      "submitInstant": "Book now",
+      "submitRequest": "Send request",
+      "submitExtension": "Extend now",
+      "sending": "One moment …",
+      "noPrice": "There is no price for this service right now. Feel free to ask us directly.",
+      "toOverview": "Booked & requested",
+      "done": {
+        "booked": "Booked.",
+        "bookedText": "{service} is now part of your reservation.",
+        "requested": "Request sent.",
+        "requestedText": "We will check it and get back to you.",
+        "extended": "Extended.",
+        "extendedText": "Your new departure is on {date}."
+      },
+      "state": {
+        "booked": "Already booked. You will find it under “Booked & requested”.",
+        "requested": "Requested. We will get back to you.",
+        "confirmed": "Your request is confirmed.",
+        "declined": "Unfortunately not possible."
+      },
+      "errors": {
+        "price_changed": "The price has just changed. Please check the new price and confirm again.",
+        "already_booked": "This service is already booked for your stay.",
+        "already_requested": "You have already requested this service.",
+        "not_available": "This service is no longer available right now.",
+        "limit_reached": "This service can only be booked once per apartment.",
+        "capacity_exceeded": "That many additional guests are not possible in this apartment.",
+        "vehicle_registration_required": "Please enter a licence plate for every vehicle.",
+        "in_progress": "Your booking is being processed. Please wait a moment.",
+        "rate_limited": "Too many attempts in a short time. Please try again shortly.",
+        "unavailable": "Booking is not possible right now. Please try again later."
+      },
+      "extension": {
+        "currentDeparture": "Previous departure",
+        "newDeparture": "New departure",
+        "accommodation": "Night",
+        "cityTax": "City tax"
+      }
+    },
+    "houseUnavailable": "Our services cannot be loaded right now. Please try again later."
   }
 }

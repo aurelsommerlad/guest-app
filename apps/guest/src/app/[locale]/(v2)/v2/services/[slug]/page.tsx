@@ -15,6 +15,7 @@ import { V2Arrow } from "../../../../../../v2/components/glyphs";
 import { V2Header } from "../../../../../../v2/components/V2Header";
 import { formatCancellation, formatDuration } from "../../../../../../v2/upsell/format";
 import { OfferViewBeacon } from "../../../../../../v2/upsell/OfferTracking";
+import { V2ExtrasBooking } from "../../../../../../v2/upsell/V2ExtrasBooking";
 import { V2OfferAction } from "../../../../../../v2/upsell/V2OfferAction";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -35,10 +36,20 @@ export default async function V2OfferPage({ params }: Props) {
   const context = await requireGuestContext(locale);
   if (!upsellEnabled(context.property)) notFound();
   const catalog = await getOfferCatalog(context, locale);
-  const offer = catalog?.offers.find((item) => item.slug === decodeURIComponent(slug));
+  // Booked or requested services keep their page (it shows the state instead of the form).
+  const offer = catalog?.all.find((item) => item.slug === decodeURIComponent(slug));
   if (!offer) notFound();
   const t = await getTranslations("services");
   const by = [offer.partnerName, offer.locality].filter(Boolean).join(", ");
+  // Services that exist only in Extras carry no STAY editorial rules (e.g. no cancellation
+  // policy) – nothing is shown that the backend does not provide.
+  const editorial = !offer.id.startsWith("extras-");
+  const fulfillment =
+    offer.booking?.kind === "service"
+      ? offer.booking.fulfillment
+      : offer.booking
+        ? "instant"
+        : offer.fulfillment;
 
   return (
     <div className="v2-page">
@@ -87,12 +98,14 @@ export default async function V2OfferPage({ params }: Props) {
             )}
             <div className="v2-row">
               <dt>{t("facts.booking")}</dt>
-              <dd className="v2-text">{t(`fulfillment.${offer.fulfillment}`)}</dd>
+              <dd className="v2-text">{t(`fulfillment.${fulfillment}`)}</dd>
             </div>
-            <div className="v2-row">
-              <dt>{t("facts.cancellation")}</dt>
-              <dd className="v2-text">{formatCancellation(offer.cancellation, t)}</dd>
-            </div>
+            {editorial && (
+              <div className="v2-row">
+                <dt>{t("facts.cancellation")}</dt>
+                <dd className="v2-text">{formatCancellation(offer.cancellation, t)}</dd>
+              </div>
+            )}
           </dl>
         </section>
 
@@ -131,7 +144,11 @@ export default async function V2OfferPage({ params }: Props) {
         )}
 
         <section className="v2-margin" aria-label={t("facts.price")}>
-          <V2OfferAction offer={offer} extrasUrl={serverEnv.EXTRAS_APP_URL} />
+          {offer.booking ? (
+            <V2ExtrasBooking booking={offer.booking} title={offer.title} />
+          ) : (
+            <V2OfferAction offer={offer} extrasUrl={serverEnv.EXTRAS_APP_URL} />
+          )}
           {offer.pricePreview && (
             <p className="v2-caption v2-muted" style={{ marginTop: 14 }}>
               {t("previewNote")}

@@ -32,7 +32,9 @@ export async function recordReportedOfferEvents(
 ): Promise<number> {
   const list: readonly unknown[] = Array.isArray(events) ? (events as unknown[]) : [];
   if (!deps.db || list.length === 0) return 0;
-  const catalog = await loadOfferCatalog(deps, context, journey, "de");
+  // Validated against STAY's own catalog only: counters exist for STAY's offers, and a report
+  // must not cost a call to the Extras bridge.
+  const catalog = await loadOfferCatalog({ ...deps, extras: undefined }, context, journey, "de");
   if (!catalog) return 0;
   const shown = new Set(catalog.source.map((offer) => offer.id));
   const valid = list.slice(0, MAX_EVENTS_PER_CALL).flatMap((raw) => {
