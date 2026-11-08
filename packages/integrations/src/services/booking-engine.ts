@@ -345,25 +345,36 @@ export class ServiceBookingEngine {
     }
     candidates.sort((a, b) => compareBySortOrder(a.item, b.item));
 
+    // Missing English STAY texts are taken from Apaleo's own translation (one read per item,
+    // in parallel, only where needed) before falling back to German – as Extras does.
+    const localized = await Promise.all(
+      candidates.map(({ item }) =>
+        item.title.en.trim() && item.description.en.trim()
+          ? Promise.resolve(null)
+          : this.#reader.getServiceLocalized(item.serviceId),
+      ),
+    );
+
     const items = candidates.map(
-      ({ item, bookingRule, nights, unitPrice, price, serviceDates }) => {
+      ({ item, bookingRule, nights, unitPrice, price, serviceDates }, index) => {
+        const apaleo = localized[index];
         const booked = bookedQuantities.get(item.serviceId) ?? 0;
         const capacityGated =
           item.requiresRemainingCapacity || item.actionType === "increase_occupancy";
         return {
           offerId: item.offerId,
           serviceId: item.serviceId,
-          // STAY texts; a missing language falls back to the other one (never to the id).
+          // STAY text → Apaleo translation (same language) → STAY text of the other language.
           displayName: resolveBilingualText({
             overrideDe: item.title.de,
-            overrideEn: item.title.en,
+            overrideEn: item.title.en || apaleo?.name.en,
             apaleoDe: item.title.de,
             apaleoEn: item.title.en,
             finalFallback: item.serviceId,
           }),
           description: resolveBilingualText({
             overrideDe: item.description.de,
-            overrideEn: item.description.en,
+            overrideEn: item.description.en || apaleo?.description.en,
             apaleoDe: item.description.de,
             apaleoEn: item.description.en,
             finalFallback: "",

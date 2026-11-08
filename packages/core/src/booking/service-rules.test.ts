@@ -941,3 +941,15 @@ describe("STAY deviations from Extras", () => {
     expect(buildExtraPersonPricing({ pricePerNight: 0, nights: 3 })?.price.amount).toBe(0);
   });
 });
+
+describe("M4: additional guest price", () => {
+  it("0 € per night is a valid, explicitly free price; empty or missing is not", () => {
+    expect(buildExtraPersonPricing({ pricePerNight: 0, nights: 2 })?.price).toEqual({
+      amount: 0,
+      currency: "EUR",
+    });
+    expect(buildExtraPersonPricing({ pricePerNight: "", nights: 2 })).toBeNull();
+    expect(buildExtraPersonPricing({ pricePerNight: null, nights: 2 })).toBeNull();
+    expect(buildExtraPersonPricing({ pricePerNight: undefined, nights: 2 })).toBeNull();
+  });
+});

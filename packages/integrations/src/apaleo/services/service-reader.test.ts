@@ -61,4 +61,31 @@ describe("Apaleo service reader", () => {
       true,
     );
   });
+
+  it("requests service offers exactly like Extras: no query parameters (no onlyDefaultDates)", async () => {
+    const { reader, calls } = clientWith({
+      "/booking/v1/reservations/R-2/service-offers": { status: 200, body: { services: [] } },
+    });
+    await reader.getServiceOffersForStay("R-2", "2099-01-02", new Date("2026-11-08T10:00:00Z"));
+    const offerCalls = calls.filter((c) => c.url.includes("service-offers"));
+    expect(offerCalls.map((c) => c.url)).toEqual([
+      "https://api.apaleo.com/booking/v1/reservations/R-2/service-offers",
+    ]);
+  });
+
+  it("treats a past departure and Apaleo's 422 as a past stay, like Extras", async () => {
+    const { reader, calls } = clientWith({
+      "/booking/v1/reservations/R-3/service-offers": { status: 422, body: { messages: [] } },
+    });
+    const today = new Date("2026-11-08T10:00:00Z");
+    expect(await reader.getServiceOffersForStay("R-3", "2026-11-01", today)).toEqual({
+      items: [],
+      pastStay: true,
+    });
+    expect(calls.some((c) => c.url.includes("service-offers"))).toBe(false);
+    expect(await reader.getServiceOffersForStay("R-3", "2026-11-09", today)).toEqual({
+      items: [],
+      pastStay: true,
+    });
+  });
 });

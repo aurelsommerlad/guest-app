@@ -121,3 +121,30 @@ describe("extension discounts: empty = 0 %, missing = explicit fallback", () => 
     expect(notes).toContain("boolean_normalized:extensionNightEnabled");
   });
 });
+
+describe("M4: stored values are interpreted safely", () => {
+  it('treats historic text values such as "false" as disabled', () => {
+    for (const value of ["false", "False", "0", "nein", "off", "no", "", null, undefined, 0]) {
+      expect(normalizeBoolean(value).value).toBe(false);
+    }
+    for (const value of ["true", "1", "ja", "yes", "on", true, 1]) {
+      expect(normalizeBoolean(value).value).toBe(true);
+    }
+  });
+
+  it("allows an explicitly configured 0 € additional guest but blocks a missing price", () => {
+    const base = {
+      actionType: "increase_occupancy",
+      fulfillment: "instant",
+      requiresRemainingCapacity: true,
+      extrasServiceId: "X",
+    } as const;
+    expect(serviceConfigIssues({ ...base, extraPersonPriceCents: 0 })).toEqual([]);
+    expect(serviceConfigIssues({ ...base, extraPersonPriceCents: null })).toContain(
+      "missing_extra_person_price",
+    );
+    expect(parsePriceToCents("0")).toBe(0);
+    expect(parsePriceToCents("0,00")).toBe(0);
+    expect(parsePriceToCents("")).toBeNull();
+  });
+});

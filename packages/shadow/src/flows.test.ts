@@ -77,6 +77,66 @@ describe("catalog", () => {
   });
 });
 
+describe("M4: texts and 0 € additional guest", () => {
+  it("takes missing English texts from Apaleo before falling back to German", async () => {
+    const id = freshReservation();
+    await env.test.client.query(
+      `UPDATE offers SET title = jsonb_build_object('de', title->>'de'), teaser = jsonb_build_object('de', teaser->>'de') WHERE id = $1`,
+      [env.offerIds["TEST-HUND"]],
+    );
+    const catalog = await env.engine().getGuestCatalog(CONTEXT, await readReservation(env, id));
+    const dog = catalog.items.find((i) => i.serviceId === "TEST-HUND");
+    expect(dog?.displayName).toEqual({ de: "Hund", en: "Dog fee" });
+    expect(dog?.description).toEqual({ de: "Hund", en: "Dog fee" });
+    // Other items keep their own English STAY text (no Apaleo read needed).
+    expect(catalog.items.find((i) => i.serviceId === "TEST-ECI")?.displayName.en).toBe(
+      "Early check-in",
+    );
+    await env.test.client.query(
+      `UPDATE offers SET title = '{"de":"Hund","en":"Dog"}', teaser = '{"de":"Hund","en":"Dog"}' WHERE id = $1`,
+      [env.offerIds["TEST-HUND"]],
+    );
+  });
+
+  it("offers an explicitly configured 0 € additional guest and books it without surcharge", async () => {
+    const id = freshReservation();
+    await env.test.client.query(
+      `UPDATE offer_properties SET extra_person_price_cents = 0 WHERE extras_service_id = 'TEST-EXTRPERSON'`,
+    );
+    const catalog = await env.engine().getGuestCatalog(CONTEXT, await readReservation(env, id));
+    expect(catalog.items.find((i) => i.serviceId === "TEST-EXTRPERSON")?.price).toEqual({
+      amount: 0,
+      currency: "EUR",
+    });
+    const result = await env
+      .engine()
+      .placeOrder(CONTEXT, {
+        reservationId: id,
+        idempotencyKey: key("free-guest"),
+        lines: [{ serviceId: "TEST-EXTRPERSON", count: 1 }],
+      });
+    expect(result.status).toBe("completed");
+    expect(env.apaleo.reservation(id).adults).toBe(3);
+    expect(env.apaleo.reservation(id).timeSlices.map((t) => t.totalGrossAmount.amount)).toEqual([
+      99, 99,
+    ]);
+    await env.test.client.query(
+      `UPDATE offer_properties SET extra_person_price_cents = NULL WHERE extras_service_id = 'TEST-EXTRPERSON'`,
+    );
+    const blocked = await env.engine().getGuestCatalog(CONTEXT, await readReservation(env, id));
+    expect(blocked.items.some((i) => i.serviceId === "TEST-EXTRPERSON")).toBe(false);
+    expect(blocked.hidden).toContainEqual(
+      expect.objectContaining({
+        serviceId: "TEST-EXTRPERSON",
+        reason: "invalid_extra_person_price",
+      }),
+    );
+    await env.test.client.query(
+      `UPDATE offer_properties SET extra_person_price_cents = 3000 WHERE extras_service_id = 'TEST-EXTRPERSON'`,
+    );
+  });
+});
+
 describe("guest orders", () => {
   it("books a multi-day dog and parking with plate in one book-service call each", async () => {
     const id = freshReservation();
