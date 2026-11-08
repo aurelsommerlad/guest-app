@@ -35,6 +35,9 @@ importers:
       '@up/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@up/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@up/ui':
         specifier: workspace:*
         version: link:../../packages/ui

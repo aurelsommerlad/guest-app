@@ -71,3 +71,27 @@ export {
   type ServiceWriteStore,
   simulatedExecutor,
 } from "./apaleo/services/write-gateway";
+export {
+  assertReadCommand,
+  type KvReader,
+  type KvType,
+  LocalJsonReader,
+  READ_COMMANDS,
+  ReadOnlyViolationError,
+  UpstashReadOnlyReader,
+} from "./extras/kv-reader";
+export {
+  buildManifest,
+  canonicalJson,
+  entriesMatching,
+  exportSnapshot,
+  type Manifest,
+  minimize,
+  sha256,
+  type Snapshot,
+  SNAPSHOT_FORMAT,
+  type SnapshotEntry,
+  verifySnapshot,
+} from "./extras/snapshot";
+export { buildInventory, type Inventory, renderInventoryMarkdown } from "./extras/inventory";
+export { extrasFixture } from "./extras/fixture";
