@@ -221,6 +221,22 @@ importers:
         specifier: workspace:*
         version: link:../config
 
+  packages/shadow:
+    dependencies:
+      '@up/core':
+        specifier: workspace:*
+        version: link:../core
+      '@up/db':
+        specifier: workspace:*
+        version: link:../db
+      '@up/integrations':
+        specifier: workspace:*
+        version: link:../integrations
+    devDependencies:
+      '@up/config':
+        specifier: workspace:*
+        version: link:../config
+
   packages/ui:
     devDependencies:
       '@types/react':

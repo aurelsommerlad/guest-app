@@ -306,3 +306,14 @@ export {
   type ServiceBookingRow,
   type StayExtensionRow,
 } from "./repositories/operations-repository";
+export {
+  beginServiceBooking,
+  claimServiceLock,
+  createServiceLockStore,
+  createServiceRecordStore,
+  finishServiceBooking,
+  getEngineRequest,
+  loadEngineCatalog,
+  releaseServiceLock,
+  saveServiceBookingItem,
+} from "./repositories/service-engine-repository";

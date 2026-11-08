@@ -95,3 +95,16 @@ export {
 } from "./extras/snapshot";
 export { buildInventory, type Inventory, renderInventoryMarkdown } from "./extras/inventory";
 export { extrasFixture } from "./extras/fixture";
+export {
+  type GuestCatalog,
+  type GuestCatalogItem,
+  type HiddenReason,
+  LOCK_TTL_MS,
+  ORDER_LEASE_MS,
+  type OrderFailure,
+  type OrderLine,
+  type OrderResult,
+  ServiceBookingEngine,
+  type StayExtensionOffer,
+} from "./services/booking-engine";
+export * from "./services/ports";

@@ -25,19 +25,38 @@ export function parseServiceWriteMode(value: string | undefined): ServiceWriteMo
   return value === "simulated" ? "simulated" : "disabled";
 }
 
+/** AmendReservation body as built by the core rules (buildOccupancy/StayExtensionAmendmentPayload). */
+export type AmendReservationPayload = {
+  arrival: unknown;
+  departure: unknown;
+  adults: number;
+  childrenAges: readonly number[] | null;
+  timeSlices: readonly { ratePlanId: string; totalGrossAmount: { amount: number; currency: string } }[];
+  requote: boolean;
+};
+
+/**
+ * One Apaleo write, carrying exactly the body Extras sends (lib/apaleo.js): book-service replaces
+ * the whole date set of a service, so `dates` is always the complete desired set.
+ */
 export type ServiceWriteCommand =
   | {
       operation: "book-service";
       serviceId: string;
+      /** Top-level count (Extras: the line count, or the highest per-date count). */
+      count?: number;
       dates: readonly {
         serviceDate: string;
-        count: number;
+        count?: number;
         amount?: { amount: number; currency: string };
       }[];
     }
-  | { operation: "amend-occupancy"; adults: number; timeSlices: readonly unknown[] }
-  | { operation: "amend-stay"; departure: string; timeSlices: readonly unknown[] }
-  | { operation: "move-service"; serviceId: string; fromDate: string; toDate: string };
+  | { operation: "amend-occupancy"; payload: AmendReservationPayload }
+  | { operation: "amend-stay"; payload: AmendReservationPayload }
+  | { operation: "move-service"; serviceId: string; fromDate: string; toDate: string }
+  | { operation: "update-vehicle"; number: string; countryCode: string }
+  /** Appended to the reservation's internal comment (never overwritten). */
+  | { operation: "append-comment"; text: string };
 
 export type ServiceWriteRequest = {
   tenantId: string;
@@ -110,6 +129,12 @@ export type ServiceWriteGatewayOptions = {
   store: ServiceWriteStore;
   lookupReservation: ReservationLookup;
   executor?: ServiceWriteExecutor;
+  /**
+   * Test/shadow harness only: told about every command that ended as `simulated`, so an
+   * in-memory Apaleo double can apply it. Never wired in the apps; it cannot change the
+   * outcome and is not called for blocked or failed commands.
+   */
+  onSimulated?: (request: ServiceWriteRequest) => void | Promise<void>;
   now?: () => Date;
 };
 
@@ -218,6 +243,8 @@ export class ServiceWriteGateway {
 
     try {
       const result = await this.#executor(request);
+      if (this.mode === "simulated" && this.#options.onSimulated)
+        await this.#options.onSimulated(request);
       return await finish(
         this.mode === "simulated" ? "simulated" : "succeeded",
         result.code,

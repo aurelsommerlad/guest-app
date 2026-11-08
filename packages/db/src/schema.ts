@@ -2492,6 +2492,7 @@ export const APALEO_WRITE_OPERATIONS = [
   "amend-stay",
   "move-service",
   "update-vehicle",
+  "append-comment",
 ] as const;
 export const APALEO_WRITE_STATUSES = [
   "pending",
@@ -2560,6 +2561,32 @@ export const apaleoWriteOperations = pgTable(
       "apaleo_write_operations_completion",
       sql`(${t.status} IN ('pending') AND ${t.completedAt} IS NULL)
         OR (${t.status} <> 'pending' AND ${t.completedAt} IS NOT NULL)`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Short-lived exclusive claims of the STAY booking engine (M3) – the counterpart of the Extras
+ * Redis claims (claimDogBooking, claimVehicleBooking, claimOccupancyAmendment, claimStayExtension,
+ * claimRequestProcessing, claimRequestBooking). A claim is free once `expires_at` has passed.
+ */
+export const serviceLocks = pgTable(
+  "service_locks",
+  {
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    lockKey: text("lock_key").notNull(),
+    holder: text("holder").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: "service_locks_pkey", columns: [t.tenantId, t.lockKey] }),
+    index("service_locks_expires_idx").on(t.expiresAt),
+    check(
+      "service_locks_values_valid",
+      sql`${t.lockKey} ~ '^[A-Za-z0-9_:.-]{1,200}$' AND char_length(${t.holder}) BETWEEN 1 AND 100`,
     ),
   ],
 ).enableRLS();

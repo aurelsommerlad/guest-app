@@ -37,7 +37,7 @@ function clientWith(routes: Record<string, { status: number; body?: unknown }>) 
 describe("Apaleo service reader", () => {
   it("reads offers, booked services and definitions with GET only", async () => {
     const { reader, calls } = clientWith({
-      "/booking/v1/reservations/R-1/service-offers?onlyDefaultDates=false": {
+      "/booking/v1/reservations/R-1/service-offers": {
         status: 200,
         body: {
           services: [
