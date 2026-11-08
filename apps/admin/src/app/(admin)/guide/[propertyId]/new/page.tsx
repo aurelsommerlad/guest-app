@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "../../../../../components/PageHeader";
-import { requireAdmin } from "../../../../../features/auth/server";
+import { requirePermission } from "../../../../../features/auth/server";
 import { createTopicAction } from "../../../../../features/guide/actions";
 import { NewTopicForm } from "../../../../../features/guide/components/NewTopicForm";
 import { loadPropertyGuide } from "../../../../../features/guide/guide-admin-service";
@@ -16,7 +16,7 @@ export default async function NewTopicPage({
   params: Promise<{ propertyId: string }>;
 }) {
   const { propertyId } = await params;
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit", { propertyId });
   const guide = await loadPropertyGuide(guideDeps(), { tenantId: admin.tenantId }, propertyId);
   if (!guide) notFound();
   return (

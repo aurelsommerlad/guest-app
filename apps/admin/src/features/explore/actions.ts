@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { requireAdmin } from "../auth/server";
+import { requirePermission } from "../auth/server";
 import type { UploadGrant, UploadResult } from "../guide/actions";
 import { confirmMediaUpload, requestMediaUpload } from "../media/media-upload-service";
 import {
@@ -42,7 +42,7 @@ export async function createPlaceAction(
   _previous: ExploreFormState,
   formData: FormData,
 ): Promise<ExploreFormState> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit");
   const result = await createPlace(
     exploreDeps(),
     { tenantId: admin.tenantId },
@@ -64,7 +64,7 @@ export async function savePlaceAction(
   _previous: ExploreFormState,
   formData: FormData,
 ): Promise<ExploreFormState> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit");
   const result = await updatePlace(exploreDeps(), { tenantId: admin.tenantId }, placeId, {
     titleDe: field(formData, "titleDe", 200),
     titleEn: field(formData, "titleEn", 200),
@@ -98,7 +98,7 @@ export async function changePlaceStatusAction(
   status: string,
   viewProperty: string | null,
 ): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit");
   const result = await changePlaceStatus(
     exploreDeps(),
     { tenantId: admin.tenantId },
@@ -114,7 +114,7 @@ export async function deletePlaceAction(
   placeId: string,
   viewProperty: string | null,
 ): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit");
   const view = contextProperty(viewProperty);
   const result = await deletePlace(exploreDeps(), { tenantId: admin.tenantId }, placeId);
   redirect(
@@ -129,7 +129,7 @@ export async function movePlaceAction(
   direction: "up" | "down",
   viewProperty: string | null,
 ): Promise<void> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit");
   const view = contextProperty(viewProperty);
   await movePlace(
     exploreDeps(),
@@ -151,7 +151,7 @@ export async function requestPlaceImageUploadAction(file: {
   contentType: string;
   size: number;
 }): Promise<UploadGrant> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit");
   const deps = exploreMediaDeps();
   if (!deps) return UPLOAD_NOT_CONFIGURED;
   return requestMediaUpload(deps, admin, exploreScope(admin.tenantId), {
@@ -166,7 +166,7 @@ export async function confirmPlaceImageUploadAction(input: {
   width: number;
   height: number;
 }): Promise<UploadResult> {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit");
   const deps = exploreMediaDeps();
   if (!deps) return UPLOAD_NOT_CONFIGURED;
   return confirmMediaUpload(deps, admin, exploreScope(admin.tenantId), {

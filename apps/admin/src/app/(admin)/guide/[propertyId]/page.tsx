@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EmptyState, PageHeader } from "../../../../components/PageHeader";
-import { requireAdmin } from "../../../../features/auth/server";
+import { requirePermission } from "../../../../features/auth/server";
 import { moveTopicAction } from "../../../../features/guide/actions";
 import {
   GuideTopicList,
@@ -27,7 +27,7 @@ export async function generateMetadata({
   params: Promise<{ propertyId: string }>;
 }): Promise<Metadata> {
   const { propertyId } = await params;
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.read", { propertyId });
   const property = await getPropertyById(getDatabase(), { tenantId: admin.tenantId }, propertyId);
   return { title: property ? `Guide · ${property.displayName}` : "Guide" };
 }
@@ -40,7 +40,7 @@ type Props = {
 /** Content list of the property's guide: status tabs, search, topic rows in guest order. */
 export default async function GuideTopicsPage({ params, searchParams }: Props) {
   const [{ propertyId }, query] = await Promise.all([params, searchParams]);
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.read", { propertyId });
   const guide = await loadPropertyGuide(guideDeps(), { tenantId: admin.tenantId }, propertyId, {
     includeArchived: true,
   });

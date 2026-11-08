@@ -4,16 +4,17 @@ import { listPropertiesForTenant } from "@up/db";
 import { cookies } from "next/headers";
 import { cache } from "react";
 
+import { visibleProperties } from "../auth/authorization";
 import { requireAdmin } from "../auth/server";
 import { PROPERTY_COOKIE } from "../../navigation";
 import { getDatabase } from "../../server/database";
 import { type ContextProperty, rememberedProperty } from "./property-context";
 
-/** The signed-in tenant's properties (once per request). */
+/** The tenant's properties the signed-in admin may access (once per request). */
 export const getTenantProperties = cache(async (): Promise<ContextProperty[]> => {
   const admin = await requireAdmin();
   const properties = await listPropertiesForTenant(getDatabase(), { tenantId: admin.tenantId });
-  return properties.map((property) => ({
+  return visibleProperties(admin, properties).map((property) => ({
     id: property.id,
     displayName: property.displayName,
     spokenName: property.spokenName,

@@ -62,6 +62,10 @@ import {
   SYNC_STATUSES,
   type TranslationState,
   type Visibility,
+  ADMIN_ROLES,
+  BOOKING_RULES,
+  PROPERTY_SCOPES,
+  SERVICE_ACTION_TYPES,
 } from "@up/core";
 import { sql, type SQL } from "drizzle-orm";
 import {
@@ -600,10 +604,17 @@ export const offers = pgTable(
     sourceLocale: text("source_locale").notNull().default("de"),
     translationState: jsonb("translation_state").$type<TranslationState>().notNull().default({}),
     firstPublishedAt: timestamp("first_published_at", { withTimezone: true }),
+    /** Import bookkeeping: "extras:<service code>" for offers created from the Extras catalog. */
+    legacyKey: text("legacy_key"),
     ...timestamps,
   },
   (t) => [
     unique("offers_tenant_id_id_key").on(t.tenantId, t.id),
+    uniqueIndex("offers_legacy_key_idx").on(t.tenantId, t.legacyKey),
+    check(
+      "offers_legacy_key_valid",
+      sql`${t.legacyKey} IS NULL OR ${t.legacyKey} ~ '^extras:[A-Za-z0-9_-]{1,120}$'`,
+    ),
     index("offers_tenant_status_idx").on(t.tenantId, t.status),
     foreignKey({
       name: "offers_partner_fkey",
@@ -663,10 +674,49 @@ export const offerProperties = pgTable(
     tenantId: text("tenant_id").notNull(),
     offerId: uuid("offer_id").notNull(),
     propertyId: text("property_id").notNull(),
-    /** Apaleo service id in this property's Extras catalog (own services). */
+    /**
+     * Apaleo service id of this property (own services). Historic name from Phase 1, when the
+     * Extras app owned the configuration; since M1 the property configuration lives here.
+     */
     extrasServiceId: text("extras_service_id"),
     sortOrder: integer("sort_order").notNull().default(0),
+    /* ── Property configuration (M1; Extras catalog fields, see docs/concepts/extras-migration.md) */
+    /** Shown to guests of this property ("Im Gäste-Portal anzeigen"). */
+    active: boolean("active").notNull().default(true),
+    /** Own services: book an Apaleo service or amend the adults (additional guest). */
+    actionType: text("action_type", { enum: SERVICE_ACTION_TYPES }),
+    /** Own services: which Apaleo service dates are booked. */
+    bookingRule: text("booking_rule", { enum: BOOKING_RULES }),
+    /** Booking mode for this property; null = the offer's default. */
+    fulfillment: text("fulfillment", { enum: FULFILLMENT_TYPES }),
+    /** Additional guest: surcharge per person and night (cents). */
+    extraPersonPriceCents: integer("extra_person_price_cents"),
+    currency: text("currency"),
+    /** Price unit label override (de/en); empty = default of the booking rule. */
+    priceUnitLabel: jsonb("price_unit_label").$type<LocalizedText>(),
+    requiresRemainingCapacity: boolean("requires_remaining_capacity").notNull().default(false),
+    requiresVehicleRegistration: boolean("requires_vehicle_registration").notNull().default(false),
+    maxOnePerReservation: boolean("max_one_per_reservation").notNull().default(false),
+    /** Apaleo unit group ids; empty = every apartment type. */
+    allowedUnitGroupIds: text("allowed_unit_group_ids").array().notNull().default([]),
+    /** Per-property text overrides (null = the offer's texts). */
+    titleOverride: jsonb("title_override").$type<LocalizedText>(),
+    teaserOverride: jsonb("teaser_override").$type<LocalizedText>(),
+    bodyOverride: jsonb("body_override").$type<LocalizedText>(),
+    heroImageOverride: jsonb("hero_image_override").$type<ContentImage>(),
+    /** Partner offers: price and availability for this property (null = the offer's). */
+    priceOverride: jsonb("price_override").$type<OfferPrice>(),
+    availabilityOverride: jsonb("availability_override").$type<OfferAvailability>(),
+    /** Import bookkeeping: "<apaleoPropertyId>:<apaleoServiceId>" and hash of the last import. */
+    legacyKey: text("legacy_key"),
+    importedHash: text("imported_hash"),
+    importedAt: timestamp("imported_at", { withTimezone: true }),
+    updatedBy: uuid("updated_by"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (t) => [
     primaryKey({ name: "offer_properties_pkey", columns: [t.offerId, t.propertyId] }),
@@ -684,6 +734,54 @@ export const offerProperties = pgTable(
     check(
       "offer_properties_extras_service_id_valid",
       sql`${t.extrasServiceId} IS NULL OR ${t.extrasServiceId} ~ '^[A-Za-z0-9_-]{1,120}$'`,
+    ),
+    uniqueIndex("offer_properties_legacy_key_idx").on(t.tenantId, t.legacyKey),
+    uniqueIndex("offer_properties_apaleo_service_idx").on(
+      t.tenantId,
+      t.propertyId,
+      t.extrasServiceId,
+    ),
+    foreignKey({
+      name: "offer_properties_updated_by_fkey",
+      columns: [t.tenantId, t.updatedBy],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("set null"),
+    check(
+      "offer_properties_action_type_valid",
+      sql`${t.actionType} IS NULL OR ${oneOf(t.actionType, SERVICE_ACTION_TYPES)}`,
+    ),
+    check(
+      "offer_properties_booking_rule_valid",
+      sql`${t.bookingRule} IS NULL OR ${oneOf(t.bookingRule, BOOKING_RULES)}`,
+    ),
+    check(
+      "offer_properties_fulfillment_valid",
+      sql`${t.fulfillment} IS NULL OR ${oneOf(t.fulfillment, FULFILLMENT_TYPES)}`,
+    ),
+    // Additional guests are always booked instantly and only while capacity is left (Extras).
+    check(
+      "offer_properties_occupancy_shape",
+      sql`${t.actionType} IS DISTINCT FROM 'increase_occupancy'
+        OR (coalesce(${t.fulfillment}, 'instant') = 'instant' AND ${t.requiresRemainingCapacity})`,
+    ),
+    check(
+      "offer_properties_extra_person_price_valid",
+      sql`(${t.extraPersonPriceCents} IS NULL OR ${t.extraPersonPriceCents} BETWEEN 0 AND 10000000)
+        AND (${t.extraPersonPriceCents} IS NULL OR ${t.actionType} = 'increase_occupancy')
+        AND (${t.currency} IS NULL OR ${t.currency} ~ '^[A-Z]{3}$')`,
+    ),
+    check(
+      "offer_properties_unit_groups_valid",
+      sql`cardinality(${t.allowedUnitGroupIds}) <= 50
+        AND array_to_string(${t.allowedUnitGroupIds}, ',') ~ '^[A-Za-z0-9_,-]*$'`,
+    ),
+    check(
+      "offer_properties_legacy_key_valid",
+      sql`${t.legacyKey} IS NULL OR ${t.legacyKey} ~ '^[A-Za-z0-9_-]{1,40}:[A-Za-z0-9_-]{1,120}$'`,
+    ),
+    check(
+      "offer_properties_imported_hash_valid",
+      sql`${t.importedHash} IS NULL OR ${isSha256Hex(t.importedHash)}`,
     ),
   ],
 ).enableRLS();
@@ -734,6 +832,8 @@ export const offerMetricsDaily = pgTable(
  * removed with the stay's retention (`purge_after`).
  */
 export const OFFER_REQUEST_STATUSES = ["pending", "confirmed", "declined", "cancelled"] as const;
+/** Where a record was created: in STAY, or imported from the Extras app (migration). */
+export const RECORD_SOURCES = ["stay", "extras"] as const;
 
 export const offerRequests = pgTable(
   "offer_requests",
@@ -757,9 +857,27 @@ export const offerRequests = pgTable(
     handledAt: timestamp("handled_at", { withTimezone: true }),
     slackNotifiedAt: timestamp("slack_notified_at", { withTimezone: true }),
     purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    /* ── Own services (M1, Extras "Auf Anfrage") */
+    apaleoServiceId: text("apaleo_service_id"),
+    quantity: integer("quantity"),
+    /** Every date the shown price covered (e.g. all nights). */
+    requestedDates: date("requested_dates").array(),
+    /** Dates actually booked in Apaleo on approval. */
+    bookedServiceDates: date("booked_service_dates").array(),
+    /** stay = created in STAY · extras = imported from the Extras app. */
+    source: text("source", { enum: RECORD_SOURCES }).notNull().default("stay"),
+    legacyId: text("legacy_id"),
     ...timestamps,
   },
   (t) => [
+    uniqueIndex("offer_requests_legacy_id_idx").on(t.tenantId, t.legacyId),
+    check("offer_requests_source_valid", oneOf(t.source, RECORD_SOURCES)),
+    check(
+      "offer_requests_service_valid",
+      sql`(${t.apaleoServiceId} IS NULL OR ${t.apaleoServiceId} ~ '^[A-Za-z0-9_-]{1,120}$')
+        AND (${t.quantity} IS NULL OR ${t.quantity} BETWEEN 1 AND 50)
+        AND (${t.legacyId} IS NULL OR char_length(${t.legacyId}) BETWEEN 1 AND 100)`,
+    ),
     foreignKey({
       name: "offer_requests_offer_fkey",
       columns: [t.tenantId, t.offerId],
@@ -1323,11 +1441,21 @@ export const adminUsers = pgTable(
     displayName: text("display_name"),
     passwordHash: text("password_hash").notNull(),
     status: text("status", { enum: ADMIN_USER_STATUSES }).notNull().default("active"),
+    /** Role (M1): owner | admin | manager | viewer – read on every request. */
+    role: text("role", { enum: ADMIN_ROLES }).notNull().default("viewer"),
+    /** all = every property of the tenant · selected = only admin_user_properties. */
+    propertyScope: text("property_scope", { enum: PROPERTY_SCOPES }).notNull().default("all"),
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [
     unique("admin_users_email_key").on(t.email),
+    check("admin_users_role_valid", oneOf(t.role, ADMIN_ROLES)),
+    check("admin_users_property_scope_valid", oneOf(t.propertyScope, PROPERTY_SCOPES)),
+    check(
+      "admin_users_owner_all_properties",
+      sql`${t.role} <> 'owner' OR ${t.propertyScope} = 'all'`,
+    ),
     unique("admin_users_tenant_id_id_key").on(t.tenantId, t.id),
     check(
       "admin_users_email_format",
@@ -1975,6 +2103,639 @@ export const officialRegistrationEvents = pgTable(
   ],
 ).enableRLS();
 
+/* ------------------------------------------------------------------------------------------
+ * Extras migration M1 (docs/concepts/extras-migration.md) – roles, service settings,
+ * bookings, stay extensions, Apaleo writes, audit, notifications and import runs.
+ *
+ * - No guest names, e-mail addresses or free texts from guests in any of these tables:
+ *   reservation ids, service ids, amounts, dates and states only.
+ * - Apaleo writes run exclusively through `apaleo_write_operations` (idempotency key, lock,
+ *   status) – and only while `tenant_service_settings.service_writer = 'stay'`, which is
+ *   'extras' until the joint go-live (M1-E; the switch is prepared, not active).
+ * - admin_audit_events is append-only (triggers in migration 0018).
+ * ---------------------------------------------------------------------------------------- */
+
+/** Properties of an admin with property_scope 'selected'. */
+export const adminUserProperties = pgTable(
+  "admin_user_properties",
+  {
+    tenantId: text("tenant_id").notNull(),
+    adminUserId: uuid("admin_user_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: "admin_user_properties_pkey", columns: [t.adminUserId, t.propertyId] }),
+    foreignKey({
+      name: "admin_user_properties_admin_user_fkey",
+      columns: [t.tenantId, t.adminUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "admin_user_properties_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("cascade"),
+    index("admin_user_properties_property_idx").on(t.tenantId, t.propertyId),
+  ],
+).enableRLS();
+
+/**
+ * Invitations to the STAY admin. Only the SHA-256 of the one-time token is stored; the link
+ * is shown once to the inviting admin. No passwords are ever migrated from the Extras app.
+ */
+export const adminInvitations = pgTable(
+  "admin_invitations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    email: text("email").notNull(),
+    role: text("role", { enum: ADMIN_ROLES }).notNull(),
+    propertyScope: text("property_scope", { enum: PROPERTY_SCOPES }).notNull().default("all"),
+    /** Property ids for scope 'selected' (validated against properties when accepting). */
+    propertyIds: text("property_ids").array().notNull().default([]),
+    tokenHash: text("token_hash").notNull(),
+    invitedBy: uuid("invited_by"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    acceptedUserId: uuid("accepted_user_id"),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    /** extras = generated from the Extras user list by the import (no password). */
+    source: text("source", { enum: RECORD_SOURCES }).notNull().default("stay"),
+    ...timestamps,
+  },
+  (t) => [
+    unique("admin_invitations_token_hash_key").on(t.tokenHash),
+    unique("admin_invitations_tenant_id_id_key").on(t.tenantId, t.id),
+    uniqueIndex("admin_invitations_open_email_idx")
+      .on(t.tenantId, t.email)
+      .where(sql`${t.acceptedAt} IS NULL AND ${t.revokedAt} IS NULL`),
+    foreignKey({
+      name: "admin_invitations_invited_by_fkey",
+      columns: [t.tenantId, t.invitedBy],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("set null"),
+    foreignKey({
+      name: "admin_invitations_accepted_user_fkey",
+      columns: [t.tenantId, t.acceptedUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("set null"),
+    check("admin_invitations_token_hash_format", isSha256Hex(t.tokenHash)),
+    check(
+      "admin_invitations_email_format",
+      sql`${t.email} = lower(${t.email}) AND char_length(${t.email}) BETWEEN 3 AND 254 AND position('@' in ${t.email}) > 1`,
+    ),
+    check("admin_invitations_role_valid", oneOf(t.role, ADMIN_ROLES)),
+    check("admin_invitations_scope_valid", oneOf(t.propertyScope, PROPERTY_SCOPES)),
+    check("admin_invitations_source_valid", oneOf(t.source, RECORD_SOURCES)),
+    check(
+      "admin_invitations_scope_shape",
+      sql`(${t.propertyScope} = 'all' AND cardinality(${t.propertyIds}) = 0)
+        OR (${t.propertyScope} = 'selected' AND ${t.role} <> 'owner'
+          AND cardinality(${t.propertyIds}) BETWEEN 1 AND 100)`,
+    ),
+    check(
+      "admin_invitations_not_accepted_and_revoked",
+      sql`${t.acceptedAt} IS NULL OR ${t.revokedAt} IS NULL`,
+    ),
+    check("admin_invitations_expiry_after_creation", sql`${t.expiresAt} > ${t.createdAt}`),
+  ],
+).enableRLS();
+
+/**
+ * Service settings per property (Extras "Verlängerungsnächte" config and Slack routing).
+ * A property without a row uses DEFAULT_STAY_EXTENSION_SETTINGS (extension switched off).
+ */
+export const propertyServiceSettings = pgTable(
+  "property_service_settings",
+  {
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    extensionNightEnabled: boolean("extension_night_enabled").notNull().default(false),
+    /** Discounts in percent (0–90) per phase and gap. */
+    discountPreArrivalOneNightGap: integer("discount_pre_arrival_one_night_gap")
+      .notNull()
+      .default(15),
+    discountPreArrivalStandard: integer("discount_pre_arrival_standard").notNull().default(10),
+    discountInHouseOneNightGap: integer("discount_in_house_one_night_gap").notNull().default(20),
+    discountInHouseStandard: integer("discount_in_house_standard").notNull().default(15),
+    minSellableStayNights: integer("min_sellable_stay_nights").notNull().default(2),
+    /** Name of the Slack route (resolved to a webhook from the environment – never stored). */
+    slackRoute: text("slack_route"),
+    importedHash: text("imported_hash"),
+    importedAt: timestamp("imported_at", { withTimezone: true }),
+    updatedBy: uuid("updated_by"),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({ name: "property_service_settings_pkey", columns: [t.tenantId, t.propertyId] }),
+    foreignKey({
+      name: "property_service_settings_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "property_service_settings_updated_by_fkey",
+      columns: [t.tenantId, t.updatedBy],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("set null"),
+    check(
+      "property_service_settings_discounts_valid",
+      sql`${t.discountPreArrivalOneNightGap} BETWEEN 0 AND 90 AND ${t.discountPreArrivalStandard} BETWEEN 0 AND 90
+        AND ${t.discountInHouseOneNightGap} BETWEEN 0 AND 90 AND ${t.discountInHouseStandard} BETWEEN 0 AND 90`,
+    ),
+    check(
+      "property_service_settings_min_nights_valid",
+      sql`${t.minSellableStayNights} BETWEEN 1 AND 30`,
+    ),
+    check(
+      "property_service_settings_slack_route_valid",
+      sql`${t.slackRoute} IS NULL OR ${t.slackRoute} ~ '^[a-z0-9-]{1,40}$'`,
+    ),
+    check(
+      "property_service_settings_imported_hash_valid",
+      sql`${t.importedHash} IS NULL OR ${isSha256Hex(t.importedHash)}`,
+    ),
+  ],
+).enableRLS();
+
+/** Which system may write services to Apaleo for a tenant. Exactly one, never both. */
+export const SERVICE_WRITERS = ["extras", "stay"] as const;
+/**
+ * Joint go-live states (M1-E): extras_active → syncing → extras_locked → stay_active,
+ * fallback via extras_locked → extras_active. Changed only by owners (`writer.switch`).
+ */
+export const GO_LIVE_STATES = ["extras_active", "syncing", "extras_locked", "stay_active"] as const;
+
+export const tenantServiceSettings = pgTable(
+  "tenant_service_settings",
+  {
+    tenantId: text("tenant_id")
+      .primaryKey()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    serviceWriter: text("service_writer", { enum: SERVICE_WRITERS }).notNull().default("extras"),
+    goLiveState: text("go_live_state", { enum: GO_LIVE_STATES }).notNull().default("extras_active"),
+    changedAt: timestamp("changed_at", { withTimezone: true }),
+    changedBy: uuid("changed_by"),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "tenant_service_settings_changed_by_fkey",
+      columns: [t.tenantId, t.changedBy],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("set null"),
+    check("tenant_service_settings_writer_valid", oneOf(t.serviceWriter, SERVICE_WRITERS)),
+    check("tenant_service_settings_state_valid", oneOf(t.goLiveState, GO_LIVE_STATES)),
+    // STAY writes only in state stay_active, and stay_active always means STAY writes.
+    check(
+      "tenant_service_settings_writer_matches_state",
+      sql`(${t.serviceWriter} = 'stay') = (${t.goLiveState} = 'stay_active')`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Bookings of own services ("Bestellungen"): one row per guest order, items below. Status of
+ * the order as a whole: completed (all items booked), partial, failed.
+ */
+export const SERVICE_BOOKING_STATUSES = ["processing", "completed", "partial", "failed"] as const;
+export const SERVICE_BOOKING_ITEM_STATUSES = ["pending", "booked", "failed", "skipped"] as const;
+
+export const serviceBookings = pgTable(
+  "service_bookings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    externalBookingId: text("external_booking_id"),
+    status: text("status", { enum: SERVICE_BOOKING_STATUSES }).notNull().default("processing"),
+    /** Client idempotency key of the guest submit (double click, retries). */
+    idempotencyKey: text("idempotency_key"),
+    totalCents: integer("total_cents"),
+    currency: text("currency"),
+    source: text("source", { enum: RECORD_SOURCES }).notNull().default("stay"),
+    legacyId: text("legacy_id"),
+    slackNotifiedAt: timestamp("slack_notified_at", { withTimezone: true }),
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("service_bookings_tenant_id_id_key").on(t.tenantId, t.id),
+    uniqueIndex("service_bookings_legacy_id_idx").on(t.tenantId, t.legacyId),
+    uniqueIndex("service_bookings_idempotency_idx").on(t.tenantId, t.idempotencyKey),
+    foreignKey({
+      name: "service_bookings_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    index("service_bookings_reservation_idx").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+    ),
+    index("service_bookings_property_created_idx").on(t.tenantId, t.propertyId, t.createdAt),
+    index("service_bookings_purge_idx").on(t.purgeAfter),
+    check("service_bookings_status_valid", oneOf(t.status, SERVICE_BOOKING_STATUSES)),
+    check("service_bookings_source_valid", oneOf(t.source, RECORD_SOURCES)),
+    check(
+      "service_bookings_reservation_provider_valid",
+      oneOf(t.reservationProvider, RESERVATION_PROVIDERS),
+    ),
+    check(
+      "service_bookings_values_valid",
+      sql`char_length(${t.externalReservationId}) BETWEEN 1 AND 100
+        AND (${t.externalBookingId} IS NULL OR char_length(${t.externalBookingId}) BETWEEN 1 AND 100)
+        AND (${t.idempotencyKey} IS NULL OR ${t.idempotencyKey} ~ '^[A-Za-z0-9_:.-]{8,200}$')
+        AND (${t.legacyId} IS NULL OR char_length(${t.legacyId}) BETWEEN 1 AND 100)
+        AND (${t.totalCents} IS NULL OR ${t.totalCents} >= 0)
+        AND (${t.currency} IS NULL OR ${t.currency} ~ '^[A-Z]{3}$')`,
+    ),
+  ],
+).enableRLS();
+
+export const serviceBookingItems = pgTable(
+  "service_booking_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    bookingId: uuid("booking_id").notNull(),
+    /** Catalog entry (null for imported history whose service no longer exists). */
+    offerId: uuid("offer_id"),
+    apaleoServiceId: text("apaleo_service_id").notNull(),
+    /** Name at booking time (snapshot for history; service names, never guest data). */
+    displayName: text("display_name").notNull(),
+    actionType: text("action_type", { enum: SERVICE_ACTION_TYPES }).notNull().default("service"),
+    quantity: integer("quantity").notNull().default(1),
+    serviceDates: date("service_dates").array().notNull().default([]),
+    amountCents: integer("amount_cents"),
+    currency: text("currency"),
+    status: text("status", { enum: SERVICE_BOOKING_ITEM_STATUSES }).notNull().default("pending"),
+    /** Stable error code only (e.g. no_availability) – never raw provider responses. */
+    errorCode: text("error_code"),
+    writeOperationId: uuid("write_operation_id"),
+    ...timestamps,
+  },
+  (t) => [
+    foreignKey({
+      name: "service_booking_items_booking_fkey",
+      columns: [t.tenantId, t.bookingId],
+      foreignColumns: [serviceBookings.tenantId, serviceBookings.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "service_booking_items_offer_fkey",
+      columns: [t.tenantId, t.offerId],
+      foreignColumns: [offers.tenantId, offers.id],
+    }).onDelete("set null"),
+    index("service_booking_items_booking_idx").on(t.tenantId, t.bookingId),
+    check("service_booking_items_status_valid", oneOf(t.status, SERVICE_BOOKING_ITEM_STATUSES)),
+    check("service_booking_items_action_type_valid", oneOf(t.actionType, SERVICE_ACTION_TYPES)),
+    check(
+      "service_booking_items_values_valid",
+      sql`${t.apaleoServiceId} ~ '^[A-Za-z0-9_-]{1,120}$'
+        AND char_length(btrim(${t.displayName})) BETWEEN 1 AND 200
+        AND ${t.quantity} BETWEEN 1 AND 50
+        AND cardinality(${t.serviceDates}) <= 400
+        AND (${t.amountCents} IS NULL OR ${t.amountCents} >= 0)
+        AND (${t.currency} IS NULL OR ${t.currency} ~ '^[A-Z]{3}$')
+        AND (${t.errorCode} IS NULL OR ${t.errorCode} ~ '^[a-z0-9_]{1,60}$')`,
+    ),
+  ],
+).enableRLS();
+
+/** Stay extensions ("Eine Nacht länger"): the audit result of each extension, as in Extras. */
+export const STAY_EXTENSION_STATUSES = [
+  "processing",
+  "confirmed",
+  "confirmed_with_issues",
+  "failed",
+] as const;
+export const STAY_EXTENSION_PHASES = ["pre_arrival", "in_house"] as const;
+
+export const stayExtensions = pgTable(
+  "stay_extensions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    oldDeparture: date("old_departure").notNull(),
+    newDeparture: date("new_departure").notNull(),
+    newDepartureConfirmed: boolean("new_departure_confirmed").notNull().default(false),
+    phase: text("phase", { enum: STAY_EXTENSION_PHASES }),
+    gap: integer("gap"),
+    averageNightlyRateCents: integer("average_nightly_rate_cents"),
+    discountPercent: integer("discount_percent"),
+    extensionPriceCents: integer("extension_price_cents"),
+    totalAdditionalCents: integer("total_additional_cents"),
+    currency: text("currency"),
+    /** Details of extended services, late check-out moves and city tax (ids/amounts only). */
+    details: jsonb("details").$type<Record<string, unknown>>().notNull().default({}),
+    mandatoryServicesIntact: boolean("mandatory_services_intact"),
+    status: text("status", { enum: STAY_EXTENSION_STATUSES }).notNull().default("processing"),
+    source: text("source", { enum: RECORD_SOURCES }).notNull().default("stay"),
+    legacyId: text("legacy_id"),
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("stay_extensions_legacy_id_idx").on(t.tenantId, t.legacyId),
+    foreignKey({
+      name: "stay_extensions_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    index("stay_extensions_reservation_idx").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+    ),
+    index("stay_extensions_property_created_idx").on(t.tenantId, t.propertyId, t.createdAt),
+    check("stay_extensions_status_valid", oneOf(t.status, STAY_EXTENSION_STATUSES)),
+    check(
+      "stay_extensions_phase_valid",
+      sql`${t.phase} IS NULL OR ${oneOf(t.phase, STAY_EXTENSION_PHASES)}`,
+    ),
+    check("stay_extensions_source_valid", oneOf(t.source, RECORD_SOURCES)),
+    check(
+      "stay_extensions_reservation_provider_valid",
+      oneOf(t.reservationProvider, RESERVATION_PROVIDERS),
+    ),
+    check("stay_extensions_dates_valid", sql`${t.newDeparture} > ${t.oldDeparture}`),
+    check(
+      "stay_extensions_values_valid",
+      sql`(${t.gap} IS NULL OR ${t.gap} BETWEEN 0 AND 365)
+        AND (${t.discountPercent} IS NULL OR ${t.discountPercent} BETWEEN 0 AND 90)
+        AND (${t.averageNightlyRateCents} IS NULL OR ${t.averageNightlyRateCents} >= 0)
+        AND (${t.extensionPriceCents} IS NULL OR ${t.extensionPriceCents} >= 0)
+        AND (${t.totalAdditionalCents} IS NULL OR ${t.totalAdditionalCents} >= 0)
+        AND (${t.currency} IS NULL OR ${t.currency} ~ '^[A-Z]{3}$')
+        AND (${t.legacyId} IS NULL OR char_length(${t.legacyId}) BETWEEN 1 AND 100)
+        AND jsonb_typeof(${t.details}) = 'object'`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * The central Apaleo write log (M1-C): every write STAY would send to Apaleo is first
+ * reserved here under a unique idempotency key. `blocked` = refused by policy (writes
+ * disabled, writer is Extras, property not allowed, reservation of another property).
+ */
+export const APALEO_WRITE_OPERATIONS = [
+  "book-service",
+  "amend-occupancy",
+  "amend-stay",
+  "move-service",
+  "update-vehicle",
+] as const;
+export const APALEO_WRITE_STATUSES = [
+  "pending",
+  "blocked",
+  "simulated",
+  "succeeded",
+  "failed",
+] as const;
+export const APALEO_WRITE_TRIGGERS = ["guest", "admin", "system"] as const;
+
+export const apaleoWriteOperations = pgTable(
+  "apaleo_write_operations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    operation: text("operation", { enum: APALEO_WRITE_OPERATIONS }).notNull(),
+    idempotencyKey: text("idempotency_key").notNull(),
+    /** SHA-256 of the canonical request – a retry with the same key must carry the same payload. */
+    requestHash: text("request_hash").notNull(),
+    status: text("status", { enum: APALEO_WRITE_STATUSES }).notNull().default("pending"),
+    trigger: text("trigger", { enum: APALEO_WRITE_TRIGGERS }).notNull(),
+    actorAdminId: uuid("actor_admin_id"),
+    /** Stable code (policy or mapped provider error) – never raw responses or personal data. */
+    resultCode: text("result_code"),
+    httpStatus: integer("http_status"),
+    attempts: integer("attempts").notNull().default(0),
+    /** Lock: a pending row older than this may be taken over by a retry. */
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("apaleo_write_operations_tenant_id_id_key").on(t.tenantId, t.id),
+    unique("apaleo_write_operations_idempotency_key").on(t.tenantId, t.idempotencyKey),
+    foreignKey({
+      name: "apaleo_write_operations_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "apaleo_write_operations_actor_fkey",
+      columns: [t.tenantId, t.actorAdminId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("set null"),
+    index("apaleo_write_operations_reservation_idx").on(
+      t.tenantId,
+      t.externalReservationId,
+      t.createdAt,
+    ),
+    index("apaleo_write_operations_status_idx").on(t.status, t.createdAt),
+    check("apaleo_write_operations_operation_valid", oneOf(t.operation, APALEO_WRITE_OPERATIONS)),
+    check("apaleo_write_operations_status_valid", oneOf(t.status, APALEO_WRITE_STATUSES)),
+    check("apaleo_write_operations_trigger_valid", oneOf(t.trigger, APALEO_WRITE_TRIGGERS)),
+    check("apaleo_write_operations_request_hash_valid", isSha256Hex(t.requestHash)),
+    check(
+      "apaleo_write_operations_values_valid",
+      sql`${t.idempotencyKey} ~ '^[A-Za-z0-9_:.-]{8,200}$'
+        AND char_length(${t.externalReservationId}) BETWEEN 1 AND 100
+        AND (${t.resultCode} IS NULL OR ${t.resultCode} ~ '^[a-z0-9_]{1,60}$')
+        AND (${t.httpStatus} IS NULL OR ${t.httpStatus} BETWEEN 100 AND 599)
+        AND ${t.attempts} BETWEEN 0 AND 20`,
+    ),
+    check(
+      "apaleo_write_operations_completion",
+      sql`(${t.status} IN ('pending') AND ${t.completedAt} IS NULL)
+        OR (${t.status} <> 'pending' AND ${t.completedAt} IS NOT NULL)`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Append-only audit log of admin actions and service events (UPDATE/DELETE/TRUNCATE rejected
+ * by triggers, migration 0018). `details` holds ids, states and changed field names only.
+ */
+export const ADMIN_AUDIT_ACTORS = ["admin", "guest", "system", "import"] as const;
+
+export const adminAuditEvents = pgTable(
+  "admin_audit_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    propertyId: text("property_id"),
+    actorType: text("actor_type", { enum: ADMIN_AUDIT_ACTORS }).notNull(),
+    /** Admin user id (no FK: audit rows outlive deleted users). */
+    actorAdminId: uuid("actor_admin_id"),
+    /** e.g. "user.role_changed", "request.approved", "catalog.updated", "writer.switched". */
+    action: text("action").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id"),
+    details: jsonb("details").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("admin_audit_events_tenant_created_idx").on(t.tenantId, t.createdAt),
+    index("admin_audit_events_entity_idx").on(t.tenantId, t.entityType, t.entityId),
+    check("admin_audit_events_actor_valid", oneOf(t.actorType, ADMIN_AUDIT_ACTORS)),
+    check(
+      "admin_audit_events_values_valid",
+      sql`${t.action} ~ '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$' AND char_length(${t.action}) <= 80
+        AND ${t.entityType} ~ '^[a-z][a-z0-9_]{0,40}$'
+        AND (${t.entityId} IS NULL OR char_length(${t.entityId}) BETWEEN 1 AND 200)
+        AND (${t.propertyId} IS NULL OR ${isKey(t.propertyId)})
+        AND jsonb_typeof(${t.details}) = 'object' AND pg_column_size(${t.details}) <= 8192`,
+    ),
+  ],
+).enableRLS();
+
+/**
+ * Outbox for notifications (Slack to the front office, guest notifications later). A job is
+ * only sent by a worker when its channel is enabled; guest channels stay disabled (M1).
+ */
+export const NOTIFICATION_CHANNELS = ["slack", "guest-email", "guest-push"] as const;
+export const NOTIFICATION_STATUSES = [
+  "pending",
+  "sending",
+  "sent",
+  "failed",
+  "suppressed",
+] as const;
+
+export const notificationOutbox = pgTable(
+  "notification_outbox",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    propertyId: text("property_id"),
+    channel: text("channel", { enum: NOTIFICATION_CHANNELS }).notNull(),
+    /** e.g. "order.created", "request.created", "extension.confirmed". */
+    template: text("template").notNull(),
+    /** Unique per tenant: one notification per event, also across retries. */
+    dedupKey: text("dedup_key").notNull(),
+    /** Template data: ids, service names, dates, amounts – rendered at send time. */
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+    status: text("status", { enum: NOTIFICATION_STATUSES }).notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    lastErrorCode: text("last_error_code"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("notification_outbox_dedup_key").on(t.tenantId, t.dedupKey),
+    index("notification_outbox_due_idx").on(t.status, t.nextAttemptAt),
+    check("notification_outbox_channel_valid", oneOf(t.channel, NOTIFICATION_CHANNELS)),
+    check("notification_outbox_status_valid", oneOf(t.status, NOTIFICATION_STATUSES)),
+    check(
+      "notification_outbox_values_valid",
+      sql`${t.template} ~ '^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$' AND char_length(${t.template}) <= 80
+        AND ${t.dedupKey} ~ '^[A-Za-z0-9_:.-]{1,200}$'
+        AND ${t.attempts} BETWEEN 0 AND 50
+        AND (${t.lastErrorCode} IS NULL OR ${t.lastErrorCode} ~ '^[a-z0-9_]{1,60}$')
+        AND (${t.propertyId} IS NULL OR ${isKey(t.propertyId)})
+        AND jsonb_typeof(${t.payload}) = 'object' AND pg_column_size(${t.payload}) <= 16384
+        AND ((${t.status} = 'sent') = (${t.sentAt} IS NOT NULL))`,
+    ),
+  ],
+).enableRLS();
+
+/** Import runs from the Extras export (dry run or apply) with their per-record results. */
+export const MIGRATION_RUN_MODES = ["dry-run", "apply"] as const;
+export const MIGRATION_RUN_STATUSES = ["running", "completed", "failed"] as const;
+export const MIGRATION_ITEM_ACTIONS = [
+  "create",
+  "update",
+  "unchanged",
+  "conflict",
+  "skip",
+  "error",
+] as const;
+
+export const migrationRuns = pgTable(
+  "migration_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    mode: text("mode", { enum: MIGRATION_RUN_MODES }).notNull(),
+    status: text("status", { enum: MIGRATION_RUN_STATUSES }).notNull().default("running"),
+    /** SHA-256 of the export manifest the run was based on. */
+    snapshotSha256: text("snapshot_sha256").notNull(),
+    startedBy: uuid("started_by"),
+    /** Counts per entity and action – no record contents. */
+    summary: jsonb("summary").$type<Record<string, unknown>>().notNull().default({}),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (t) => [
+    unique("migration_runs_tenant_id_id_key").on(t.tenantId, t.id),
+    foreignKey({
+      name: "migration_runs_started_by_fkey",
+      columns: [t.tenantId, t.startedBy],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("set null"),
+    index("migration_runs_tenant_started_idx").on(t.tenantId, t.startedAt),
+    check("migration_runs_mode_valid", oneOf(t.mode, MIGRATION_RUN_MODES)),
+    check("migration_runs_status_valid", oneOf(t.status, MIGRATION_RUN_STATUSES)),
+    check("migration_runs_snapshot_valid", isSha256Hex(t.snapshotSha256)),
+    check("migration_runs_finished", sql`(${t.status} = 'running') = (${t.finishedAt} IS NULL)`),
+  ],
+).enableRLS();
+
+export const migrationItems = pgTable(
+  "migration_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    runId: uuid("run_id").notNull(),
+    /** e.g. "catalog_item", "property_settings", "order", "request", "extension", "user". */
+    entityType: text("entity_type").notNull(),
+    /** Stable source key (e.g. "ALTUS:SVC-1"), never a name or e-mail address. */
+    sourceKey: text("source_key").notNull(),
+    sourceHash: text("source_hash").notNull(),
+    action: text("action", { enum: MIGRATION_ITEM_ACTIONS }).notNull(),
+    targetId: text("target_id"),
+    /** Stable reason code for conflict/skip/error. */
+    reason: text("reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: "migration_items_run_fkey",
+      columns: [t.tenantId, t.runId],
+      foreignColumns: [migrationRuns.tenantId, migrationRuns.id],
+    }).onDelete("cascade"),
+    unique("migration_items_run_source_key").on(t.runId, t.entityType, t.sourceKey),
+    check("migration_items_action_valid", oneOf(t.action, MIGRATION_ITEM_ACTIONS)),
+    check("migration_items_source_hash_valid", isSha256Hex(t.sourceHash)),
+    check(
+      "migration_items_values_valid",
+      sql`${t.entityType} ~ '^[a-z][a-z0-9_]{0,40}$'
+        AND char_length(${t.sourceKey}) BETWEEN 1 AND 200 AND ${t.sourceKey} !~ '@'
+        AND (${t.targetId} IS NULL OR char_length(${t.targetId}) BETWEEN 1 AND 200)
+        AND (${t.reason} IS NULL OR ${t.reason} ~ '^[a-z0-9_]{1,60}$')`,
+    ),
+  ],
+).enableRLS();
+
 export const schema = {
   tenants,
   properties,
@@ -2009,4 +2770,16 @@ export const schema = {
   officialRegistrations,
   officialGuestCards,
   officialRegistrationEvents,
+  adminUserProperties,
+  adminInvitations,
+  propertyServiceSettings,
+  tenantServiceSettings,
+  serviceBookings,
+  serviceBookingItems,
+  stayExtensions,
+  apaleoWriteOperations,
+  adminAuditEvents,
+  notificationOutbox,
+  migrationRuns,
+  migrationItems,
 };

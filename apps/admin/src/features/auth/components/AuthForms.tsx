@@ -4,7 +4,7 @@ import { Button } from "@up/ui";
 import { useActionState } from "react";
 
 import { Field, FormMessage, Input } from "../../../components/fields";
-import { type AuthFormState, loginAction, setupAction } from "../actions";
+import { acceptInvitationAction, type AuthFormState, loginAction, setupAction } from "../actions";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<AuthFormState, FormData>(loginAction, {
@@ -50,6 +50,44 @@ export function SetupForm() {
       </Field>
       <Field label="E-Mail" htmlFor="email">
         <Input id="email" name="email" type="email" autoComplete="username" required />
+      </Field>
+      <Field label="Passwort" htmlFor="password" hint="Mindestens 12 Zeichen.">
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          minLength={12}
+          required
+        />
+      </Field>
+      <Field label="Passwort wiederholen" htmlFor="passwordRepeat">
+        <Input
+          id="passwordRepeat"
+          name="passwordRepeat"
+          type="password"
+          autoComplete="new-password"
+          minLength={12}
+          required
+        />
+      </Field>
+      <FormMessage state={state} />
+      <Button type="submit" disabled={pending} className="self-start">
+        Konto anlegen
+      </Button>
+    </form>
+  );
+}
+
+export function InvitationForm({ token }: { token: string }) {
+  const [state, action, pending] = useActionState<AuthFormState, FormData>(
+    acceptInvitationAction.bind(null, token),
+    { status: "idle" },
+  );
+  return (
+    <form action={action} className="flex flex-col gap-5">
+      <Field label="Name (optional)" htmlFor="displayName">
+        <Input id="displayName" name="displayName" autoComplete="name" maxLength={120} />
       </Field>
       <Field label="Passwort" htmlFor="password" hint="Mindestens 12 Zeichen.">
         <Input

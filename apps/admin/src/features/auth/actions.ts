@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { serverEnv } from "../../env/server";
-import { loginAdmin, logoutAdmin, setupFirstAdmin } from "./admin-auth-service";
+import { acceptInvitation, loginAdmin, logoutAdmin, setupFirstAdmin } from "./admin-auth-service";
 import { adminCookie, authDeps, clientAddress, readAdminSecret } from "./server";
 import { adminCookieAttributes } from "./session-cookie";
 
@@ -79,6 +79,35 @@ export async function setupAction(
     "invalid-token": "Der Einrichtungsschlüssel ist nicht korrekt.",
     "invalid-input": "Bitte prüfe Mandant, E-Mail und Passwort (mindestens 12 Zeichen).",
     "rate-limited": "Zu viele Versuche. Bitte versuche es später erneut.",
+  } as const;
+  return { status: "error", message: messages[result.reason] };
+}
+
+export async function acceptInvitationAction(
+  token: string,
+  _previous: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const password = field(formData, "password", 200);
+  if (password !== field(formData, "passwordRepeat", 200)) {
+    return { status: "error", message: "Die Passwörter stimmen nicht überein." };
+  }
+  const displayName = field(formData, "displayName", 120).trim();
+  const result = await acceptInvitation(authDeps(), {
+    token,
+    password,
+    ...(displayName ? { displayName } : {}),
+    clientAddress: await clientAddress(),
+  });
+  if (result.ok) {
+    await setSessionCookie(result.session);
+    redirect("/");
+  }
+  const messages = {
+    invalid: "Diese Einladung ist ungültig, abgelaufen oder wurde bereits verwendet.",
+    "invalid-password": "Das Passwort muss mindestens 12 Zeichen lang sein.",
+    "rate-limited": "Zu viele Versuche. Bitte versuche es in 15 Minuten erneut.",
+    "already-member": "Für diese E-Mail-Adresse gibt es bereits ein Konto. Bitte melde Dich an.",
   } as const;
   return { status: "error", message: messages[result.reason] };
 }

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 
 import { PageHeader, SectionHeader } from "../../../../../components/PageHeader";
 import { StatusBadge } from "../../../../../components/StatusBadge";
-import { requireAdmin } from "../../../../../features/auth/server";
+import { requirePermission } from "../../../../../features/auth/server";
 import {
   confirmImageUploadAction,
   createOverrideAction,
@@ -34,7 +34,7 @@ type Props = {
 /** Edits a topic (title, content, variants) or one apartment variant (content). */
 export default async function GuideEntryPage({ params, searchParams }: Props) {
   const [{ propertyId, entryId }, { error }] = await Promise.all([params, searchParams]);
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.read", { propertyId });
   const context = { tenantId: admin.tenantId };
   const deps = guideDeps();
   const loaded = await loadGuideEntry(deps, context, entryId);

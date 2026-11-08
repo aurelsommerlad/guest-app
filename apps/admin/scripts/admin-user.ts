@@ -4,13 +4,17 @@
  * /setup page instead.
  *
  *   DATABASE_URL=… ADMIN_PASSWORD=… pnpm admin-user:create --target local|staging|production
- *       --tenant unique-places --email name@example.com [--confirm-production]
+ *       --tenant unique-places --email name@example.com --role owner|admin|manager|viewer
+ *       [--confirm-production]
+ *
+ * Accounts created here always have access to all properties; property limits and further
+ * members are managed in the admin under "Team" (invitations).
  *
  * The password is read from ADMIN_PASSWORD (never from arguments, so it stays out of the
  * shell history and process list) and stored only as a scrypt hash.
  */
 /* eslint-disable no-console -- CLI output */
-import { hashPassword, PASSWORD_MIN_LENGTH } from "@up/core";
+import { hashPassword, isAdminRole, PASSWORD_MIN_LENGTH } from "@up/core";
 import {
   assertDatabaseTarget,
   CliUsageError,
@@ -37,7 +41,11 @@ async function main(): Promise<void> {
   const tenantSlug = argument(args, "tenant");
   const email = argument(args, "email");
   const password = process.env["ADMIN_PASSWORD"];
+  const role = argument(args, "role");
   if (!tenantSlug || !email) throw new CliUsageError("--tenant and --email are required");
+  if (!isAdminRole(role)) {
+    throw new CliUsageError("--role is required: owner, admin, manager or viewer");
+  }
   if (!password || password.length < PASSWORD_MIN_LENGTH) {
     throw new CliUsageError(
       `ADMIN_PASSWORD must be set (at least ${PASSWORD_MIN_LENGTH} characters)`,
@@ -55,9 +63,10 @@ async function main(): Promise<void> {
       {
         email,
         passwordHash: await hashPassword(password),
+        role,
       },
     );
-    console.log(`✓ admin account ${user.id} (${user.email}) for tenant ${tenant.slug}`);
+    console.log(`✓ admin account ${user.id} (${user.role}) for tenant ${tenant.slug}`);
   } finally {
     await close();
   }

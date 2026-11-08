@@ -3,6 +3,8 @@
 import { GUIDE_STATUSES, type GuideStatus } from "@up/core";
 import { redirect } from "next/navigation";
 
+import { type AdminContext } from "../auth/admin-auth-service";
+import { FORBIDDEN_MESSAGE, isAllowed } from "../auth/authorization";
 import { requireAdmin } from "../auth/server";
 import {
   changeStatus,
@@ -30,9 +32,19 @@ function field(formData: FormData, name: string, max = 5000): string {
   return typeof value === "string" ? value.slice(0, max) : "";
 }
 
-async function tenant() {
+const tenantOf = (admin: AdminContext) => ({ tenantId: admin.tenantId });
+
+/**
+ * Session + permission for an existing entry: the entry's property decides (M1 roles).
+ * `allowed: false` only when the entry exists and the admin may not edit its property;
+ * unknown entries are left to the service (same "not found" as before).
+ */
+async function entryAccess(entryId: string) {
   const admin = await requireAdmin();
-  return { tenantId: admin.tenantId };
+  const context = tenantOf(admin);
+  const loaded = await loadGuideEntry(guideDeps(), context, entryId);
+  const allowed = !loaded || isAllowed(admin, "content.edit", { propertyId: loaded.property.id });
+  return { admin, context, loaded, allowed };
 }
 
 const guidePath = (propertyId: string) => `/guide/${encodeURIComponent(propertyId)}`;
@@ -42,7 +54,11 @@ export async function createTopicAction(
   _previous: GuideFormState,
   formData: FormData,
 ): Promise<GuideFormState> {
-  const context = await tenant();
+  const admin = await requireAdmin();
+  if (!isAllowed(admin, "content.edit", { propertyId })) {
+    return { status: "error", message: FORBIDDEN_MESSAGE };
+  }
+  const context = tenantOf(admin);
   const scope = field(formData, "scope") === "unit" ? "unit" : "property";
   const result = await createTopic(guideDeps(), context, propertyId, {
     titleDe: field(formData, "titleDe", 120),
@@ -62,7 +78,8 @@ export async function updateTopicAction(
   _previous: GuideFormState,
   formData: FormData,
 ): Promise<GuideFormState> {
-  const context = await tenant();
+  const { context, allowed } = await entryAccess(entryId);
+  if (!allowed) return { status: "error", message: FORBIDDEN_MESSAGE };
   const result = await updateTopic(guideDeps(), context, entryId, {
     titleDe: field(formData, "titleDe", 120),
     titleEn: field(formData, "titleEn", 120),
@@ -83,7 +100,8 @@ export async function saveContentAction(
   _previous: GuideFormState,
   formData: FormData,
 ): Promise<GuideFormState> {
-  const context = await tenant();
+  const { context, allowed } = await entryAccess(entryId);
+  if (!allowed) return { status: "error", message: FORBIDDEN_MESSAGE };
   const result = await updateContent(
     guideDeps(),
     context,
@@ -99,10 +117,10 @@ export async function createOverrideAction(
   _previous: GuideFormState,
   formData: FormData,
 ): Promise<GuideFormState> {
-  const context = await tenant();
+  const { context, loaded, allowed } = await entryAccess(topicId);
   const deps = guideDeps();
-  const loaded = await loadGuideEntry(deps, context, topicId);
   if (!loaded) return { status: "error", message: "Thema nicht gefunden." };
+  if (!allowed) return { status: "error", message: FORBIDDEN_MESSAGE };
   const result = await createOverride(deps, context, topicId, field(formData, "unitId", 64));
   if (!result.ok) return { status: "error", message: result.error };
   return { status: "created", url: `${guidePath(loaded.property.id)}/${result.id}` };
@@ -110,25 +128,26 @@ export async function createOverrideAction(
 
 export async function changeStatusAction(entryId: string, status: GuideStatus): Promise<void> {
   if (!(GUIDE_STATUSES as readonly string[]).includes(status)) return;
-  const context = await tenant();
+  const { context, loaded, allowed } = await entryAccess(entryId);
   const deps = guideDeps();
-  const loaded = await loadGuideEntry(deps, context, entryId);
   if (!loaded) redirect("/guide");
+  if (!allowed) redirect("/forbidden");
   await changeStatus(deps, context, entryId, status);
   redirect(`${guidePath(loaded.property.id)}/${entryId}`);
 }
 
 export async function moveTopicAction(entryId: string, direction: "up" | "down"): Promise<void> {
-  const context = await tenant();
+  const { context, loaded, allowed } = await entryAccess(entryId);
   const deps = guideDeps();
-  const loaded = await loadGuideEntry(deps, context, entryId);
   if (!loaded) redirect("/guide");
+  if (!allowed) redirect("/forbidden");
   await moveTopic(deps, context, entryId, direction === "up" ? "up" : "down");
   redirect(guidePath(loaded.property.id));
 }
 
 export async function deleteEntryAction(entryId: string): Promise<void> {
-  const context = await tenant();
+  const { context, allowed } = await entryAccess(entryId);
+  if (!allowed) redirect("/forbidden");
   const result = await deleteEntry(guideDeps(), context, entryId);
   if (!result.ok) {
     const loaded = await loadGuideEntry(guideDeps(), context, entryId);
@@ -166,6 +185,8 @@ export async function requestImageUploadAction(
   file: { contentType: string; size: number },
 ): Promise<UploadGrant> {
   const admin = await requireAdmin();
+  if (!isAllowed(admin, "content.edit", { propertyId }))
+    return { ok: false, error: FORBIDDEN_MESSAGE };
   const deps = guideMediaDeps();
   if (!deps) return UPLOAD_NOT_CONFIGURED;
   return requestImageUpload(deps, admin, propertyId, {
@@ -180,6 +201,8 @@ export async function confirmImageUploadAction(
   input: { path: string; width: number; height: number },
 ): Promise<UploadResult> {
   const admin = await requireAdmin();
+  if (!isAllowed(admin, "content.edit", { propertyId }))
+    return { ok: false, error: FORBIDDEN_MESSAGE };
   const deps = guideMediaDeps();
   if (!deps) return UPLOAD_NOT_CONFIGURED;
   return confirmImageUpload(deps, admin, propertyId, {

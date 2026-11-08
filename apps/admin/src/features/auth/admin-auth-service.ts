@@ -7,6 +7,7 @@
  * Never logged: passwords, e-mail addresses, session secrets, setup tokens.
  */
 import {
+  type AdminRole,
   constantTimeEquals,
   dummyPasswordHash,
   generateSecret,
@@ -15,10 +16,12 @@ import {
   isWellFormedSecret,
   type Logger,
   PASSWORD_MAX_LENGTH,
+  type PropertyScope,
   PASSWORD_MIN_LENGTH,
   verifyPassword,
 } from "@up/core";
 import {
+  acceptAdminInvitation,
   type AdminUser,
   countAdminUsers,
   createAdminSession,
@@ -26,6 +29,7 @@ import {
   type Database,
   findAdminSessionByTokenHash,
   findAdminUserByEmail,
+  findOpenAdminInvitation,
   getTenantBySlug,
   hitRateLimit,
   normalizeAdminEmail,
@@ -45,6 +49,10 @@ export type AdminContext = {
   tenantId: string;
   email: string;
   displayName?: string;
+  /** Read from the database on every request – role changes apply immediately (M1). */
+  role: AdminRole;
+  propertyScope: PropertyScope;
+  propertyIds: readonly string[];
 };
 
 export type LoginResult =
@@ -142,6 +150,9 @@ export async function resolveAdminSession(
       tenantId: record.user.tenantId,
       email: record.user.email,
       ...(record.user.displayName ? { displayName: record.user.displayName } : {}),
+      role: record.user.role,
+      propertyScope: record.user.propertyScope,
+      propertyIds: record.user.propertyIds,
     };
   } catch (error) {
     deps.logger.error("admin session lookup failed", {
@@ -212,6 +223,7 @@ export async function setupFirstAdmin(
       {
         email,
         passwordHash: await hashPassword(input.password),
+        role: "owner",
       },
     );
     log.info("first admin account created", { adminUserId: user.id, tenantId: tenant.id });
@@ -221,5 +233,64 @@ export async function setupFirstAdmin(
       error: error instanceof Error ? { name: error.name } : "unknown",
     });
     return { ok: false, reason: "invalid-input" };
+  }
+}
+
+/* ------------------------------------------------------------------------------------------
+ * Invitations (M1): new team members set their own password via a one-time link.
+ * No passwords are ever taken over from the Extras app.
+ * ---------------------------------------------------------------------------------------- */
+
+export type InvitationPreview = { role: AdminUser["role"]; email: string; expiresAt: Date };
+
+/** What the invitation page may show – only for a well-formed, open, unexpired link. */
+export async function previewInvitation(
+  deps: AdminAuthDeps,
+  token: string,
+): Promise<InvitationPreview | undefined> {
+  if (!isWellFormedSecret(token)) return undefined;
+  const invitation = await findOpenAdminInvitation(deps.db, hashSecret(token), deps.now());
+  return invitation
+    ? { role: invitation.role, email: invitation.email, expiresAt: invitation.expiresAt }
+    : undefined;
+}
+
+export type AcceptInvitationOutcome =
+  | { ok: true; session: AdminSessionGrant }
+  | { ok: false; reason: "invalid" | "invalid-password" | "rate-limited" | "already-member" };
+
+export async function acceptInvitation(
+  deps: AdminAuthDeps,
+  input: { token: string; password: string; displayName?: string; clientAddress: string },
+): Promise<AcceptInvitationOutcome> {
+  const log = deps.logger.child({ flow: "admin-invitation" });
+  try {
+    if (await limited(deps, "admin-invite-client", input.clientAddress, LOGIN_LIMIT.perClient)) {
+      return { ok: false, reason: "rate-limited" };
+    }
+    if (!isWellFormedSecret(input.token)) return { ok: false, reason: "invalid" };
+    if (
+      input.password.length < PASSWORD_MIN_LENGTH ||
+      input.password.length > PASSWORD_MAX_LENGTH
+    ) {
+      return { ok: false, reason: "invalid-password" };
+    }
+    const result = await acceptAdminInvitation(deps.db, {
+      tokenHash: hashSecret(input.token),
+      passwordHash: await hashPassword(input.password),
+      ...(input.displayName ? { displayName: input.displayName.slice(0, 120) } : {}),
+      now: deps.now(),
+    });
+    if (!result.ok) {
+      log.info("admin invitation rejected", { reason: result.reason });
+      return result;
+    }
+    log.info("admin invitation accepted", { adminUserId: result.user.id });
+    return { ok: true, session: await startSession(deps, result.user, undefined) };
+  } catch (error) {
+    log.error("admin invitation failed", {
+      error: error instanceof Error ? { name: error.name } : "unknown",
+    });
+    return { ok: false, reason: "invalid" };
   }
 }

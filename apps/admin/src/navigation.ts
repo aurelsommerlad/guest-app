@@ -69,6 +69,14 @@ export const adminModules: readonly AdminModule[] = [
     icon: "home",
     scope: { kind: "tenant" },
   },
+  {
+    id: "team",
+    label: "Team",
+    group: "admin",
+    segment: "team",
+    icon: "users",
+    scope: { kind: "tenant" },
+  },
 ];
 
 export type ResolvedGroup = { id: NavigationGroupId; label?: string; modules: AdminModule[] };

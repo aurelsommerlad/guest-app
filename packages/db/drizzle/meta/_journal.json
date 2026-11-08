@@ -127,6 +127,13 @@
       "when": 1794140193867,
       "tag": "0017_upsell_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794163263673,
+      "tag": "0018_extras_migration_m1",
+      "breakpoints": true
     }
   ]
 }

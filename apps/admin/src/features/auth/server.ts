@@ -7,7 +7,10 @@ import { cache } from "react";
 import { serverEnv } from "../../env/server";
 import { getDatabase } from "../../server/database";
 import { logger } from "../../server/logger";
+import { type AdminPermission } from "@up/core";
+
 import { type AdminAuthDeps, type AdminContext, resolveAdminSession } from "./admin-auth-service";
+import { isAllowed } from "./authorization";
 import { adminCookieConfig } from "./session-cookie";
 
 export const adminCookie = adminCookieConfig(serverEnv.APP_ENV);
@@ -37,5 +40,21 @@ export const getAdminContext = cache(async (): Promise<AdminContext | undefined>
 export async function requireAdmin(): Promise<AdminContext> {
   const admin = await getAdminContext();
   if (!admin) redirect("/login");
+  return admin;
+}
+
+/**
+ * Pages and actions that need a permission: no session → login, no permission → the
+ * "no access" page. The check runs on the server for every request.
+ */
+export async function requirePermission(
+  permission: AdminPermission,
+  target: { propertyId?: string } = {},
+): Promise<AdminContext> {
+  const admin = await requireAdmin();
+  if (!isAllowed(admin, permission, target)) {
+    logger.warn("admin action denied", { adminUserId: admin.adminUserId, permission });
+    redirect("/forbidden");
+  }
   return admin;
 }

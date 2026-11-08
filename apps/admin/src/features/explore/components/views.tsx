@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 
 import { EmptyState, PageHeader } from "../../../components/PageHeader";
 import { StatusBadge } from "../../../components/StatusBadge";
-import { requireAdmin } from "../../auth/server";
+import { requirePermission } from "../../auth/server";
 import { mediaStorageConfig } from "../../guide/server";
 import { filterHref, matchesFilter, parseTopicFilter, topicCounts } from "../../guide/topic-list";
 import {
@@ -33,7 +33,10 @@ export async function ExploreListView({
   viewProperty: string | null;
   searchParams: { status?: string; archived?: string };
 }) {
-  const admin = await requireAdmin();
+  const admin = await requirePermission(
+    "content.read",
+    viewProperty ? { propertyId: viewProperty } : {},
+  );
   const overview = await loadExploreOverview(
     exploreDeps(),
     { tenantId: admin.tenantId },
@@ -106,7 +109,7 @@ export async function ExploreListView({
 }
 
 export async function NewPlaceView({ viewProperty }: { viewProperty: string | null }) {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.edit");
   const overview = await loadExploreOverview(
     exploreDeps(),
     { tenantId: admin.tenantId },
@@ -141,7 +144,7 @@ export async function PlaceEditorView({
   placeId: string;
   error?: string;
 }) {
-  const admin = await requireAdmin();
+  const admin = await requirePermission("content.read");
   const loaded = await loadPlace(exploreDeps(), { tenantId: admin.tenantId }, placeId);
   if (!loaded) notFound();
   const { place, properties, englishComplete } = loaded;

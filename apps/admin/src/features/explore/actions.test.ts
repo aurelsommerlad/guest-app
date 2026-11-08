@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  requireAdmin: vi.fn(),
+  requirePermission: vi.fn(),
   exploreDeps: vi.fn(),
   exploreMediaDeps: vi.fn(),
   updatePlace: vi.fn(),
@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   requestMediaUpload: vi.fn(),
 }));
 
-vi.mock("../auth/server", () => ({ requireAdmin: mocks.requireAdmin }));
+vi.mock("../auth/server", () => ({ requirePermission: mocks.requirePermission }));
 vi.mock("./server", () => ({
   exploreDeps: mocks.exploreDeps,
   exploreMediaDeps: mocks.exploreMediaDeps,
@@ -36,7 +36,7 @@ beforeEach(() => {
 
 describe("explore actions", () => {
   it("require a valid admin session before anything else", async () => {
-    mocks.requireAdmin.mockRejectedValue(new Error("NEXT_REDIRECT /login"));
+    mocks.requirePermission.mockRejectedValue(new Error("NEXT_REDIRECT /login"));
     await expect(savePlaceAction("x", { status: "idle" }, new FormData())).rejects.toThrow(
       /NEXT_REDIRECT/,
     );
@@ -52,7 +52,7 @@ describe("explore actions", () => {
   });
 
   it("use the session's tenant and scope – never values from the form", async () => {
-    mocks.requireAdmin.mockResolvedValue({
+    mocks.requirePermission.mockResolvedValue({
       adminUserId: "a",
       tenantId: "unique-places",
       email: "a@example.com",
@@ -75,6 +75,8 @@ describe("explore actions", () => {
       size: 10,
       ...{ path: "other-tenant/x" },
     });
+    // Explore places are tenant-wide: editing needs content.edit for all properties.
+    expect(mocks.requirePermission).toHaveBeenCalledWith("content.edit");
     expect(mocks.requestMediaUpload.mock.calls[0]?.slice(1)).toEqual([
       { adminUserId: "a", tenantId: "unique-places", email: "a@example.com" },
       { tenantId: "unique-places", module: "explore" },

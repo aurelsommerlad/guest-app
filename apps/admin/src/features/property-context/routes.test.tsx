@@ -13,10 +13,20 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock("server-only", () => ({}));
-vi.mock("../auth/server", () => ({
-  requireAdmin: () =>
-    Promise.resolve({ adminUserId: "a", tenantId: state.tenantId, email: "redaktion@example.com" }),
-}));
+vi.mock("../auth/server", () => {
+  const admin = () => ({
+    adminUserId: "a",
+    tenantId: state.tenantId,
+    email: "redaktion@example.com",
+    role: "owner" as const,
+    propertyScope: "all" as const,
+    propertyIds: [],
+  });
+  return {
+    requireAdmin: () => Promise.resolve(admin()),
+    requirePermission: () => Promise.resolve(admin()),
+  };
+});
 vi.mock("../../server/database", () => ({ getDatabase: () => state.db }));
 vi.mock("../guide/server", () => ({
   guideDeps: () => ({

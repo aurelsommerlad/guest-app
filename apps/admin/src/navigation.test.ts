@@ -26,6 +26,7 @@ describe("admin navigation registry", () => {
       "Guide",
       "Explore",
       "Objekte",
+      "Team",
     ]);
     expect(navigationGroups.map((group) => group.label)).toEqual([
       undefined,

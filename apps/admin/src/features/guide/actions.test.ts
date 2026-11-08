@@ -14,7 +14,8 @@ vi.mock("./guide-media-service", () => ({
   confirmImageUpload: mocks.confirmImageUpload,
 }));
 
-const { confirmImageUploadAction, requestImageUploadAction } = await import("./actions");
+const { confirmImageUploadAction, createTopicAction, requestImageUploadAction } =
+  await import("./actions");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -35,7 +36,14 @@ describe("upload actions", () => {
   });
 
   it("use the session's tenant – never one from the browser", async () => {
-    const admin = { adminUserId: "a", tenantId: "unique-places", email: "a@example.com" };
+    const admin = {
+      adminUserId: "a",
+      tenantId: "unique-places",
+      email: "a@example.com",
+      role: "manager",
+      propertyScope: "all",
+      propertyIds: [],
+    };
     mocks.requireAdmin.mockResolvedValue(admin);
     mocks.guideMediaDeps.mockReturnValue({ storage: {} });
     mocks.requestImageUpload.mockResolvedValue({ ok: true, uploadUrl: "u", path: "p" });
@@ -51,11 +59,57 @@ describe("upload actions", () => {
   });
 
   it("answer clearly when uploads are not configured", async () => {
-    mocks.requireAdmin.mockResolvedValue({ adminUserId: "a", tenantId: "unique-places" });
+    mocks.requireAdmin.mockResolvedValue({
+      adminUserId: "a",
+      tenantId: "unique-places",
+      role: "owner",
+      propertyScope: "all",
+      propertyIds: [],
+    });
     mocks.guideMediaDeps.mockReturnValue(undefined);
     expect(await requestImageUploadAction("hov", { contentType: "image/png", size: 10 })).toEqual({
       ok: false,
       error: "Der Bild-Upload ist nicht konfiguriert.",
+    });
+  });
+});
+
+describe("role and property checks (M1)", () => {
+  const scoped = (role: string, propertyIds: string[]) => ({
+    adminUserId: "a",
+    tenantId: "unique-places",
+    email: "a@example.com",
+    role,
+    propertyScope: "selected",
+    propertyIds,
+  });
+
+  it("refuse uploads for a property outside the admin's selection", async () => {
+    mocks.requireAdmin.mockResolvedValue(scoped("manager", ["hov"]));
+    mocks.guideMediaDeps.mockReturnValue({ storage: {} });
+    expect(
+      await requestImageUploadAction("huesle", { contentType: "image/png", size: 10 }),
+    ).toEqual({
+      ok: false,
+      error: "Dafür fehlt Dir die Berechtigung.",
+    });
+    expect(mocks.requestImageUpload).not.toHaveBeenCalled();
+  });
+
+  it("refuse every write for viewers, even on their own property", async () => {
+    mocks.requireAdmin.mockResolvedValue(scoped("viewer", ["hov"]));
+    mocks.guideMediaDeps.mockReturnValue({ storage: {} });
+    expect(await confirmImageUploadAction("hov", { path: "x", width: 1, height: 1 })).toMatchObject(
+      { ok: false },
+    );
+    expect(mocks.confirmImageUpload).not.toHaveBeenCalled();
+  });
+
+  it("refuse creating topics for another property before touching the database", async () => {
+    mocks.requireAdmin.mockResolvedValue(scoped("manager", ["hov"]));
+    expect(await createTopicAction("laeke", { status: "idle" }, new FormData())).toEqual({
+      status: "error",
+      message: "Dafür fehlt Dir die Berechtigung.",
     });
   });
 });
