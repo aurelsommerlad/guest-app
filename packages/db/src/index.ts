@@ -257,3 +257,19 @@ export {
   saveOfficialRegistrationState,
   type SaveResult,
 } from "./repositories/official-registration-repository";
+export {
+  catalogMembers,
+  configOf,
+  type ExtrasSnapshotLike,
+  importExtrasSnapshot,
+  type ImportAction,
+  type ImportItem,
+  type ImportOptions,
+  type ImportResult,
+} from "./extras-import/importer";
+export {
+  type CatalogComparison,
+  reconcileExtras,
+  type Reconciliation,
+  renderImportReport,
+} from "./extras-import/reconcile";
