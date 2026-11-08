@@ -61,7 +61,9 @@ export function serviceWriteGateway(): ServiceWriteGateway {
   const live = apaleoReader();
   return new ServiceWriteGateway({
     mode: serverEnv.APALEO_SERVICE_WRITES,
-    allowedApaleoPropertyIds: (serverEnv.APALEO_SERVICE_WRITE_PROPERTIES ?? "").split(",").filter(Boolean),
+    allowedApaleoPropertyIds: (serverEnv.APALEO_SERVICE_WRITE_PROPERTIES ?? "")
+      .split(",")
+      .filter(Boolean),
     store: createServiceWriteStore(getDatabase()),
     lookupReservation: async (reservationId) => {
       if (!live) throw new Error("apaleo_not_configured");

@@ -1,7 +1,7 @@
 import { SERVICE_CONFIG_ISSUE_LABELS, type ServiceConfigIssue } from "@up/core";
 import { buttonStyles, cx } from "@up/ui";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { EmptyState, PageHeader } from "../../../components/PageHeader";
 import { StatusBadge } from "../../../components/StatusBadge";
@@ -53,7 +53,7 @@ function Pill({ tone, children }: { tone: "ok" | "muted" | "warn"; children: str
 export async function CatalogListView({ viewProperty }: { viewProperty: string | null }) {
   const admin = await requireAdmin();
   const loaded = await loadCatalog(catalogDeps(), admin);
-  if (!loaded.ok) notFound();
+  if (!loaded.ok) redirect("/forbidden");
   const { properties, canEditOffers } = loaded;
   if (viewProperty && !properties.some((p) => p.id === viewProperty)) notFound();
   const offers = viewProperty
@@ -143,7 +143,9 @@ export async function CatalogListView({ viewProperty }: { viewProperty: string |
                     </span>
                   )}
                 </div>
-                <StatusBadge status={offer.status} />
+                <div className="shrink-0 self-start">
+                  <StatusBadge status={offer.status} />
+                </div>
               </li>
             );
           })}

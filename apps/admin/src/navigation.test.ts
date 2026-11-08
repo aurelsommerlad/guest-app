@@ -55,7 +55,12 @@ describe("admin navigation registry", () => {
       scope: { kind: "property", allProperties: "aggregate" },
     };
     const groups = visibleNavigation([...adminModules, inbox]);
-    expect(groups.map((group) => group.label)).toEqual(["Kommunikation", "Inhalte", "Services", "Verwaltung"]);
+    expect(groups.map((group) => group.label)).toEqual([
+      "Kommunikation",
+      "Inhalte",
+      "Services",
+      "Verwaltung",
+    ]);
     expect(moduleHref(inbox, null)).toBe("/inbox");
     expect(moduleHref(inbox, "hov")).toBe("/inbox/hov");
   });

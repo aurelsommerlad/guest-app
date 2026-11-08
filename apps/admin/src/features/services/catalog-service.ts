@@ -167,6 +167,10 @@ export async function loadApaleoOptions(
       deps.apaleo.listServices(apaleoPropertyId),
       deps.apaleo.listUnitGroups(apaleoPropertyId),
     ]);
+    // The local fixture only knows the Apaleo TEST property – elsewhere: manual entry.
+    if (deps.apaleo.kind === "fixture" && services.length === 0) {
+      return { available: false, reason: "not-configured", apaleoPropertyId };
+    }
     return { available: true, source: deps.apaleo.kind, services, unitGroups, apaleoPropertyId };
   } catch (error) {
     deps.logger.warn("apaleo service list failed", {

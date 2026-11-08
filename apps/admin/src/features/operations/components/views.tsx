@@ -1,6 +1,6 @@
 import { buttonStyles, cx } from "@up/ui";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { EmptyState, PageHeader } from "../../../components/PageHeader";
@@ -127,7 +127,7 @@ const base = (segment: string, viewProperty: string | null) =>
 export async function ExtensionNightsView({ viewProperty }: { viewProperty: string | null }) {
   const admin = await requireAdmin();
   const loaded = await loadExtensionSettings(operationsDeps(), admin, viewProperty);
-  if (!loaded.ok) notFound();
+  if (!loaded.ok) redirect("/forbidden");
   return (
     <div className="flex max-w-224 flex-col gap-8">
       <PageHeader
@@ -191,7 +191,7 @@ export async function RequestsView({
   const admin = await requireAdmin();
   const filter = REQUEST_FILTERS.find((f) => f.key === status)?.key;
   const loaded = await loadRequests(operationsDeps(), admin, viewProperty, filter);
-  if (!loaded.ok) notFound();
+  if (!loaded.ok) redirect("/forbidden");
   const href = base("requests", viewProperty);
   return (
     <div className="flex flex-col gap-8">
@@ -227,7 +227,7 @@ export async function RequestsView({
             <li key={request.id}>
               <Link
                 href={`/requests/r/${request.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface"
+                className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface [&>span:last-child]:shrink-0"
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="type-body text-text">
@@ -351,7 +351,7 @@ export async function RequestDetailView({
 export async function BookingsView({ viewProperty }: { viewProperty: string | null }) {
   const admin = await requireAdmin();
   const loaded = await loadBookings(operationsDeps(), admin, viewProperty);
-  if (!loaded.ok) notFound();
+  if (!loaded.ok) redirect("/forbidden");
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -366,7 +366,7 @@ export async function BookingsView({ viewProperty }: { viewProperty: string | nu
             <li key={booking.id}>
               <Link
                 href={`/bookings/b/${booking.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface"
+                className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface [&>span:last-child]:shrink-0"
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="type-body text-text">
@@ -446,7 +446,7 @@ export async function BookingDetailView({ bookingId }: { bookingId: string }) {
 export async function ExtensionsView({ viewProperty }: { viewProperty: string | null }) {
   const admin = await requireAdmin();
   const loaded = await loadExtensions(operationsDeps(), admin, viewProperty);
-  if (!loaded.ok) notFound();
+  if (!loaded.ok) redirect("/forbidden");
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -461,7 +461,7 @@ export async function ExtensionsView({ viewProperty }: { viewProperty: string | 
             <li key={extension.id}>
               <Link
                 href={`/extensions/e/${extension.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface"
+                className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface [&>span:last-child]:shrink-0"
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="type-body text-text">
@@ -616,7 +616,7 @@ const AUDIT_LABELS: Record<string, string> = {
 export async function AuditView() {
   const admin = await requireAdmin();
   const loaded = await loadAudit(operationsDeps(), admin);
-  if (!loaded.ok) notFound();
+  if (!loaded.ok) redirect("/forbidden");
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -663,7 +663,7 @@ const RUN_STATUS: Record<string, string> = {
 export async function ImportsView() {
   const admin = await requireAdmin();
   const loaded = await loadImports(operationsDeps(), admin);
-  if (!loaded.ok) notFound();
+  if (!loaded.ok) redirect("/forbidden");
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -681,7 +681,7 @@ export async function ImportsView() {
             <li key={run.id}>
               <Link
                 href={`/imports/${run.id}`}
-                className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface"
+                className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-surface [&>span:last-child]:shrink-0"
               >
                 <span className="flex flex-col gap-0.5">
                   <span className="type-body text-text">
