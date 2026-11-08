@@ -346,14 +346,19 @@ export class ServiceBookingEngine {
       return {
         offerId: item.offerId,
         serviceId: item.serviceId,
+        // STAY texts; a missing language falls back to the other one (never to the id).
         displayName: resolveBilingualText({
           overrideDe: item.title.de,
           overrideEn: item.title.en,
+          apaleoDe: item.title.de,
+          apaleoEn: item.title.en,
           finalFallback: item.serviceId,
         }),
         description: resolveBilingualText({
           overrideDe: item.description.de,
           overrideEn: item.description.en,
+          apaleoDe: item.description.de,
+          apaleoEn: item.description.en,
           finalFallback: "",
         }),
         category: item.category,

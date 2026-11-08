@@ -1,0 +1,5341 @@
+{
+  "format": "stay-extras-parity/1",
+  "createdAt": "2026-11-08T21:23:26.031Z",
+  "extrasSource": "aurelsommerlad/guest-services (lokaler Checkout, nur gelesen)",
+  "apaleo": "guest-services test/support/apaleo-simulator.mjs (Apaleo TEST, Stand 08.11.2026) – kein Apaleo-Zugriff",
+  "gatewayMode": "simulated",
+  "scenarios": [
+    {
+      "id": "S01",
+      "title": "Standardreservierung: Katalog und Verlängerungsangebot",
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S01",
+          "step": "1:catalog",
+          "field": "TEST-ECI.description",
+          "extras": {
+            "de": "Früher Check-in",
+            "en": "Early Check-in"
+          },
+          "stay": {
+            "de": "Früher Check-in",
+            "en": "Früher Check-in"
+          }
+        },
+        {
+          "scenario": "S01",
+          "step": "1:catalog",
+          "field": "TEST-LCO.description",
+          "extras": {
+            "de": "Später Check-out",
+            "en": "Late Check-out"
+          },
+          "stay": {
+            "de": "Später Check-out",
+            "en": "Später Check-out"
+          }
+        },
+        {
+          "scenario": "S01",
+          "step": "1:catalog",
+          "field": "TEST-HUND.description",
+          "extras": {
+            "de": "Hund",
+            "en": "Dog fee"
+          },
+          "stay": {
+            "de": "Hund",
+            "en": "Hund"
+          }
+        },
+        {
+          "scenario": "S01",
+          "step": "1:catalog",
+          "field": "TEST-PKW.description",
+          "extras": {
+            "de": "Parkplatz",
+            "en": "Car park"
+          },
+          "stay": {
+            "de": "Parkplatz",
+            "en": "Parkplatz"
+          }
+        },
+        {
+          "scenario": "S01",
+          "step": "1:catalog",
+          "field": "TEST-BABY.description",
+          "extras": {
+            "de": "Babybett",
+            "en": "Baby cot"
+          },
+          "stay": {
+            "de": "Babybett",
+            "en": "Babybett"
+          }
+        },
+        {
+          "scenario": "S01",
+          "step": "1:catalog",
+          "field": "TEST-EXTRPERSON.description",
+          "extras": {
+            "de": "Zusatzperson",
+            "en": "Extra person"
+          },
+          "stay": {
+            "de": "Zusatzperson",
+            "en": "Zusatzperson"
+          }
+        }
+      ],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "serviceId": "TEST-ECI",
+                  "code": "ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Early Check-in"
+                  },
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-LCO",
+                  "code": "LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Late Check-out"
+                  },
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-HUND",
+                  "code": "HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-PKW",
+                  "code": "PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Car park"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-BABY",
+                  "code": "BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-EXTRPERSON",
+                  "code": "EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Extra person"
+                  },
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ]
+            }
+          },
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              },
+              "discountPercent": 10,
+              "gap": 3,
+              "phase": "before_arrival",
+              "extras": [],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              }
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "offerId": "0c5e58ed-df43-4080-9f95-0e61ee51faa7",
+                  "serviceId": "TEST-ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Früher Check-in"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "02bc5d68-8050-426a-8f8a-3eab4ff1661f",
+                  "serviceId": "TEST-LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Später Check-out"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "842e23e3-2294-457f-b692-8df680cf5dcb",
+                  "serviceId": "TEST-HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Hund"
+                  },
+                  "category": "pets",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "026ec1a8-b933-4cbb-87b0-e005bb9c8fca",
+                  "serviceId": "TEST-PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Parkplatz"
+                  },
+                  "category": "mobility",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "44f206fd-9114-48fd-86a8-f127aff4b04e",
+                  "serviceId": "TEST-BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Babybett"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "8428d5e3-f779-4cf7-ab18-89edf5d97d4f",
+                  "serviceId": "TEST-EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Zusatzperson"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ],
+              "hidden": [
+                {
+                  "serviceId": "TEST-FINALCLEAN",
+                  "offerId": "9aaeab85-b2e7-433d-b467-4ba8713e3829",
+                  "reason": "no_offer"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              },
+              "discountPercent": 10,
+              "gap": 3,
+              "phase": "before_arrival",
+              "extras": [],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              }
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S02",
+      "title": "Hund bereits gebucht (aus Apaleo direkt)",
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S02",
+          "step": "1:catalog",
+          "field": "TEST-ECI.description",
+          "extras": {
+            "de": "Früher Check-in",
+            "en": "Early Check-in"
+          },
+          "stay": {
+            "de": "Früher Check-in",
+            "en": "Früher Check-in"
+          }
+        },
+        {
+          "scenario": "S02",
+          "step": "1:catalog",
+          "field": "TEST-LCO.description",
+          "extras": {
+            "de": "Später Check-out",
+            "en": "Late Check-out"
+          },
+          "stay": {
+            "de": "Später Check-out",
+            "en": "Später Check-out"
+          }
+        },
+        {
+          "scenario": "S02",
+          "step": "1:catalog",
+          "field": "TEST-HUND.description",
+          "extras": {
+            "de": "Hund",
+            "en": "Dog fee"
+          },
+          "stay": {
+            "de": "Hund",
+            "en": "Hund"
+          }
+        },
+        {
+          "scenario": "S02",
+          "step": "1:catalog",
+          "field": "TEST-PKW.description",
+          "extras": {
+            "de": "Parkplatz",
+            "en": "Car park"
+          },
+          "stay": {
+            "de": "Parkplatz",
+            "en": "Parkplatz"
+          }
+        },
+        {
+          "scenario": "S02",
+          "step": "1:catalog",
+          "field": "TEST-BABY.description",
+          "extras": {
+            "de": "Babybett",
+            "en": "Baby cot"
+          },
+          "stay": {
+            "de": "Babybett",
+            "en": "Babybett"
+          }
+        },
+        {
+          "scenario": "S02",
+          "step": "1:catalog",
+          "field": "TEST-EXTRPERSON.description",
+          "extras": {
+            "de": "Zusatzperson",
+            "en": "Extra person"
+          },
+          "stay": {
+            "de": "Zusatzperson",
+            "en": "Zusatzperson"
+          }
+        }
+      ],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "serviceId": "TEST-ECI",
+                  "code": "ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Early Check-in"
+                  },
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-LCO",
+                  "code": "LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Late Check-out"
+                  },
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-HUND",
+                  "code": "HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 0,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": true,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-PKW",
+                  "code": "PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Car park"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-BABY",
+                  "code": "BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-EXTRPERSON",
+                  "code": "EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Extra person"
+                  },
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ]
+            }
+          },
+          {
+            "kind": "order",
+            "value": {
+              "booked": [],
+              "failed": [
+                "TEST-HUND:dog_limit_exceeded"
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            },
+            {
+              "id": "TEST-HUND",
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "offerId": "cfb2cd25-2f63-4647-af33-5fef2bd86965",
+                  "serviceId": "TEST-ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Früher Check-in"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "7fdeacff-2df5-4b7d-b40a-2526639e95ea",
+                  "serviceId": "TEST-LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Später Check-out"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "999b4460-40cd-44fd-b1bf-3eb536bf31ff",
+                  "serviceId": "TEST-HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Hund"
+                  },
+                  "category": "pets",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 0,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": true,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "86e0059d-d894-43f0-8077-9079524cd782",
+                  "serviceId": "TEST-PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Parkplatz"
+                  },
+                  "category": "mobility",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "31a92945-6e2d-4439-826c-944adfc3e298",
+                  "serviceId": "TEST-BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Babybett"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "644a2a64-1562-4c37-bebd-ab2bf89b6d07",
+                  "serviceId": "TEST-EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Zusatzperson"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ],
+              "hidden": [
+                {
+                  "serviceId": "TEST-FINALCLEAN",
+                  "offerId": "0c390702-43a4-454b-afe0-43dd8b6932d1",
+                  "reason": "no_offer"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "order",
+            "value": {
+              "booked": [],
+              "failed": [
+                "TEST-HUND:dog_limit_exceeded"
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            },
+            {
+              "id": "TEST-HUND",
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S03",
+      "title": "Keine Restkapazität (5 Erwachsene + 1 Kind bei max. 6)",
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S03",
+          "step": "1:catalog",
+          "field": "TEST-ECI.description",
+          "extras": {
+            "de": "Früher Check-in",
+            "en": "Early Check-in"
+          },
+          "stay": {
+            "de": "Früher Check-in",
+            "en": "Früher Check-in"
+          }
+        },
+        {
+          "scenario": "S03",
+          "step": "1:catalog",
+          "field": "TEST-LCO.description",
+          "extras": {
+            "de": "Später Check-out",
+            "en": "Late Check-out"
+          },
+          "stay": {
+            "de": "Später Check-out",
+            "en": "Später Check-out"
+          }
+        },
+        {
+          "scenario": "S03",
+          "step": "1:catalog",
+          "field": "TEST-HUND.description",
+          "extras": {
+            "de": "Hund",
+            "en": "Dog fee"
+          },
+          "stay": {
+            "de": "Hund",
+            "en": "Hund"
+          }
+        },
+        {
+          "scenario": "S03",
+          "step": "1:catalog",
+          "field": "TEST-PKW.description",
+          "extras": {
+            "de": "Parkplatz",
+            "en": "Car park"
+          },
+          "stay": {
+            "de": "Parkplatz",
+            "en": "Parkplatz"
+          }
+        },
+        {
+          "scenario": "S03",
+          "step": "1:catalog",
+          "field": "TEST-BABY.description",
+          "extras": {
+            "de": "Babybett",
+            "en": "Baby cot"
+          },
+          "stay": {
+            "de": "Babybett",
+            "en": "Babybett"
+          }
+        }
+      ],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "serviceId": "TEST-ECI",
+                  "code": "ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Early Check-in"
+                  },
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-LCO",
+                  "code": "LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Late Check-out"
+                  },
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-HUND",
+                  "code": "HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-PKW",
+                  "code": "PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Car park"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-BABY",
+                  "code": "BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ]
+            }
+          },
+          {
+            "kind": "order",
+            "value": {
+              "booked": [],
+              "failed": [
+                "TEST-EXTRPERSON:not_available"
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 5,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "offerId": "c5a00aff-53c7-4e4e-a877-f2886762d94a",
+                  "serviceId": "TEST-ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Früher Check-in"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "cabdeead-2308-4d59-8753-56d874aeb174",
+                  "serviceId": "TEST-LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Später Check-out"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "679deed3-019a-4639-aebe-2989634bff31",
+                  "serviceId": "TEST-HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Hund"
+                  },
+                  "category": "pets",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "fdc4f5d0-a889-4f66-8a1b-d0c03bcdbb3b",
+                  "serviceId": "TEST-PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Parkplatz"
+                  },
+                  "category": "mobility",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "00ed3e75-9cce-43e3-a6d7-92bb582acd5a",
+                  "serviceId": "TEST-BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Babybett"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ],
+              "hidden": [
+                {
+                  "serviceId": "TEST-EXTRPERSON",
+                  "offerId": "894e507f-65f6-4edd-9897-b0dadc519bb4",
+                  "reason": "no_capacity"
+                },
+                {
+                  "serviceId": "TEST-FINALCLEAN",
+                  "offerId": "07aec869-eec1-4453-8c63-1de7c90a1ddc",
+                  "reason": "no_offer"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "order",
+            "value": {
+              "booked": [],
+              "failed": [
+                "TEST-EXTRPERSON:not_available"
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 5,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S04",
+      "title": "Apartmenttyp für Parken nicht erlaubt",
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S04",
+          "step": "1:catalog",
+          "field": "TEST-ECI.description",
+          "extras": {
+            "de": "Früher Check-in",
+            "en": "Early Check-in"
+          },
+          "stay": {
+            "de": "Früher Check-in",
+            "en": "Früher Check-in"
+          }
+        },
+        {
+          "scenario": "S04",
+          "step": "1:catalog",
+          "field": "TEST-LCO.description",
+          "extras": {
+            "de": "Später Check-out",
+            "en": "Late Check-out"
+          },
+          "stay": {
+            "de": "Später Check-out",
+            "en": "Später Check-out"
+          }
+        },
+        {
+          "scenario": "S04",
+          "step": "1:catalog",
+          "field": "TEST-HUND.description",
+          "extras": {
+            "de": "Hund",
+            "en": "Dog fee"
+          },
+          "stay": {
+            "de": "Hund",
+            "en": "Hund"
+          }
+        },
+        {
+          "scenario": "S04",
+          "step": "1:catalog",
+          "field": "TEST-PKW.description",
+          "extras": {
+            "de": "Parkplatz",
+            "en": "Car park"
+          },
+          "stay": {
+            "de": "Parkplatz",
+            "en": "Parkplatz"
+          }
+        },
+        {
+          "scenario": "S04",
+          "step": "1:catalog",
+          "field": "TEST-BABY.description",
+          "extras": {
+            "de": "Babybett",
+            "en": "Baby cot"
+          },
+          "stay": {
+            "de": "Babybett",
+            "en": "Babybett"
+          }
+        },
+        {
+          "scenario": "S04",
+          "step": "1:catalog",
+          "field": "TEST-EXTRPERSON.description",
+          "extras": {
+            "de": "Zusatzperson",
+            "en": "Extra person"
+          },
+          "stay": {
+            "de": "Zusatzperson",
+            "en": "Zusatzperson"
+          }
+        }
+      ],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "serviceId": "TEST-ECI",
+                  "code": "ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Early Check-in"
+                  },
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-LCO",
+                  "code": "LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Late Check-out"
+                  },
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-HUND",
+                  "code": "HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-PKW",
+                  "code": "PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Car park"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": true,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-BABY",
+                  "code": "BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-EXTRPERSON",
+                  "code": "EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Extra person"
+                  },
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ]
+            }
+          },
+          {
+            "kind": "order",
+            "value": {
+              "booked": [],
+              "failed": [
+                "TEST-PKW:unit_group_restricted"
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "offerId": "c3e41f10-a601-4c1d-8f02-923c348ab24f",
+                  "serviceId": "TEST-ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Früher Check-in"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "eb9ee05d-135f-4283-bcdf-2d1994625b69",
+                  "serviceId": "TEST-LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Später Check-out"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "ec910444-fe02-446a-9014-fd71f896c9d2",
+                  "serviceId": "TEST-HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Hund"
+                  },
+                  "category": "pets",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "fdca3875-966f-43ab-9b6c-0c5003687517",
+                  "serviceId": "TEST-PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Parkplatz"
+                  },
+                  "category": "mobility",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": true,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "7c38b485-a82a-4dc6-a0fa-5c8a8dc9c5d9",
+                  "serviceId": "TEST-BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Babybett"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "10614cef-12c0-43b2-9e40-e0d94937e02e",
+                  "serviceId": "TEST-EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Zusatzperson"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ],
+              "hidden": [
+                {
+                  "serviceId": "TEST-FINALCLEAN",
+                  "offerId": "e501bd29-5a52-455c-8e1e-f3adce64b3bc",
+                  "reason": "no_offer"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "order",
+            "value": {
+              "booked": [],
+              "failed": [
+                "TEST-PKW:unit_group_restricted"
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S05",
+      "title": "Vergangener Aufenthalt",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": true,
+              "items": []
+            }
+          },
+          {
+            "kind": "extension-offer",
+            "value": null
+          }
+        ],
+        "state": {
+          "departure": "2026-10-03",
+          "adults": 2,
+          "timeSlices": [
+            "2026-10-01:99",
+            "2026-10-02:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2026-10-02×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": true,
+              "items": [],
+              "hidden": []
+            }
+          },
+          {
+            "kind": "extension-offer",
+            "value": null
+          }
+        ],
+        "state": {
+          "departure": "2026-10-03",
+          "adults": 2,
+          "timeSlices": [
+            "2026-10-01:99",
+            "2026-10-02:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2026-10-02×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S06",
+      "title": "Geänderter Apaleo-Preis (Früher Check-in 25 €)",
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S06",
+          "step": "1:catalog",
+          "field": "TEST-ECI.description",
+          "extras": {
+            "de": "Früher Check-in",
+            "en": "Early Check-in"
+          },
+          "stay": {
+            "de": "Früher Check-in",
+            "en": "Früher Check-in"
+          }
+        },
+        {
+          "scenario": "S06",
+          "step": "1:catalog",
+          "field": "TEST-LCO.description",
+          "extras": {
+            "de": "Später Check-out",
+            "en": "Late Check-out"
+          },
+          "stay": {
+            "de": "Später Check-out",
+            "en": "Später Check-out"
+          }
+        },
+        {
+          "scenario": "S06",
+          "step": "1:catalog",
+          "field": "TEST-HUND.description",
+          "extras": {
+            "de": "Hund",
+            "en": "Dog fee"
+          },
+          "stay": {
+            "de": "Hund",
+            "en": "Hund"
+          }
+        },
+        {
+          "scenario": "S06",
+          "step": "1:catalog",
+          "field": "TEST-PKW.description",
+          "extras": {
+            "de": "Parkplatz",
+            "en": "Car park"
+          },
+          "stay": {
+            "de": "Parkplatz",
+            "en": "Parkplatz"
+          }
+        },
+        {
+          "scenario": "S06",
+          "step": "1:catalog",
+          "field": "TEST-BABY.description",
+          "extras": {
+            "de": "Babybett",
+            "en": "Baby cot"
+          },
+          "stay": {
+            "de": "Babybett",
+            "en": "Babybett"
+          }
+        },
+        {
+          "scenario": "S06",
+          "step": "1:catalog",
+          "field": "TEST-EXTRPERSON.description",
+          "extras": {
+            "de": "Zusatzperson",
+            "en": "Extra person"
+          },
+          "stay": {
+            "de": "Zusatzperson",
+            "en": "Zusatzperson"
+          }
+        }
+      ],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "serviceId": "TEST-ECI",
+                  "code": "ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Early Check-in"
+                  },
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 25,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 25,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-LCO",
+                  "code": "LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Late Check-out"
+                  },
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-HUND",
+                  "code": "HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-PKW",
+                  "code": "PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Car park"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-BABY",
+                  "code": "BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-EXTRPERSON",
+                  "code": "EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Extra person"
+                  },
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ]
+            }
+          },
+          {
+            "kind": "order",
+            "value": {
+              "booked": [
+                "TEST-ECI×1"
+              ],
+              "failed": []
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Früher Check-in"
+          ],
+          "services": [
+            {
+              "id": "TEST-ECI",
+              "dates": [
+                "2027-01-12×1@25"
+              ]
+            },
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "patch"
+          ]
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "offerId": "3a210f5f-cff6-40bd-a6d6-a2b4792e525f",
+                  "serviceId": "TEST-ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Früher Check-in"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 25,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 25,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "f3b2163f-4f4b-42c2-aa7a-cd0aa6080ca7",
+                  "serviceId": "TEST-LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Später Check-out"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "3f412d84-f24a-421c-9e2c-a3f4643f9032",
+                  "serviceId": "TEST-HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Hund"
+                  },
+                  "category": "pets",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "459dc6a3-2ea3-409b-8c28-8ab1f258d5f9",
+                  "serviceId": "TEST-PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Parkplatz"
+                  },
+                  "category": "mobility",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "a04bf8b1-a4df-459e-b066-3effa99b701a",
+                  "serviceId": "TEST-BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Babybett"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "57ebefcc-462a-4695-aa83-919808e572cc",
+                  "serviceId": "TEST-EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Zusatzperson"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ],
+              "hidden": [
+                {
+                  "serviceId": "TEST-FINALCLEAN",
+                  "offerId": "85c8ebd6-9d59-4411-81ab-b59a87f5b13f",
+                  "reason": "no_offer"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "order",
+            "value": {
+              "booked": [
+                "TEST-ECI×1"
+              ],
+              "failed": []
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Früher Check-in"
+          ],
+          "services": [
+            {
+              "id": "TEST-ECI",
+              "dates": [
+                "2027-01-12×1@25"
+              ]
+            },
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "patch"
+          ]
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S07",
+      "title": "Mehrtägige Buchung: Hund, 2 Parkplätze, Früher Check-in, 2 Zusatzpersonen",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "order",
+            "value": {
+              "booked": [
+                "TEST-HUND×1",
+                "TEST-PKW×2",
+                "TEST-ECI×1",
+                "TEST-EXTRPERSON×2"
+              ],
+              "failed": []
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 4,
+          "timeSlices": [
+            "2027-01-12:159",
+            "2027-01-13:159"
+          ],
+          "vehicle": "KN-AB 1",
+          "comment": [
+            "Parking vehicles:",
+            "1. KN-AB 1",
+            "2. FN-CD 2",
+            "[Gäste-Portal] Extras gebucht: 1x Hund, 2x Parkplatz, 1x Früher Check-in, 2x Zusatzperson"
+          ],
+          "services": [
+            {
+              "id": "TEST-ECI",
+              "dates": [
+                "2027-01-12×1@20"
+              ]
+            },
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            },
+            {
+              "id": "TEST-HUND",
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15"
+              ]
+            },
+            {
+              "id": "TEST-PKW",
+              "dates": [
+                "2027-01-12×2@0",
+                "2027-01-13×2@0"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "patch",
+            "patch",
+            "book-service",
+            "book-service",
+            "amend",
+            "patch"
+          ]
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "order",
+            "value": {
+              "booked": [
+                "TEST-HUND×1",
+                "TEST-PKW×2",
+                "TEST-ECI×1",
+                "TEST-EXTRPERSON×2"
+              ],
+              "failed": []
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 4,
+          "timeSlices": [
+            "2027-01-12:159",
+            "2027-01-13:159"
+          ],
+          "vehicle": "KN-AB 1",
+          "comment": [
+            "Parking vehicles:",
+            "1. KN-AB 1",
+            "2. FN-CD 2",
+            "[Gäste-Portal] Extras gebucht: 1x Hund, 2x Parkplatz, 1x Früher Check-in, 2x Zusatzperson"
+          ],
+          "services": [
+            {
+              "id": "TEST-ECI",
+              "dates": [
+                "2027-01-12×1@20"
+              ]
+            },
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            },
+            {
+              "id": "TEST-HUND",
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15"
+              ]
+            },
+            {
+              "id": "TEST-PKW",
+              "dates": [
+                "2027-01-12×2@0",
+                "2027-01-13×2@0"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "patch",
+            "patch",
+            "book-service",
+            "book-service",
+            "amend",
+            "patch"
+          ]
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S08",
+      "title": "Ungültige Positionen: Menge über Kapazität, Hund ×2, Parken ohne Kennzeichen, Anfrage-Service",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "order",
+            "value": {
+              "booked": [
+                "TEST-ECI×1"
+              ],
+              "failed": [
+                "TEST-EXTRPERSON:capacity_exceeded",
+                "TEST-HUND:dog_limit_exceeded",
+                "TEST-PKW:vehicle_registration_required",
+                "TEST-BABY:not_available"
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Früher Check-in"
+          ],
+          "services": [
+            {
+              "id": "TEST-ECI",
+              "dates": [
+                "2027-01-12×1@20"
+              ]
+            },
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "patch"
+          ]
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "order",
+            "value": {
+              "booked": [
+                "TEST-ECI×1"
+              ],
+              "failed": [
+                "TEST-EXTRPERSON:capacity_exceeded",
+                "TEST-HUND:dog_limit_exceeded",
+                "TEST-PKW:vehicle_registration_required",
+                "TEST-BABY:not_available"
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Früher Check-in"
+          ],
+          "services": [
+            {
+              "id": "TEST-ECI",
+              "dates": [
+                "2027-01-12×1@20"
+              ]
+            },
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "patch"
+          ]
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S09",
+      "title": "Verlängerung mit Hund und bestehendem Late Check-out",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "order",
+            "value": {
+              "booked": [
+                "TEST-HUND×1",
+                "TEST-LCO×1"
+              ],
+              "failed": []
+            }
+          },
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              },
+              "discountPercent": 10,
+              "gap": 3,
+              "phase": "before_arrival",
+              "extras": [
+                {
+                  "serviceId": "TEST-HUND",
+                  "name": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "amount": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  }
+                }
+              ],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 104.1,
+                "currency": "EUR"
+              }
+            }
+          },
+          {
+            "kind": "extend",
+            "value": {
+              "ok": true,
+              "newDeparture": "2027-01-15",
+              "extensionPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              },
+              "status": "confirmed"
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-15",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99",
+            "2027-01-14:89.1"
+          ],
+          "vehicle": null,
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Hund, 1x Später Check-out"
+          ],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-14×1@139"
+              ]
+            },
+            {
+              "id": "TEST-HUND",
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15",
+                "2027-01-14×1@15"
+              ]
+            },
+            {
+              "id": "TEST-LCO",
+              "dates": [
+                "2027-01-15×1@20"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "book-service",
+            "patch",
+            "amend",
+            "book-service",
+            "book-service"
+          ]
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "order",
+            "value": {
+              "booked": [
+                "TEST-HUND×1",
+                "TEST-LCO×1"
+              ],
+              "failed": []
+            }
+          },
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              },
+              "discountPercent": 10,
+              "gap": 3,
+              "phase": "before_arrival",
+              "extras": [
+                {
+                  "serviceId": "TEST-HUND",
+                  "name": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "amount": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  }
+                }
+              ],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 104.1,
+                "currency": "EUR"
+              }
+            }
+          },
+          {
+            "kind": "extend",
+            "value": {
+              "ok": true,
+              "newDeparture": "2027-01-15",
+              "extensionPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              },
+              "status": "confirmed"
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-15",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99",
+            "2027-01-14:89.1"
+          ],
+          "vehicle": null,
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Hund, 1x Später Check-out"
+          ],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-14×1@139"
+              ]
+            },
+            {
+              "id": "TEST-HUND",
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15",
+                "2027-01-14×1@15"
+              ]
+            },
+            {
+              "id": "TEST-LCO",
+              "dates": [
+                "2027-01-15×1@20"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "book-service",
+            "patch",
+            "amend",
+            "book-service",
+            "book-service"
+          ]
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S10",
+      "title": "Verlängerung im Haus (Status InHouse, Rabatt im Haus)",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 84.15,
+                "currency": "EUR"
+              },
+              "discountPercent": 15,
+              "gap": 3,
+              "phase": "in_house",
+              "extras": [],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 84.15,
+                "currency": "EUR"
+              }
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 84.15,
+                "currency": "EUR"
+              },
+              "discountPercent": 15,
+              "gap": 3,
+              "phase": "in_house",
+              "extras": [],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 84.15,
+                "currency": "EUR"
+              }
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S11",
+      "title": "Keine Verlängerung: Folgenacht ausgebucht",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "extension-offer",
+            "value": null
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "extension-offer",
+            "value": null
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S12",
+      "title": "Verlängerung mit Lücke von genau einer Nacht (Lückenrabatt)",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 84.15,
+                "currency": "EUR"
+              },
+              "discountPercent": 15,
+              "gap": 1,
+              "phase": "before_arrival",
+              "extras": [],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 84.15,
+                "currency": "EUR"
+              }
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 84.15,
+                "currency": "EUR"
+              },
+              "discountPercent": 15,
+              "gap": 1,
+              "phase": "before_arrival",
+              "extras": [],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 84.15,
+                "currency": "EUR"
+              }
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S13",
+      "title": "Anfrage Babybett: anlegen und bestätigen",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "request",
+            "value": {
+              "created": true,
+              "requestedDates": [
+                "2027-01-12"
+              ],
+              "quoted": 15,
+              "approval": "ok"
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [
+            "[Gäste-Portal] Anfrage bestätigt: 1x Babybett"
+          ],
+          "services": [
+            {
+              "id": "TEST-BABY",
+              "dates": [
+                "2027-01-12×1@15"
+              ]
+            },
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "patch"
+          ]
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "request",
+            "value": {
+              "created": true,
+              "requestedDates": [
+                "2027-01-12"
+              ],
+              "quoted": 15,
+              "approval": "ok"
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [
+            "[Gäste-Portal] Anfrage bestätigt: 1x Babybett"
+          ],
+          "services": [
+            {
+              "id": "TEST-BABY",
+              "dates": [
+                "2027-01-12×1@15"
+              ]
+            },
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": [
+            "book-service",
+            "patch"
+          ]
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S14",
+      "title": "Anfrage mit zu geringer Verfügbarkeit",
+      "identical": true,
+      "deviations": [],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "request",
+            "value": {
+              "created": true,
+              "requestedDates": [
+                "2027-01-12"
+              ],
+              "quoted": 15,
+              "approval": "insufficient_availability"
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "request",
+            "value": {
+              "created": true,
+              "requestedDates": [
+                "2027-01-12"
+              ],
+              "quoted": 15,
+              "approval": "insufficient_availability"
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    },
+    {
+      "id": "S15",
+      "title": "Historischer Wahrheitswert: extensionNightEnabled = \"false\" (Text)",
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S15",
+          "step": "1:extension-offer",
+          "field": "Angebot vorhanden",
+          "extras": true,
+          "stay": false
+        }
+      ],
+      "importWarnings": [
+        "TEST:boolean_normalized:extensionNightEnabled"
+      ],
+      "extras": {
+        "steps": [
+          {
+            "kind": "extension-offer",
+            "value": {
+              "currentDeparture": "2027-01-14",
+              "newDeparture": "2027-01-15",
+              "averageNightlyRate": {
+                "amount": 99,
+                "currency": "EUR"
+              },
+              "extensionPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              },
+              "discountPercent": 10,
+              "gap": 3,
+              "phase": "before_arrival",
+              "extras": [],
+              "cityTax": null,
+              "totalPrice": {
+                "amount": 89.1,
+                "currency": "EUR"
+              }
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "extension-offer",
+            "value": null
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": [
+          "TEST:boolean_normalized:extensionNightEnabled"
+        ]
+      }
+    },
+    {
+      "id": "S16",
+      "title": "Zusatzperson ohne gültigen Preis (Konfigurationsfehler)",
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S16",
+          "step": "1:catalog",
+          "field": "Reihenfolge/angezeigte Services",
+          "extras": [
+            "TEST-ECI",
+            "TEST-LCO",
+            "TEST-HUND",
+            "TEST-PKW",
+            "TEST-BABY",
+            "TEST-EXTRPERSON"
+          ],
+          "stay": [
+            "TEST-ECI",
+            "TEST-LCO",
+            "TEST-HUND",
+            "TEST-PKW",
+            "TEST-BABY"
+          ]
+        },
+        {
+          "scenario": "S16",
+          "step": "1:catalog",
+          "field": "TEST-ECI.description",
+          "extras": {
+            "de": "Früher Check-in",
+            "en": "Early Check-in"
+          },
+          "stay": {
+            "de": "Früher Check-in",
+            "en": "Früher Check-in"
+          }
+        },
+        {
+          "scenario": "S16",
+          "step": "1:catalog",
+          "field": "TEST-LCO.description",
+          "extras": {
+            "de": "Später Check-out",
+            "en": "Late Check-out"
+          },
+          "stay": {
+            "de": "Später Check-out",
+            "en": "Später Check-out"
+          }
+        },
+        {
+          "scenario": "S16",
+          "step": "1:catalog",
+          "field": "TEST-HUND.description",
+          "extras": {
+            "de": "Hund",
+            "en": "Dog fee"
+          },
+          "stay": {
+            "de": "Hund",
+            "en": "Hund"
+          }
+        },
+        {
+          "scenario": "S16",
+          "step": "1:catalog",
+          "field": "TEST-PKW.description",
+          "extras": {
+            "de": "Parkplatz",
+            "en": "Car park"
+          },
+          "stay": {
+            "de": "Parkplatz",
+            "en": "Parkplatz"
+          }
+        },
+        {
+          "scenario": "S16",
+          "step": "1:catalog",
+          "field": "TEST-BABY.description",
+          "extras": {
+            "de": "Babybett",
+            "en": "Baby cot"
+          },
+          "stay": {
+            "de": "Babybett",
+            "en": "Babybett"
+          }
+        }
+      ],
+      "importWarnings": [
+        "TEST:TEST-EXTRPERSON:config_error:missing_extra_person_price"
+      ],
+      "extras": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "serviceId": "TEST-ECI",
+                  "code": "ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Early Check-in"
+                  },
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-LCO",
+                  "code": "LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Late Check-out"
+                  },
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-HUND",
+                  "code": "HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-PKW",
+                  "code": "PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Car park"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-BABY",
+                  "code": "BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-EXTRPERSON",
+                  "code": "EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Extra person"
+                  },
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "offerId": "dfaa1fb7-e559-46ff-9f5f-ae4cae316bd7",
+                  "serviceId": "TEST-ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Früher Check-in"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "0c79c065-3fbb-4792-9b9a-90aa8287049b",
+                  "serviceId": "TEST-LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Später Check-out"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "9393750c-5abc-4f06-b587-c6c22929f7e7",
+                  "serviceId": "TEST-HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Hund"
+                  },
+                  "category": "pets",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "a7d140b0-8022-4cca-8c8e-53d2a7ca08b0",
+                  "serviceId": "TEST-PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Parkplatz"
+                  },
+                  "category": "mobility",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "081a14c5-1fb8-4d81-a62a-eabed81e65f5",
+                  "serviceId": "TEST-BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Babybett"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ],
+              "hidden": [
+                {
+                  "serviceId": "TEST-EXTRPERSON",
+                  "offerId": "a392479d-de20-4695-92b9-298c4d06f9b6",
+                  "reason": "invalid_extra_person_price"
+                },
+                {
+                  "serviceId": "TEST-FINALCLEAN",
+                  "offerId": "e820a7c9-6e91-4d3b-a71a-a8e5d9e33f74",
+                  "reason": "no_offer"
+                }
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": [
+          "TEST:TEST-EXTRPERSON:config_error:missing_extra_person_price"
+        ]
+      }
+    },
+    {
+      "id": "S17",
+      "title": "Inaktiver Eintrag und Sortierung ohne Reihenfolge",
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S17",
+          "step": "1:catalog",
+          "field": "TEST-HUND.description",
+          "extras": {
+            "de": "Hund",
+            "en": "Dog fee"
+          },
+          "stay": {
+            "de": "Hund",
+            "en": "Hund"
+          }
+        },
+        {
+          "scenario": "S17",
+          "step": "1:catalog",
+          "field": "TEST-PKW.description",
+          "extras": {
+            "de": "Parkplatz",
+            "en": "Car park"
+          },
+          "stay": {
+            "de": "Parkplatz",
+            "en": "Parkplatz"
+          }
+        },
+        {
+          "scenario": "S17",
+          "step": "1:catalog",
+          "field": "TEST-BABY.description",
+          "extras": {
+            "de": "Babybett",
+            "en": "Baby cot"
+          },
+          "stay": {
+            "de": "Babybett",
+            "en": "Babybett"
+          }
+        },
+        {
+          "scenario": "S17",
+          "step": "1:catalog",
+          "field": "TEST-EXTRPERSON.description",
+          "extras": {
+            "de": "Zusatzperson",
+            "en": "Extra person"
+          },
+          "stay": {
+            "de": "Zusatzperson",
+            "en": "Zusatzperson"
+          }
+        },
+        {
+          "scenario": "S17",
+          "step": "1:catalog",
+          "field": "TEST-ECI.description",
+          "extras": {
+            "de": "Früher Check-in",
+            "en": "Early Check-in"
+          },
+          "stay": {
+            "de": "Früher Check-in",
+            "en": "Früher Check-in"
+          }
+        }
+      ],
+      "importWarnings": [],
+      "extras": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "serviceId": "TEST-HUND",
+                  "code": "HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Dog fee"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-PKW",
+                  "code": "PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Car park"
+                  },
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-BABY",
+                  "code": "BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-EXTRPERSON",
+                  "code": "EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Extra person"
+                  },
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "serviceId": "TEST-ECI",
+                  "code": "ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Early Check-in"
+                  },
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        }
+      },
+      "stay": {
+        "steps": [
+          {
+            "kind": "catalog",
+            "value": {
+              "pastStay": false,
+              "items": [
+                {
+                  "offerId": "7ea7627f-21e3-4871-bd9b-66218e6bc1aa",
+                  "serviceId": "TEST-HUND",
+                  "displayName": {
+                    "de": "Hund",
+                    "en": "Dog"
+                  },
+                  "description": {
+                    "de": "Hund",
+                    "en": "Hund"
+                  },
+                  "category": "pets",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 1,
+                  "maxOnePerReservation": true,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "13abe568-2367-4e79-8e43-7e0254e179c2",
+                  "serviceId": "TEST-PKW",
+                  "displayName": {
+                    "de": "Parkplatz",
+                    "en": "Parking"
+                  },
+                  "description": {
+                    "de": "Parkplatz",
+                    "en": "Parkplatz"
+                  },
+                  "category": "mobility",
+                  "imageUrl": null,
+                  "bookingRule": "per_night",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Nacht",
+                    "en": "per night"
+                  },
+                  "unitPrice": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 0,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": true,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "5d4e774e-2eb5-4c1a-86ce-b85cf424a348",
+                  "serviceId": "TEST-BABY",
+                  "displayName": {
+                    "de": "Babybett",
+                    "en": "Baby cot"
+                  },
+                  "description": {
+                    "de": "Babybett",
+                    "en": "Babybett"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_stay",
+                  "actionType": "service",
+                  "fulfillmentMode": "request",
+                  "priceUnitLabel": {
+                    "de": "pro Aufenthalt",
+                    "en": "per stay"
+                  },
+                  "unitPrice": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 15,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "fc5df338-c165-427f-b82d-c7bdbef04747",
+                  "serviceId": "TEST-EXTRPERSON",
+                  "displayName": {
+                    "de": "Zusatzperson",
+                    "en": "Additional guest"
+                  },
+                  "description": {
+                    "de": "Zusatzperson",
+                    "en": "Zusatzperson"
+                  },
+                  "category": "comfort",
+                  "imageUrl": null,
+                  "bookingRule": "per_person_per_night",
+                  "actionType": "increase_occupancy",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "pro Person / Nacht",
+                    "en": "per person / night"
+                  },
+                  "unitPrice": {
+                    "amount": 30,
+                    "currency": "EUR"
+                  },
+                  "nights": 2,
+                  "price": {
+                    "amount": 60,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": null,
+                  "unitGroupRestricted": false,
+                  "maxQuantity": 3,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "9a08b384-a257-4458-aa3f-abadf8f65ccc",
+                  "serviceId": "TEST-ECI",
+                  "displayName": {
+                    "de": "Früher Check-in",
+                    "en": "Early check-in"
+                  },
+                  "description": {
+                    "de": "Früher Check-in",
+                    "en": "Früher Check-in"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "arrival_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                }
+              ],
+              "hidden": [
+                {
+                  "serviceId": "TEST-LCO",
+                  "offerId": "41f27b5d-6cbb-4b08-9185-8e17248b0bf8",
+                  "reason": "inactive"
+                },
+                {
+                  "serviceId": "TEST-FINALCLEAN",
+                  "offerId": "1785c60d-cc38-4976-9afd-140694f7b1d8",
+                  "reason": "no_offer"
+                }
+              ]
+            }
+          }
+        ],
+        "state": {
+          "departure": "2027-01-14",
+          "adults": 2,
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
+          "vehicle": null,
+          "comment": [],
+          "services": [
+            {
+              "id": "TEST-FINALCLEAN",
+              "dates": [
+                "2027-01-13×1@139"
+              ]
+            }
+          ],
+          "writes": []
+        },
+        "importWarnings": []
+      }
+    }
+  ]
+}
