@@ -20,8 +20,11 @@ import { createHash } from "node:crypto";
 import {
   canonicalJson,
   DEFAULT_AVAILABILITY,
+  normalizeBoolean,
+  parsePriceToCents,
+  resolveStayExtensionSettingsDetailed,
+  serviceConfigIssues,
   type OfferCategory,
-  resolveStayExtensionSettings,
   type TenantContext,
 } from "@up/core";
 import { and, eq, inArray } from "drizzle-orm";
@@ -50,6 +53,8 @@ export type ExtrasSnapshotLike = {
 
 export type ImportAction = "create" | "update" | "unchanged" | "conflict" | "skip" | "error";
 export type ImportItem = {
+  /** Interpretations/normalizations and configuration errors – reported, never silent. */
+  warnings?: string[];
   entityType: string;
   sourceKey: string;
   sourceHash: string;
@@ -70,8 +75,14 @@ export type ImportOptions = {
   snapshotSha256: string;
   actorAdminId: string | null;
   now: Date;
-  /** Retention of imported operational history (days after departure / order date). */
+  /** Operational data (requests): days after departure. Default 180. */
   retentionDays?: number;
+  /**
+   * Records with evidential value (orders/bookings, extensions with amounts): days after the
+   * order / new departure. Default 3650 (10 years) until the retention decision is made; the
+   * legally relevant documents themselves (invoices, folios) stay in Apaleo.
+   */
+  recordRetentionDays?: number;
 };
 
 const sha = (value: unknown) => createHash("sha256").update(canonicalJson(value)).digest("hex");
@@ -128,45 +139,78 @@ export function groupKeyOf(item: Obj): string {
   return /^[A-Za-z0-9_-]{1,120}$/.test(code) ? code : str(item.serviceId);
 }
 
-/** The property configuration an Extras item maps to (fields of offer_properties). */
-export function configOf(item: Obj) {
+/**
+ * The property configuration an Extras item maps to (fields of offer_properties), plus every
+ * interpretation that was necessary. Values are taken over as stored; only what the STAY
+ * model cannot represent is normalized, and each such case becomes a warning in the report.
+ */
+export function configWithWarnings(item: Obj) {
+  const warnings: string[] = [];
+  const flag = (key: string) => {
+    const result = normalizeBoolean(item[key]);
+    if (result.normalized && item[key] !== undefined) warnings.push(`boolean_normalized:${key}`);
+    return result.value;
+  };
   const actionType = item.actionType === "increase_occupancy" ? "increase_occupancy" : "service";
+  if (item.actionType !== undefined && item.actionType !== actionType)
+    warnings.push("unknown_action_type");
   const isOccupancy = actionType === "increase_occupancy";
-  const bookingRule = ["per_stay", "per_night", "arrival_day", "departure_day"].includes(
+  const knownRule = ["per_stay", "per_night", "arrival_day", "departure_day"].includes(
     str(item.bookingRule),
-  )
+  );
+  const bookingRule = knownRule
     ? (str(item.bookingRule) as "per_stay" | "per_night" | "arrival_day" | "departure_day")
     : "per_stay";
-  const fulfillment: "instant" | "request" =
-    isOccupancy || item.fulfillmentMode !== "request" ? "instant" : "request";
-  const extraPersonPriceCents = isOccupancy ? cents(item.extraPersonPricePerNight) : null;
+  if (!knownRule && item.bookingRule !== undefined && item.bookingRule !== "")
+    warnings.push("unknown_booking_rule");
+  const storedFulfillment = item.fulfillmentMode === "request" ? "request" : "instant";
+  const fulfillment: "instant" | "request" = isOccupancy ? "instant" : storedFulfillment;
+  if (isOccupancy && storedFulfillment !== "instant")
+    warnings.push("occupancy_fulfillment_forced_instant");
+  let extraPersonPriceCents: number | null = null;
+  if (isOccupancy) {
+    const parsed = parsePriceToCents(item.extraPersonPricePerNight);
+    if (parsed === null) warnings.push("config_error:missing_extra_person_price");
+    else if (Number.isNaN(parsed) || parsed < 0 || parsed > 10_000_000)
+      warnings.push("config_error:invalid_extra_person_price");
+    else extraPersonPriceCents = parsed;
+  }
+  const requiresCapacity = flag("requiresRemainingCapacity");
+  if (isOccupancy && !requiresCapacity) warnings.push("occupancy_capacity_rule_forced");
   const labelDe = str(item.priceUnitLabelDe) || str(item.priceUnitLabel);
   const labelEn = str(item.priceUnitLabelEn);
-  const unitGroups = Array.isArray(item.allowedUnitGroupIds)
-    ? item.allowedUnitGroupIds
-        .map(str)
-        .filter((id) => /^[A-Za-z0-9_-]{1,80}$/.test(id))
-        .slice(0, 50)
+  const rawGroups = Array.isArray(item.allowedUnitGroupIds)
+    ? item.allowedUnitGroupIds.map(str).filter(Boolean)
     : [];
-  return {
+  const unitGroups = rawGroups.filter((id) => /^[A-Za-z0-9_-]{1,80}$/.test(id)).slice(0, 50);
+  if (unitGroups.length !== rawGroups.length) warnings.push("invalid_unit_group_ids_dropped");
+  const sortOrder = num(item.sortOrder);
+  const config = {
     extrasServiceId: str(item.serviceId),
-    active: item.active === true,
+    active: flag("active"),
     actionType,
     bookingRule,
     fulfillment,
-    extraPersonPriceCents:
-      extraPersonPriceCents !== null && extraPersonPriceCents >= 0 ? extraPersonPriceCents : null,
+    extraPersonPriceCents,
     currency: extraPersonPriceCents !== null ? "EUR" : null,
     priceUnitLabel:
       labelDe || labelEn
         ? { ...(labelDe ? { de: labelDe } : {}), ...(labelEn ? { en: labelEn } : {}) }
         : null,
-    requiresRemainingCapacity: isOccupancy || item.requiresRemainingCapacity === true,
-    requiresVehicleRegistration: item.requiresVehicleRegistration === true,
-    maxOnePerReservation: item.maxOnePerReservation === true,
+    requiresRemainingCapacity: isOccupancy || requiresCapacity,
+    requiresVehicleRegistration: flag("requiresVehicleRegistration"),
+    maxOnePerReservation: flag("maxOnePerReservation"),
     allowedUnitGroupIds: unitGroups,
-    sortOrder: num(item.sortOrder) ?? 1000,
+    sortOrder: sortOrder ?? 1000,
   } as const;
+  for (const issue of serviceConfigIssues(config)) {
+    if (!warnings.includes(`config_error:${issue}`)) warnings.push(`config_error:${issue}`);
+  }
+  return { config, warnings };
+}
+
+export function configOf(item: Obj) {
+  return configWithWarnings(item).config;
 }
 
 function textsOf(item: Obj) {
@@ -216,6 +260,7 @@ export async function importExtrasSnapshot(
   const items: ImportItem[] = [];
   const add = (item: ImportItem) => items.push(item);
   const retentionDays = options.retentionDays ?? 180;
+  const recordRetentionDays = options.recordRetentionDays ?? 3650;
   let failure: unknown;
 
   try {
@@ -237,7 +282,10 @@ export async function importExtrasSnapshot(
 
       await importCatalog(tx, context, snapshot, mapProperty, add, options.now);
       await importSettings(tx, context, snapshot, mapProperty, add, options.now);
-      await importHistory(tx, context, snapshot, mapProperty, add, options.now, retentionDays);
+      await importHistory(tx, context, snapshot, mapProperty, add, options.now, {
+        operational: retentionDays,
+        records: recordRetentionDays,
+      });
       importUsersAndImages(snapshot, add);
 
       if (options.mode === "apply") {
@@ -283,12 +331,17 @@ export async function importExtrasSnapshot(
     sourceHash: item.sourceHash,
     action: item.action,
     targetId: item.targetId ?? null,
-    reason: item.reason ?? null,
+    reason: item.reason ?? (item.warnings?.[0] ? warningCode(item.warnings[0]) : null),
   }));
   for (let i = 0; i < rows.length; i += 200)
     await db.insert(migrationItems).values(rows.slice(i, i + 200));
   if (failure) throw failure instanceof Error ? failure : new Error("Extras import failed");
   return { runId: run.id, mode: options.mode, items, summary };
+}
+
+/** A stable reason code for migration_items (pattern ^[a-z0-9_]{1,60}$). */
+function warningCode(warning: string): string {
+  return `w_${warning.toLowerCase().replace(/[^a-z0-9_]+/g, "_")}`.slice(0, 60);
 }
 
 function summarize(items: readonly ImportItem[]): ImportResult["summary"] {
@@ -464,7 +517,10 @@ async function upsertPropertyConfig(
   const sourceKey = `${member.apaleoPropertyId}:${serviceId}`;
   const { updatedAt: _ignored, ...relevant } = member.item;
   const hash = sha(relevant);
-  const config = configOf(member.item);
+  const { config, warnings } = configWithWarnings(member.item);
+  const report: Add = (item) => {
+    add(warnings.length ? { ...item, warnings } : item);
+  };
   const texts = textsOf(member.item);
   const titleOverride =
     texts.title.de !== str(offer.title.de) ||
@@ -485,7 +541,7 @@ async function upsertPropertyConfig(
       ),
     );
   if (byService && byService.offerId !== offer.id) {
-    add({
+    report({
       entityType: "catalog_item",
       sourceKey,
       sourceHash: hash,
@@ -518,7 +574,7 @@ async function upsertPropertyConfig(
       ...bookkeeping,
       createdAt: now,
     });
-    add({
+    report({
       entityType: "catalog_item",
       sourceKey,
       sourceHash: hash,
@@ -528,7 +584,7 @@ async function upsertPropertyConfig(
     return;
   }
   if (existing.extrasServiceId && existing.extrasServiceId !== serviceId) {
-    add({
+    report({
       entityType: "catalog_item",
       sourceKey,
       sourceHash: hash,
@@ -539,7 +595,7 @@ async function upsertPropertyConfig(
     return;
   }
   if (existing.importedHash === hash) {
-    add({
+    report({
       entityType: "catalog_item",
       sourceKey,
       sourceHash: hash,
@@ -552,7 +608,7 @@ async function upsertPropertyConfig(
     existing.importedAt !== null &&
     existing.updatedAt.getTime() > existing.importedAt.getTime() + 1000;
   if (editedInStay) {
-    add({
+    report({
       entityType: "catalog_item",
       sourceKey,
       sourceHash: hash,
@@ -574,7 +630,7 @@ async function upsertPropertyConfig(
         eq(offerProperties.propertyId, propertyId),
       ),
     );
-  add({
+  report({
     entityType: "catalog_item",
     sourceKey,
     sourceHash: hash,
@@ -609,7 +665,10 @@ async function importSettings(
       });
       continue;
     }
-    const s = resolveStayExtensionSettings(stored);
+    const { settings: s, notes } = resolveStayExtensionSettingsDetailed(stored);
+    const report: Add = (item) => {
+      add(notes.length ? { ...item, warnings: notes } : item);
+    };
     const clamp = (n: number) => Math.min(90, Math.max(0, Math.round(n)));
     const values = {
       extensionNightEnabled: s.extensionNightEnabled,
@@ -635,7 +694,7 @@ async function importSettings(
       await tx
         .insert(propertyServiceSettings)
         .values({ tenantId: context.tenantId, propertyId, ...values, createdAt: now });
-      add({
+      report({
         entityType: "property_settings",
         sourceKey: apaleoId,
         sourceHash: hash,
@@ -643,7 +702,7 @@ async function importSettings(
         targetId: propertyId,
       });
     } else if (existing.importedHash === hash) {
-      add({
+      report({
         entityType: "property_settings",
         sourceKey: apaleoId,
         sourceHash: hash,
@@ -654,7 +713,7 @@ async function importSettings(
       existing.importedAt === null ||
       existing.updatedAt.getTime() > existing.importedAt.getTime() + 1000
     ) {
-      add({
+      report({
         entityType: "property_settings",
         sourceKey: apaleoId,
         sourceHash: hash,
@@ -673,7 +732,7 @@ async function importSettings(
             eq(propertyServiceSettings.propertyId, propertyId),
           ),
         );
-      add({
+      report({
         entityType: "property_settings",
         sourceKey: apaleoId,
         sourceHash: hash,
@@ -710,7 +769,7 @@ async function importHistory(
   mapProperty: MapProperty,
   add: Add,
   now: Date,
-  retentionDays: number,
+  retention: { operational: number; records: number },
 ) {
   const valueOf = (key: string) => snapshot.entries.find((e) => e.key === key)?.value;
 
@@ -758,7 +817,7 @@ async function importHistory(
         currency: "EUR",
         source: "extras",
         legacyId,
-        purgeAfter: addDays(createdAt, retentionDays),
+        purgeAfter: addDays(createdAt, retention.records),
         createdAt,
         updatedAt: now,
       })
@@ -818,6 +877,16 @@ async function importHistory(
       });
       continue;
     }
+    if (!str(request.reservationId)) {
+      add({
+        entityType: "request",
+        sourceKey,
+        sourceHash: hash,
+        action: "skip",
+        reason: "missing_reservation",
+      });
+      continue;
+    }
     if (!propertyId) {
       add({
         entityType: "request",
@@ -867,7 +936,7 @@ async function importHistory(
           : null,
         purgeAfter: addDays(
           departure ? new Date(`${departure}T00:00:00Z`) : createdAt,
-          retentionDays,
+          retention.operational,
         ),
         apaleoServiceId: serviceId,
         quantity: Math.min(50, Math.max(1, Math.round(num(request.requestedQuantity) ?? 1))),
@@ -983,7 +1052,7 @@ async function importHistory(
         status,
         source: "extras",
         legacyId,
-        purgeAfter: addDays(new Date(`${newDeparture}T00:00:00Z`), retentionDays),
+        purgeAfter: addDays(new Date(`${newDeparture}T00:00:00Z`), retention.records),
         createdAt,
         updatedAt: now,
       })

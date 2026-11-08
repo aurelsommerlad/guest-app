@@ -420,4 +420,75 @@ describe("Extras import", () => {
     const users = result.items.filter((i) => i.entityType === "user").map((i) => i.reason);
     expect(users).toEqual(["invite_as_admin", "invite_as_manager"]);
   });
+
+  it("reports deviations instead of silently changing Extras configurations", async () => {
+    const snap = snapshot({
+      "catalog:HUESLE:items": {
+        "HUESLE-LCO": {
+          serviceId: "HUESLE-LCO",
+          code: "LCO",
+          displayNameDe: "Später Check-out",
+          active: "true",
+          bookingRule: "departure_day",
+          updatedAt: "2026-10-01T10:00:00.000Z",
+        },
+        "HUESLE-EXTRPERSON": {
+          serviceId: "HUESLE-EXTRPERSON",
+          code: "EXTRPERSON",
+          actionType: "increase_occupancy",
+          extraPersonPricePerNight: null,
+          requiresRemainingCapacity: "1",
+          active: true,
+        },
+      },
+      "extension-night:config:HUESLE": {
+        extensionNightEnabled: "true",
+        extensionDiscountPreArrivalOneNightGap: "",
+        extensionDiscountStandard: 5,
+      },
+    });
+    const result = await run("dry-run", snap);
+    const lco = result.items.find((i) => i.sourceKey === "HUESLE:HUESLE-LCO");
+    expect(lco?.warnings).toContain("boolean_normalized:active");
+    const extra = result.items.find((i) => i.sourceKey === "HUESLE:HUESLE-EXTRPERSON");
+    expect(extra?.warnings).toEqual(
+      expect.arrayContaining([
+        "config_error:missing_extra_person_price",
+        "boolean_normalized:requiresRemainingCapacity",
+      ]),
+    );
+    const settings = result.items.find(
+      (i) => i.entityType === "property_settings" && i.sourceKey === "HUESLE",
+    );
+    expect(settings?.warnings).toEqual(
+      expect.arrayContaining([
+        "boolean_normalized:extensionNightEnabled",
+        "empty_discount:extensionDiscountPreArrivalOneNightGap",
+        "legacy_discount:extensionDiscountInHouseStandard<-extensionDiscountStandard",
+      ]),
+    );
+    const report = renderImportReport(result, await reconcileExtras(db, up, snap));
+    expect(report).toContain("Zusatzperson ohne Preis – in STAY nicht buchbar");
+    expect(report).toContain("Leerer Rabatt als 0 % übernommen");
+  });
+
+  it("keeps a missing extra-person price as null – never as 0 € (free)", async () => {
+    const snap = snapshot({
+      "catalog:HUESLE:items": {
+        "HUESLE-EXTRPERSON": {
+          serviceId: "HUESLE-EXTRPERSON",
+          code: "EXTRPERSON",
+          actionType: "increase_occupancy",
+          extraPersonPricePerNight: "",
+          requiresRemainingCapacity: true,
+          active: true,
+        },
+      },
+    });
+    await run("apply", snap);
+    const row = await client.query<{ extra_person_price_cents: number | null }>(
+      `SELECT extra_person_price_cents FROM offer_properties WHERE extras_service_id = 'HUESLE-EXTRPERSON'`,
+    );
+    expect(row.rows).toEqual([{ extra_person_price_cents: null }]);
+  });
 });

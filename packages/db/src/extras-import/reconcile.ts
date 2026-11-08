@@ -160,6 +160,46 @@ const ACTION_LABELS: Record<string, string> = {
   error: "Fehler",
 };
 
+const WARNING_LABELS: Record<string, string> = {
+  "config_error:missing_extra_person_price":
+    "Zusatzperson ohne Preis – in STAY nicht buchbar, bis ein Preis gesetzt ist (Extras würde 0 € berechnen)",
+  "config_error:invalid_extra_person_price":
+    "Ungültiger Zusatzpersonenpreis – in STAY nicht buchbar",
+  "config_error:missing_apaleo_service": "Kein Apaleo-Service – nicht buchbar",
+  occupancy_fulfillment_forced_instant:
+    "Zusatzperson war nicht „sofort“ – STAY bucht Zusatzpersonen immer sofort",
+  occupancy_capacity_rule_forced: "Zusatzperson ohne Kapazitätsregel – STAY setzt die Regel",
+  invalid_unit_group_ids_dropped: "Ungültige Apartmenttyp-IDs verworfen",
+  unknown_action_type: "Unbekannter Aktionstyp – als Service übernommen",
+  unknown_booking_rule: "Unbekannte Buchungsregel – als „pro Aufenthalt“ übernommen",
+  invalid_min_nights_defaulted: "Mindestnächte ungültig – Standard 2",
+};
+
+function labelOf(warning: string): string {
+  if (warning.startsWith("boolean_normalized:"))
+    return `Historischer Wahrheitswert normalisiert (${warning.split(":")[1] ?? ""})`;
+  if (warning.startsWith("empty_discount:"))
+    return `Leerer Rabatt als 0 % übernommen (${warning.split(":")[1] ?? ""})`;
+  if (warning.startsWith("legacy_discount:"))
+    return `Rabatt aus Altfeld übernommen (${warning.split(":")[1] ?? ""})`;
+  return WARNING_LABELS[warning] ?? warning;
+}
+
+function warningLines(result: ImportResult): string[] {
+  const lines: string[] = [];
+  const seen = new Set<string>();
+  for (const item of result.items) {
+    for (const warning of item.warnings ?? []) {
+      const line = `- ${item.entityType} ${item.sourceKey}: ${labelOf(warning)}`;
+      if (!seen.has(line)) {
+        seen.add(line);
+        lines.push(line);
+      }
+    }
+  }
+  return lines.length ? lines : ["- keine"];
+}
+
 export function renderImportReport(result: ImportResult, reconciliation: Reconciliation): string {
   const reasons = new Map<string, number>();
   for (const item of result.items) {
@@ -196,6 +236,12 @@ export function renderImportReport(result: ImportResult, reconciliation: Reconci
     "",
     ...[...reasons.entries()].sort().map(([key, n]) => `- ${key}: ${n}`),
     ...(reasons.size ? [] : ["- keine"]),
+    "",
+    "## Abweichungen, Normalisierungen und Konfigurationsfehler",
+    "",
+    "Werte werden so übernommen, wie Extras sie gespeichert hat. Wo STAY etwas anders darstellen muss, steht es hier – nichts wird stillschweigend geändert.",
+    "",
+    ...warningLines(result),
     "",
     "## Abgleich Service-Konfiguration",
     "",

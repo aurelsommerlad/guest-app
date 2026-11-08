@@ -3,6 +3,7 @@
  * (lib/stayExtension.js, lib/store.js getExtensionConfig). Pure functions; the Apaleo calls
  * around them live in the STAY booking gateway.
  */
+import { normalizeBoolean } from "./config-normalization";
 import { type Money } from "../payment/payment-summary";
 import {
   type ApaleoBookedService,
@@ -31,43 +32,88 @@ export const DEFAULT_STAY_EXTENSION_SETTINGS: StayExtensionSettings = {
   minSellableStayNights: 2,
 };
 
-function finite(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null;
+/**
+ * A stored discount value: missing → undefined (fall back), empty (null/"") → 0 %, a number
+ * → that number, anything else → undefined. Matches how Extras reads its config.
+ */
+function storedNumber(value: unknown): number | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return 0;
   const n = Number(value);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) ? n : undefined;
 }
+
+export type ResolvedStayExtensionSettings = {
+  settings: StayExtensionSettings;
+  /** What had to be interpreted (for the import report), e.g. "empty_discount:…". */
+  notes: string[];
+};
 
 /**
  * Reads a stored Extras config, including records written before the phase-specific
- * discounts existed: new field → legacy flat field (extensionDiscountOneNightGap /
- * extensionDiscountStandard) → default.
+ * discounts existed. Per discount: the field itself (empty = 0 %) → the legacy flat field
+ * (extensionDiscountOneNightGap / extensionDiscountStandard, empty = 0 %) → the default.
+ * The enabled flag accepts historic values such as "true".
  */
-export function resolveStayExtensionSettings(
+export function resolveStayExtensionSettingsDetailed(
   stored: Record<string, unknown> | null | undefined,
-): StayExtensionSettings {
+): ResolvedStayExtensionSettings {
   const s = stored ?? {};
-  const legacyOneNight = finite(s.extensionDiscountOneNightGap);
-  const legacyStandard = finite(s.extensionDiscountStandard);
-  const pick = (key: keyof StayExtensionSettings, legacy: number | null) =>
-    finite(s[key]) ?? legacy ?? (DEFAULT_STAY_EXTENSION_SETTINGS[key] as number);
-  return {
-    extensionNightEnabled: s.extensionNightEnabled === true,
+  const notes: string[] = [];
+  const legacyOneNight = storedNumber(s.extensionDiscountOneNightGap);
+  const legacyStandard = storedNumber(s.extensionDiscountStandard);
+  const pick = (
+    key: keyof StayExtensionSettings,
+    legacyKey: string,
+    legacy: number | undefined,
+  ): number => {
+    const own = storedNumber(s[key]);
+    if (s[key] === null || s[key] === "") notes.push(`empty_discount:${key}`);
+    if (own !== undefined) return own;
+    if (legacy !== undefined) {
+      notes.push(`legacy_discount:${key}<-${legacyKey}`);
+      return legacy;
+    }
+    return DEFAULT_STAY_EXTENSION_SETTINGS[key] as number;
+  };
+  const enabled = normalizeBoolean(s.extensionNightEnabled);
+  if (enabled.normalized) notes.push("boolean_normalized:extensionNightEnabled");
+  const minNights = storedNumber(s.minSellableStayNights);
+  const settings: StayExtensionSettings = {
+    extensionNightEnabled: enabled.value,
     extensionDiscountPreArrivalOneNightGap: pick(
       "extensionDiscountPreArrivalOneNightGap",
+      "extensionDiscountOneNightGap",
       legacyOneNight,
     ),
     extensionDiscountPreArrivalStandard: pick(
       "extensionDiscountPreArrivalStandard",
+      "extensionDiscountStandard",
       legacyStandard,
     ),
     extensionDiscountInHouseOneNightGap: pick(
       "extensionDiscountInHouseOneNightGap",
+      "extensionDiscountOneNightGap",
       legacyOneNight,
     ),
-    extensionDiscountInHouseStandard: pick("extensionDiscountInHouseStandard", legacyStandard),
+    extensionDiscountInHouseStandard: pick(
+      "extensionDiscountInHouseStandard",
+      "extensionDiscountStandard",
+      legacyStandard,
+    ),
     minSellableStayNights:
-      finite(s.minSellableStayNights) ?? DEFAULT_STAY_EXTENSION_SETTINGS.minSellableStayNights,
+      minNights !== undefined && minNights >= 1
+        ? minNights
+        : DEFAULT_STAY_EXTENSION_SETTINGS.minSellableStayNights,
   };
+  if (minNights !== undefined && minNights < 1) notes.push("invalid_min_nights_defaulted");
+  return { settings, notes };
+}
+
+export function resolveStayExtensionSettings(
+  stored: Record<string, unknown> | null | undefined,
+): StayExtensionSettings {
+  return resolveStayExtensionSettingsDetailed(stored).settings;
 }
 
 export function addOneDay(dateStr: unknown): string | null {

@@ -133,7 +133,19 @@ export function buildInventory(snapshot: Snapshot, manifest: Manifest): Inventor
         anomalies.push(
           `catalog ${propertyId}: Feld ${field} enthält serviceId ${serviceId || "(leer)"}`,
         );
-      if (item.active === true) inv.active++;
+      for (const key of [
+        "active",
+        "requiresRemainingCapacity",
+        "requiresVehicleRegistration",
+        "maxOnePerReservation",
+      ]) {
+        if (item[key] !== undefined && typeof item[key] !== "boolean") {
+          anomalies.push(
+            `catalog ${propertyId}/${serviceId}: ${key} ist kein Wahrheitswert (wird beim Import normalisiert)`,
+          );
+        }
+      }
+      if (item.active === true || item.active === "true") inv.active++;
       const actionType = typeof item.actionType === "string" ? item.actionType : "service";
       const bookingRule = typeof item.bookingRule === "string" ? item.bookingRule : "per_stay";
       const fulfillment =

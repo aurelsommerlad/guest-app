@@ -540,4 +540,5 @@ export {
 export * from "./admin/permissions";
 export * from "./booking/service-rules";
 export * from "./booking/stay-extension";
+export * from "./booking/config-normalization";
 export * from "./serialization/canonical-json";
