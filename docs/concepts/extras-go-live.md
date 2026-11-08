@@ -72,3 +72,41 @@ Zu keinem Zeitpunkt sind beide Systeme freigeschaltet: STAY wird erst aktiv, wen
 - Keine Oberfläche, kein CLI ruft `transitionGoLiveState()` auf.
 - Kein Live-Executor im Gateway; Modus nur `disabled` (Standard) oder `simulated`.
 - Die STAY-Production-Datenbank existiert nicht.
+
+## Synchronisation bis zum Go-live (M2–M5)
+
+Bis zum Go-live ist **Extras führend**. STAY übernimmt Daten nur in eine Richtung (Extras → STAY), wiederholbar:
+
+| Datenbestand                           | Richtung bis Go-live | Verfahren                                                                            | Wenn in STAY geändert                                         |
+| -------------------------------------- | -------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| Katalog und Standort-Konfiguration     | Extras → STAY        | `extras:export` (lesend) → `extras:import` (Probelauf, dann Übernahme)               | Konflikt im Bericht; STAY-Wert bleibt, bis jemand entscheidet |
+| Verlängerungsnächte                    | Extras → STAY        | wie oben                                                                             | Konflikt im Bericht                                           |
+| Bestellungen, Anfragen, Verlängerungen | Extras → STAY        | einmalig je Extras-ID (`legacy_id`), weitere Läufe ergänzen nur neue Vorgänge        | – (nur lesend in STAY)                                        |
+| Offene Extras-Anfragen                 | bleiben in Extras    | werden in Extras entschieden; STAY zeigt sie lesend                                  | Entscheiden in STAY ist gesperrt                              |
+| Benutzer                               | –                    | nur Einladungsliste (Rollen)                                                         | neue Konten nur per STAY-Einladung                            |
+| Bilder                                 | Extras → STAY        | M2: vorgemerkt; Upload in den Storage-Bereich `offers` mit Prüfsumme vor dem Go-live | –                                                             |
+
+Regeln:
+
+- Jede Übernahme schreibt einen Lauf in `migration_runs`/`migration_items` und kann im Admin unter „Datenimport“ nachvollzogen werden.
+- Werte werden wie gespeichert übernommen. Normalisierungen (z. B. historische Wahrheitswerte, leere Rabatte) und Konfigurationsfehler (z. B. Zusatzperson ohne Preis) stehen im Bericht.
+- Redaktionelle Arbeit in STAY (Texte, Bilder, Veröffentlichung) ist erlaubt und wird nie überschrieben. Konfigurationsänderungen in STAY vor dem Go-live sind möglich, gelten aber erst mit dem Go-live; der Importbericht weist sie als Konflikt aus, damit klar ist, welcher Wert gilt.
+
+## Operative Daten und aufbewahrungspflichtige Nachweise
+
+| Art                    | Beispiele                               | Aufbewahrung (Vorschlag)                     | Ort    |
+| ---------------------- | --------------------------------------- | -------------------------------------------- | ------ |
+| Operative Daten        | Anfragen, Wunschdaten, Slack-Status     | 180 Tage nach Abreise (`purge_after`)        | STAY   |
+| Nachweise mit Beträgen | Bestellungen/Positionen, Verlängerungen | 10 Jahre (`purge_after`), Entscheidung offen | STAY   |
+| Buchhaltungsbelege     | Rechnungen, Folios, Zahlungen           | gesetzlich, unabhängig von STAY              | Apaleo |
+| Protokolle             | Audit, Apaleo-Schreibprotokoll          | unbefristet, ohne Personendaten              | STAY   |
+
+Gastnamen und E-Mail-Adressen werden nicht übernommen.
+
+## Rückfall nach dem Go-live
+
+1. `stay_active → extras_locked`: STAY schreibt sofort nicht mehr.
+2. Offene STAY-Anfragen entscheiden oder als Liste an das Team.
+3. Änderungen in STAY seit dem Go-live (aus dem Protokoll, gefiltert auf `catalog.*` und `settings.*`) prüfen und – falls sie auch im Rückfallbetrieb gelten sollen – in Extras nachtragen. Ein automatisches Rückschreiben ist nicht vorgesehen (Entscheidung offen).
+4. `extras_locked → extras_active`, Extras-Sperre aufheben.
+5. Buchungen stehen in Apaleo und gehen nicht verloren.

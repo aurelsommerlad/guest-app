@@ -153,7 +153,7 @@ export class ApaleoServiceReader {
 
   async listServiceDefinitions(apaleoPropertyId: string): Promise<ApaleoServiceDefinition[]> {
     const result = await this.#client.getList(
-      `/rateplan/v1/services?propertyId=${enc(apaleoPropertyId)}&pageSize=200`,
+      `/rateplan/v1/services?propertyId=${enc(apaleoPropertyId)}&onlySoldAsExtras=true&pageSize=200`,
       servicesListSchema,
       "services.listServices",
     );
