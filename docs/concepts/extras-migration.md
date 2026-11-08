@@ -1,6 +1,6 @@
 # Extras-App in STAY: Bestandsaufnahme, Zielarchitektur und Migrationsplan
 
-Stand: 08.11.2026. Konzept, noch keine Implementierung.
+Stand: 08.11.2026 (überarbeitet nach den Architekturentscheidungen vom 08.11.2026; M1 umgesetzt, siehe `docs/staging/extras-migration-m1-bericht.md`).
 
 **Grundlage**
 
@@ -9,9 +9,18 @@ Stand: 08.11.2026. Konzept, noch keine Implementierung.
 - Vercel-Projektkonfiguration (nur Namen);
 - Apaleo-Stammdaten (nur lesend).
 
-**Nicht gelesen:** die produktiven Extras-Daten im KV-Store. Mengen und Inhalte (Anzahl Katalogeinträge, Bestellungen, Anfragen, Bilder) werden erst im Schritt M0 erhoben.
+**Nicht gelesen:** die produktiven Extras-Daten im KV-Store. Der lesende Export ist vorbereitet (M0, `docs/staging/extras-m0-export.md`) und wird erst nach gesonderter Freigabe ausgeführt.
 
 **Entscheidung (08.11.2026):** Die Extras-App wird vollständig in STAY integriert und danach stillgelegt. Das betrifft Gästeoberfläche, Administration, Einstellungen, Geschäftsregeln, Integrationen und Daten. Die API-Brücke ist eine Übergangslösung.
+
+**Verbindliche Entscheidungen (08.11.2026, zweite Runde)**
+
+- **Gemeinsamer Go-live statt Umstellung je Objekt.** Extras bleibt für alle Objekte produktiv, bis STAY vollständig live geht. Kein Objekt wird vorher einzeln umgestellt. STAY schreibt bis dahin nur in isolierten Test-/Staging-Umgebungen. Es gibt nie zwei produktive Apaleo-Schreiber. Danach bleibt Extras als Rückfall erhalten und wird erst nach erfolgreicher Prüfung stillgelegt.
+- **Katalog:** ein zentraler Katalog für eigene Services und später Partnerangebote. Ein Angebot kann mehreren Objekten zugeordnet sein; Preis, Regeln, Verfügbarkeit, Texte und Sichtbarkeit sind je Objekt konfigurierbar, inklusive Apartmenttyp- und Kapazitätsregeln. Keine doppelte Pflege.
+- **Administration:** alle Extras-Einstellungen im STAY-Admin. Rollen Owner/Admin/Manager/Viewer, auf Objekte beschränkbar. Neue Konten nur per STAY-Einladung; alte Passwörter werden nicht übernommen. Rechteänderungen wirken sofort.
+- **Buchung:** Extras-Logik vollständig übernehmen; Apaleo bleibt führend. STAY bekommt eine eigene zentrale Apaleo-Schreibschnittstelle mit verlässlicher Idempotenz, Sperren, Audit und Fehlerbehandlung. Die Extras-Tests sind Referenz.
+- **Anfragen und Kommunikation:** Bestätigen/Ablehnen im STAY-Admin, Slack aus STAY; Gast-Benachrichtigungen vorbereitet, nicht aktiviert. Bestellungen, Anfragen und Verlängerungen bleiben nachvollziehbar.
+- **Daten:** eine STAY-Datenbank mit Mandanten-/Objekttrennung. Eine STAY-Production-Datenbank wird geplant, aber nicht eingerichtet. Personendaten nur, soweit nötig; Aufbewahrung historischer Buchungsdaten und operativer Gastdaten getrennt betrachten.
 
 ---
 
@@ -230,49 +239,46 @@ Alle in Extras umgesetzt. In STAY nur über die Brücke 🟡 oder gar nicht ❌.
 
 1. **Eine Datenbank** (Supabase/Postgres) für Katalog, Einstellungen, Rollen, Buchungen, Anfragen, Verlängerungen, Medienverweise und Audit. Mandantenspalte und zusammengesetzte Fremdschlüssel wie bisher. RLS aktiv, Data API gesperrt.
 2. **Apaleo bleibt führend für die Reservierung.** Was gebucht ist, steht in Apaleo; STAY speichert Vorgänge, Entscheidungen und Nachweise, aber keinen zweiten „Wahrheitsstand“ der Leistungen.
-3. **Ein Schreiber je Objekt.** Für jedes Objekt ist genau ein System für Apaleo-Schreibzugriffe zuständig: Extras oder STAY (siehe 3.2).
-4. **Ein Katalog je Leistung**, keine doppelte Pflege. Redaktioneller Inhalt (Texte, Bilder) und Buchungsregeln liegen am selben Angebot. Preise kommen immer live aus Apaleo, bzw. aus den Einstellungen für Zusatzperson und Verlängerung.
+3. **Genau ein produktiver Schreiber je Mandant:** bis zum Go-live Extras, danach STAY. Der Wechsel gilt für alle Objekte gleichzeitig (siehe 3.2 und `docs/concepts/extras-go-live.md`).
+4. **Ein zentraler Katalog**, keine doppelte Pflege. Ein Angebot (`offers`) hat Texte und Bilder einmal; je Objekt (`offer_properties`) liegen Apaleo-Service, Buchungsregeln, Sichtbarkeit, Apartmenttypen, Kapazität und optionale Text-/Preis-Overrides. Preise kommen live aus Apaleo bzw. aus den Einstellungen für Zusatzperson und Verlängerung.
 5. **Eigene Services und Partnerangebote** in einem Katalog und einer Administration, unterschieden durch `kind`.
 
 ### 2.2 Bausteine
 
-| Baustein                                    | Inhalt                                                                                                                                                                                                                                                                                 |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/guest`                                | Gäste-Oberfläche (V2), Buchung, Anfrage, Verlängerung, „Gebucht & angefragt“                                                                                                                                                                                                           |
-| `apps/admin`                                | eine Administration: Inhalte (Guide, Explore), **Services & Erlebnisse** (Katalog, Partner), **Betrieb** (Anfragen, Buchungen, Verlängerungen), **Einstellungen** (Objekt, Verlängerung, Benachrichtigungen), **Benutzer & Rollen**                                                    |
-| `packages/core/booking` (neu)               | reine Buchungsregeln aus Extras portiert: Datumsauflösung, Preis, Kapazität, Apartmenttyp, Hund, Kennzeichen, Verlängerungsentscheidung, Late-Check-out, Kurtaxe; vollständig mit den Extras-Tests abgedeckt                                                                           |
-| `packages/integrations/apaleo` (erweitert)  | lesend: `service-offers`, Services der Reservierung, Service-Definitionen, Unit-Groups, Verfügbarkeit, Properties. Schreibend: `book-service`, `amend`, `PATCH` Kommentar/Kennzeichen. Nur über einen zentralen **Apaleo-Schreib-Gateway** mit Schreiber-Prüfung, Idempotenz und Audit |
-| `packages/integrations/notifications` (neu) | Slack (Webhook pro Objekt/Mandant), über eine Outbox mit Wiederholung und Dedup                                                                                                                                                                                                        |
-| `packages/db`                               | Tabellen siehe 2.3, Repositories, Migrationen, Import-Werkzeuge                                                                                                                                                                                                                        |
+| Baustein                                | Inhalt (Stand M1)                                                                                                                                                                              |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/guest`                            | Gäste-Oberfläche (V2), Buchung, Anfrage, Verlängerung, „Gebucht & angefragt“ – heute über die Brücke, ab M3 über die eigene Buchungslogik                                                      |
+| `apps/admin`                            | eine Administration: Inhalte, **Team** (Rollen, Objekte, Einladungen; M1 umgesetzt), ab M2 **Services & Erlebnisse**, **Betrieb**, **Einstellungen**                                           |
+| `packages/core/admin`                   | Rollen- und Rechtemodell `can()` (M1 umgesetzt)                                                                                                                                                |
+| `packages/core/booking`                 | Extras-Buchungsregeln 1:1 portiert, 160 Extras-Tests als Referenz (M1 umgesetzt)                                                                                                               |
+| `packages/integrations/apaleo/services` | Lesezugriffe (Service-Angebote, gebuchte Services, Definitionen, Unit-Groups) und das **zentrale Schreib-Gateway** (Idempotenz, Sperre, Richtlinien, Audit) – in M1 nur `disabled`/`simulated` |
+| `packages/integrations/extras`          | lesender Export (M0) mit Prüfsummen und anonymisierter Bestandsaufnahme                                                                                                                        |
+| `packages/db`                           | Migration 0018, Repositories, Import und Abgleich (M1-D)                                                                                                                                       |
+| Benachrichtigungen                      | `notification_outbox` (M1); Versand-Worker für Slack in M4                                                                                                                                     |
 
-### 2.3 Datenmodell (Entwurf)
+### 2.3 Datenmodell (umgesetzt in Migration 0018)
 
 **Bestehend und erweitert**
 
-- `offers` (Katalog, tenantweit, `kind` = `house-service` | `partner`): bleibt redaktionelles Angebot.
-- `offer_properties` wird zur **Objektkonfiguration eines Angebots**:
-  - `apaleo_service_id` (heute `extras_service_id`), `active`, `sort_order`;
-  - bei house-service: `action_type`, `booking_rule`, `fulfillment`, `extra_person_price_cents`, `requires_remaining_capacity`, `requires_vehicle_registration`, `max_one_per_reservation`, `allowed_unit_group_ids`, `price_unit_label` (de/en);
-  - optional objektbezogene Text-Overrides (`title_override`, `teaser_override`).
-
-  Die CHECK-Regeln stellen sicher, dass Zusatzperson immer `instant` mit Preis ist und Partnerangebote keine Apaleo-Felder haben.
-
-- `offer_requests` (erweitert): Bezug auf Angebot + Objekt, `apaleo_service_id`, Menge, angefragte Daten, angezeigter Preis, Status `pending|approved|rejected|cancelled`, `decided_by`, `decided_at`, `booked_service_dates`, `slack_notified_at`; Gastname/E-Mail nur, wenn nötig und mit Löschfrist.
-- `admin_users` + **`admin_memberships`** (neu): Benutzer × Mandant × Rolle (`owner|admin|manager|viewer`), optional Objekt-Einschränkung.
+- `offers`: zentraler Katalogeintrag, `legacy_key` = `extras:<Service-Code>` für importierte Einträge.
+- `offer_properties` = **Objektkonfiguration eines Angebots**: `extras_service_id` (Apaleo-Service des Objekts), `active`, `sort_order`, `action_type`, `booking_rule`, `fulfillment`, `extra_person_price_cents`, `currency`, `price_unit_label`, `requires_remaining_capacity`, `requires_vehicle_registration`, `max_one_per_reservation`, `allowed_unit_group_ids`, Text-/Bild-Overrides, Preis-/Verfügbarkeits-Overrides für Partnerangebote, Import-Buchhaltung (`legacy_key`, `imported_hash`, `imported_at`), `updated_by`. CHECKs und ein Trigger erzwingen: Zusatzperson immer sofort und nur mit Restkapazität; Apaleo-Felder nur bei eigenen Services; Overrides nur bei Partnerangeboten.
+- `offer_requests`: zusätzlich `apaleo_service_id`, `quantity`, `requested_dates`, `booked_service_dates`, `source` (`stay`/`extras`), `legacy_id`.
+- `admin_users`: `role` (`owner|admin|manager|viewer`), `property_scope` (`all|selected`). Bestehende Konten wurden Owner.
 
 **Neu**
 
-- `property_service_settings`: je Objekt Verlängerungsnacht (aktiv, vier Rabatte, Mindestbelegung), Standard-Kanal für Benachrichtigungen, **Schreiber** (`extras|stay`) mit Zeitstempel und Person.
-- `service_bookings` + `service_booking_items`: Sofortbuchungen und Zusatzpersonen. Unbegrenzt, mit Idempotenzschlüssel (eindeutig), Positionen, Preisen, Apaleo-Ergebnis. Ersetzt `orders`.
-- `stay_extensions`: Verlängerungen mit allen Feldern der Extras-Datensätze.
-- `apaleo_write_audit` (nur anfügbar): jeder Schreibversuch mit Objekt, Reservierung, Aktion, Idempotenzschlüssel, Ergebnis, Quelle (gast/admin/system/migration). Ersetzt `stay-bridge:audit`.
-- `notification_outbox`: Nachrichten mit Status, Versuchen, Dedup-Schlüssel.
-- `admin_audit_events` (nur anfügbar): Änderungen an Katalog, Einstellungen, Rollen, Freigaben.
-- `migration_runs` + `migration_items`: Import-Läufe mit Quell-Checksumme, Zählern, Abweichungen (siehe 3.4).
+- `admin_user_properties` (Objektrechte), `admin_invitations` (nur Token-Hash, Ablauf, einmalig).
+- `property_service_settings`: Verlängerungsnacht (aktiv, vier Rabatte, Mindestnächte), Slack-Route.
+- `tenant_service_settings`: **produktiver Schreiber** (`extras|stay`) und Go-live-Zustand; Änderung nur über die Go-live-Prozedur (Datenbank-Trigger).
+- `service_bookings` + `service_booking_items` (unbegrenzt, Idempotenzschlüssel), `stay_extensions`.
+- `apaleo_write_operations`: zentrales Schreibprotokoll mit eindeutigem Idempotenzschlüssel, Anfrage-Hash, Status, Sperrfrist.
+- `admin_audit_events` (nur anfügbar, Trigger), `notification_outbox` (Dedup, Versuche; Gast-Kanäle unterdrückt), `migration_runs` + `migration_items`.
 
-Sperren und Idempotenz laufen künftig über Datenbank-Transaktionen (`SELECT … FOR UPDATE`, eindeutige Schlüssel, Advisory Locks) statt über KV-Sperren ohne Ablauf.
+Sperren und Idempotenz laufen über Datenbank-Transaktionen (`FOR UPDATE`, eindeutige Schlüssel, Advisory Locks) statt über KV-Sperren ohne Ablauf.
 
-### 2.4 Rollen und Berechtigungen (Ziel)
+### 2.4 Rollen und Berechtigungen
+
+Umgesetzt in `packages/core/src/admin/permissions.ts`; Details in `docs/staging/extras-migration-m1-bericht.md`.
 
 | Recht                                                         | owner | admin          | manager | viewer |
 | ------------------------------------------------------------- | ----- | -------------- | ------- | ------ |
@@ -280,34 +286,30 @@ Sperren und Idempotenz laufen künftig über Datenbank-Transaktionen (`SELECT �
 | Katalog, Partner, Bilder                                      | ✔     | ✔              | ✔       | lesen  |
 | Anfragen bestätigen/ablehnen                                  | ✔     | ✔              | ✔       | –      |
 | Buchungen/Verlängerungen ansehen                              | ✔     | ✔              | ✔       | ✔      |
-| Objekt-Einstellungen, Verlängerungsregeln, Benachrichtigungen | ✔     | ✔              | –       | –      |
-| **Schreiber-Umschaltung je Objekt**                           | ✔     | –              | –       | –      |
+| Objekt-Einstellungen, Verlängerungsregeln, Benachrichtigungen | ✔     | ✔              | –       | lesen  |
 | Benutzer und Rollen                                           | ✔     | ✔ (ohne owner) | –       | –      |
+| Datenimport aus Extras                                        | ✔     | ✔              | –       | –      |
+| **Produktiver Schreiber-Wechsel (Go-live)**                   | ✔     | –              | –       | –      |
 
-- Optional sind Rollen auf einzelne Objekte beschränkbar.
-- Aktionen, die nicht erlaubt sind, werden gar nicht angezeigt; das behebt den Viewer-Fehler aus Extras.
-- Sitzungen sind widerrufbar (STAY-Basis). Eine Rollenänderung wirkt sofort.
+- Jede Rolle außer owner kann auf ausgewählte Objekte beschränkt werden. Mandantenweite Rechte (Benutzer, Import, Schreiber) verlangen Zugriff auf alle Objekte.
+- Die Rolle wird bei jeder Anfrage aus der Datenbank gelesen: Änderungen wirken sofort; Deaktivieren beendet alle Sitzungen.
 
 ### 2.5 Buchungsablauf in STAY (Ziel)
 
-1. Gast wählt eine Leistung. STAY lädt live aus Apaleo: Angebote, Reservierung, Services, Unit-Group. Daraus berechnet es Preis, Daten und Einschränkungen nach den portierten Regeln.
-2. Absenden → Server Action mit Idempotenzschlüssel → Apaleo-Schreib-Gateway:
-   1. Prüfen, dass STAY Schreiber für das Objekt ist (sonst Abbruch, kein Apaleo-Aufruf);
-   2. Datenbanksperre auf Reservierung und Service;
-   3. Neuberechnung, Preis gegen `expectedPrice` prüfen;
-   4. bereits gebucht? → Konflikt;
-   5. ein `book-service` bzw. `amend`;
-   6. Audit;
-   7. `service_bookings` schreiben;
-   8. Kommentar.
-3. Anfragen: Datensatz in `offer_requests`, Outbox-Nachricht an Slack, Freigabe in der STAY-Administration mit derselben Live-Prüfung wie heute in Extras.
+1. Gast wählt eine Leistung. STAY lädt live aus Apaleo (Service-Angebote, Reservierung, gebuchte Services, Unit-Group) und berechnet Preis, Daten und Einschränkungen mit `packages/core/booking`.
+2. Absenden → Server Action mit Idempotenzschlüssel → Schreib-Gateway:
+   1. Schlüssel reservieren (`apaleo_write_operations`); Wiederholung liefert das gespeicherte Ergebnis, gleicher Schlüssel mit anderem Inhalt wird abgelehnt;
+   2. Richtlinien: Modus, Schreiber = STAY, Objekt freigegeben, Reservierung gehört zum Objekt und ist buchbar;
+   3. Neuberechnung und Prüfung „bereits gebucht“ (Extras-Regeln);
+   4. genau ein `book-service` bzw. `amend`;
+   5. Ergebnis, Audit, `service_bookings`, Outbox-Nachricht.
+3. Anfragen: `offer_requests` + Outbox → Slack; Freigabe im STAY-Admin mit derselben Live-Prüfung wie in Extras.
 
 ### 2.6 Mandanten- und Objekttrennung
 
 - Jeder Datensatz trägt `tenant_id`; Objektbezug über zusammengesetzte Fremdschlüssel.
-- Admin-Kontext aus der Sitzung; Objekt aus der URL, gegen Mitgliedschaft und Objekt-Einschränkung geprüft.
-- Apaleo-Zugangsdaten je Mandant (heute ein Konto).
-- Das Schreib-Gateway prüft immer: Reservierung gehört zum Objekt, Objekt zum Mandanten, Objekt-Schreiber = STAY.
+- Admin-Kontext aus der Sitzung; Objekt aus der URL, gegen Rolle und Objektrechte geprüft (`can()`), in jeder Server Action.
+- Das Schreib-Gateway prüft immer: Reservierung gehört zum Objekt, Objekt ist freigegeben, Schreiber = STAY.
 
 ---
 
@@ -315,112 +317,76 @@ Sperren und Idempotenz laufen künftig über Datenbank-Transaktionen (`SELECT �
 
 ### 3.1 Leitplanken
 
-- **Extras bleibt produktiv**, bis das letzte Objekt umgestellt ist; danach eine Rückfallfrist.
-- **Ein Schreiber je Objekt:**
-  - Vor dem Umstieg schreibt nur Extras, danach nur STAY.
-  - Die Brücke bleibt in der Übergangszeit nur für Objekte mit Schreiber = Extras im Einsatz; für Objekte mit Schreiber = STAY ist sie aus.
-- **Keine doppelte Buchung:**
-  - Beide Systeme prüfen vor jedem Schreiben live die Services der Reservierung.
-  - STAY nutzt Idempotenzschlüssel und Datenbanksperren.
-  - Dazu kommt die Schreiber-Sperre.
-- **Daten bleiben erhalten:** Import ist wiederholbar, idempotent und prüfbar. Die Quelle bleibt unverändert, bis zur Abschaltung und als Archiv darüber hinaus.
-- **Rückfall:** Schreiber-Schalter zurück auf Extras. Extras-Katalog und -Einstellungen des Objekts sind bis zur Abschaltung unverändert verfügbar (siehe 3.5).
-- **Extras-Tests sind Referenz:** Jede portierte Regel bekommt die entsprechenden Testfälle. Ein Paritätsbericht vergleicht für dieselben Eingaben die Ergebnisse von Extras und STAY (siehe 3.3).
+- **Extras bleibt produktiv bis unmittelbar vor dem gemeinsamen Go-live** – für alle Objekte. Keine vorzeitige Umstellung einzelner Objekte.
+- **STAY schreibt vor dem Go-live nur in isolierten Test-/Staging-Umgebungen** (Apaleo TEST, Staging-Datenbank). Das Gateway kennt in M1 nur `disabled` und `simulated`.
+- **Nie zwei produktive Schreiber:** Schreiberwert in STAY (Trigger-geschützt) plus Sperre in Extras, Reihenfolge siehe 3.2.
+- **Nichts geht verloren:** Export mit Prüfsummen, idempotenter Import mit Protokoll, Delta-Lauf direkt vor dem Go-live, Extras-Daten bleiben unverändert als Rückfall und Archiv.
+- **Extras-Tests sind Referenz:** 160 portierte Tests; Paritätsbericht im Schattenbetrieb (M3).
 
-### 3.2 Schreiber-Schalter
+### 3.2 Gemeinsamer Go-live und Rückfall
 
-| Stelle                 | Umsetzung                                                                                                                                                                                                                                                                                                                                    |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| STAY                   | `property_service_settings.writer` (`extras`/`stay`), nur durch owner änderbar, mit Audit. Das Schreib-Gateway lehnt ab, wenn `writer ≠ stay`.                                                                                                                                                                                               |
-| Extras                 | **kleine Änderung nötig, braucht eine Freigabe für guest-services:** Extras liest vor jedem Schreibzugriff (Gast-Bestellung, Anfrage, Bestätigung, Verlängerung) einen Sperrwert je Objekt. Ist das Objekt an STAY übergeben, lehnt Extras ab und leitet Gäste zu STAY. Der Wert wird bei der Umstellung gesetzt und beim Rückfall entfernt. |
-| Reihenfolge Umstellung | 1. Extras sperren → 2. offene Extras-Anfragen übernehmen (Delta-Import) → 3. STAY freischalten. Zu keinem Zeitpunkt sind beide freigeschaltet.                                                                                                                                                                                               |
-| Reihenfolge Rückfall   | 1. STAY sperren → 2. offene STAY-Anfragen an Extras zurückgeben oder in STAY abschließen → 3. Extras freischalten.                                                                                                                                                                                                                           |
+Technisches Konzept: `docs/concepts/extras-go-live.md` (vorbereitet, nicht aktiviert).
+
+1. Extras bleibt produktiv bis unmittelbar vor dem Go-live.
+2. Offene Vorgänge und Einstellungen werden direkt vor dem Wechsel synchronisiert (Delta-Export und -Import, Abgleich ohne Abweichung).
+3. Extras wird für neue Buchungen gesperrt, bevor STAY-Schreibzugriffe aktiviert werden (Zustand `extras_locked`).
+4. STAY wird erst nach erfolgreichen Prüfungen aktiviert (`stay_active`, Prüfliste Pflicht).
+5. Kontrollierter Rückfall: `stay_active → extras_locked → extras_active`; Extras-Daten sind unverändert vorhanden.
+6. Keine Daten gehen verloren: letzter Delta-Lauf nach der Sperre, Abgleichsbericht, Archiv-Export mit Prüfsummen.
 
 ### 3.3 Phasen
 
-| Phase                                                          | Ziel                                                | Inhalt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Ergebnis / Abnahme                                                                                                                              |
-| -------------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M0 Bestand erheben**                                         | echte Mengen kennen                                 | Lesender Export des produktiven KV-Stores über den vorhandenen **Read-only-Token**, nur lokal, ohne Schreibzugriff. Zählung je Datenbestand und Objekt, Prüfung der Feldvarianten (Altdaten), Bildergrößen. Datenschutz-Einstufung (Namen, E-Mails).                                                                                                                                                                                                                                                 | Bestandsbericht; Entscheidung, welche historischen Personendaten übernommen werden. **Braucht Freigabe** (Zugriff auf Produktionsdaten, lesend) |
-| **M1 Fundament**                                               | Datenmodell, Rollen, Apaleo-Lese- und Schreibclient | Migrationen für 2.3; `admin_memberships` + Rollenprüfung in allen Admin-Aktionen; Apaleo-Client erweitert (nur Code, Schreiben bleibt aus); `packages/core/booking` portiert mit allen Extras-Testfällen                                                                                                                                                                                                                                                                                             | Alle portierten Tests grün; keine Apaleo-Schreibzugriffe möglich (Gateway hart aus)                                                             |
-| **M2 Administration und Servicekonfiguration** _(Priorität 1)_ | Extras-Administration vollständig in STAY           | Admin-Modul „Services & Erlebnisse“: Katalog je Objekt mit Apaleo-Serviceliste und allen Feldern aus 1.15, Unit-Groups, Bilder (Storage-Modul `offers`); Verlängerungs-Einstellungen; Benutzer & Rollen inkl. Passwort ändern; Lesezugriff auf Bestellungen, Anfragen und Verlängerungen (importiert). **Import-Werkzeug** für Katalog, Einstellungen, Bilder, Historie (3.4). Während M2 bleibt Extras Schreiber; STAY zeigt importierte Daten und einen **Abgleich** (Unterschiede Extras ↔ STAY). | Import auf Staging wiederholbar, Prüfbericht ohne Abweichungen; Admin-Abnahme durch euch                                                        |
-| **M3 Buchungsmotor im Schattenbetrieb**                        | STAY rechnet wie Extras                             | STAY berechnet Katalog, Preise und Verfügbarkeit selbst. Für jede Gästeansicht auf TEST wird das Ergebnis neben die Brücke gelegt und protokolliert: **Paritätsbericht**. Keine Schreibzugriffe.                                                                                                                                                                                                                                                                                                     | Über einen festgelegten Zeitraum keine Abweichung                                                                                               |
-| **M4 Anfragen, Freigaben, Slack**                              | Betrieb in STAY                                     | Anfragen-Warteschlange mit Bestätigen/Ablehnen (Live-Prüfung wie Extras), Outbox + Slack (Testkanal), optional Gast-Benachrichtigung                                                                                                                                                                                                                                                                                                                                                                 | Ablauf auf TEST (simuliert)                                                                                                                     |
-| **M5 Umstellung TEST**                                         | erster echter Schreiber-Wechsel                     | Schreiber TEST = STAY; Testplan JTKQSYFX-1 (erweitert um Anfrage + Freigabe, Zusatzperson, Verlängerung mit Rücknahme); Rückfall-Übung                                                                                                                                                                                                                                                                                                                                                               | Freigabe; Apaleo-Zustand wie erwartet; Rückfall in Minuten möglich                                                                              |
-| **M6 Umstellung je echtem Objekt**                             | Produktivbetrieb                                    | Reihenfolge nach Risiko, z. B. LAEKE → ALTUS (HØV) → HUESLE → ALPILA. Je Objekt: Delta-Import, Sperre in Extras, Freigabe in STAY, Links von `extras.unique-places.com` → STAY-Login, Beobachtung                                                                                                                                                                                                                                                                                                    | Je Objekt eigene Freigabe; Kennzahlen: Buchungen, Fehler, Doppelbuchungen = 0                                                                   |
-| **M7 Partnerplattform** _(Priorität 2)_                        | Partner in derselben Administration                 | Partner und Partnerangebote, Anfragen, Provisionen, Kennzahlen im Modul „Services & Erlebnisse“                                                                                                                                                                                                                                                                                                                                                                                                      | Abnahme Partner-Prozess                                                                                                                         |
-| **M8 Stilllegung Extras**                                      | Abschaltung                                         | Extras nur lesend (Rückfallfrist, z. B. 4–8 Wochen), Abschluss-Export mit Checksummen archivieren, Brücke entfernen, Domain umleiten, Projekt abschalten                                                                                                                                                                                                                                                                                                                                             | Freigabe zur Abschaltung                                                                                                                        |
+| Phase                                   | Ziel                                         | Inhalt                                                                                                                                                                                 | Abnahme                                                                  |
+| --------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **M0 Bestand erheben**                  | echte Mengen kennen                          | Lesender Export (vorbereitet). Ausführung gegen Produktion nur nach gesonderter Freigabe, mit Read-only-Token                                                                          | Bestandsbericht ohne Personendaten; Entscheidungen zur Datenübernahme    |
+| **M1 Fundament** _(umgesetzt)_          | Datenmodell, Rollen, Regeln, Gateway, Import | Migration 0018, Rollen/Objektrechte/Einladungen im Admin, portierte Regeln, Apaleo-Lesezugriffe, Schreib-Gateway (aus), Import/Abgleich, Go-live-Mechanik vorbereitet                  | Alle Tests grün; keine Apaleo-Schreibzugriffe möglich                    |
+| **M2 Administration** _(Priorität 1)_   | Extras-Admin vollständig in STAY             | Services & Erlebnisse (Katalog zentral + je Objekt), Verlängerungseinstellungen, Bilder (Storage), Lesezugriff auf importierte Vorgänge, Import-Oberfläche mit Abgleich, Audit-Ansicht | Import auf Staging wiederholbar, Abgleich ohne Abweichung, Admin-Abnahme |
+| **M3 Buchungslogik im Schattenbetrieb** | STAY rechnet wie Extras                      | Gäste-UI nutzt eigene Regeln + Apaleo-Lesezugriffe; Ergebnis neben die Brücke gelegt (Paritätsbericht); keine Schreibzugriffe                                                          | festgelegter Zeitraum ohne Abweichung                                    |
+| **M4 Anfragen, Freigaben, Slack**       | Betrieb in STAY                              | Anfragen-Warteschlange, Bestätigen/Ablehnen, Outbox-Worker + Slack (Testkanal), Gast-Benachrichtigung vorbereitet                                                                      | Ablauf auf TEST (simuliert)                                              |
+| **M5 Generalprobe TEST**                | echter Schreibtest in isolierter Umgebung    | Gateway mit Live-Executor nur für Apaleo TEST (eigene Freigabe), Testplan JTKQSYFX-1, Go-live- und Rückfall-Probe auf Staging                                                          | Freigabe; Apaleo-Zustand wie erwartet; Rückfall geübt                    |
+| **M6 Gemeinsamer Go-live**              | STAY ist produktiver Schreiber               | STAY-Production-Datenbank (eigene Freigabe), finaler Delta-Import, Sperre Extras, Prüfliste, Aktivierung STAY für alle Objekte                                                         | ausdrückliche Freigabe; Kennzahlen: Fehler, Doppelbuchungen = 0          |
+| **M7 Partnerplattform** _(Priorität 2)_ | Partner in derselben Administration          | Partnerangebote, Anfragen, Provisionen                                                                                                                                                 | Abnahme Partner-Prozess                                                  |
+| **M8 Stilllegung Extras**               | Abschaltung nach Prüfung                     | Extras als Rückfall lesend vorhalten, Abschluss-Export archivieren, Brücke entfernen, Domain umleiten                                                                                  | Freigabe zur Abschaltung                                                 |
 
-### 3.4 Datenmigration: wiederholbar und prüfbar
+### 3.4 Datenmigration: wiederholbar und prüfbar (umgesetzt)
 
-1. **Export (nur lesend):**
-   - `users`, `catalog:*`, `extension-night:config:*`, `orders`, `requests:items`, `stay-extensions:records`, `image:*`, `stay-bridge:audit`.
-   - Ablage als Snapshot mit Zeitstempel und SHA-256 je Datenbestand.
-   - Nie über `KV_REST_API_TOKEN` (Schreibrecht), nur über den Read-only-Token.
+1. **Export (M0, nur lesend):** Befehls-Allowlist, Read-only-Token, Minimierung an der Quelle (keine Passwörter, Gastnamen, E-Mails, Kennzeichen), Manifest mit SHA-256 je Schlüssel und Gesamtprüfsumme.
 2. **Abbildung (deterministisch):**
-   - Katalog: `(objekt, apaleoServiceId)` → `offer_properties`. Pro Extras-Eintrag ein Angebot; Zusammenführen gleicher Services über Objekte hinweg ist ein späterer redaktioneller Schritt.
-   - Anfragen: `requestId` → `offer_requests.legacy_id` (eindeutig).
-   - Bestellungen: `order.id` → `service_bookings.legacy_id`.
-   - Verlängerungen: `record.id` → `stay_extensions.legacy_id`.
-   - Bilder: `image:{uuid}` → Storage-Pfad `<tenant>/offers/legacy-<uuid>.<ext>` (Bytes geprüft, ggf. neu komprimiert).
-3. **Import:** idempotent (Upsert auf `legacy_id`), in einer Transaktion je Datenbestand, mit `migration_runs`.
-4. **Prüfung:**
-   - Zähler Quelle = Ziel je Datenbestand und Objekt;
-   - Feldvergleich je Datensatz (normalisiert);
-   - Bilder per Checksumme;
-   - Abweichungsbericht.
-
-   Erst ein Lauf ohne Abweichung gilt.
-
-5. **Wiederholung:**
-   - Beliebig oft auf Staging.
-   - Vor jeder Objekt-Umstellung ein Delta-Lauf; dann Sperre in Extras und ein letzter Delta-Lauf (nur offene Anfragen).
-6. **Benutzer:** Die bcrypt-Hashes sind mit dem STAY-Verfahren (scrypt) nicht verwendbar. Zwei Möglichkeiten:
-   - Konten anlegen und Personen setzen ein neues Passwort per Einladung (empfohlen);
-   - beim ersten Login einmalig gegen bcrypt prüfen und neu hashen.
-7. **Altdaten:** Altfelder der Verlängerung über die vorhandene Fallback-Logik auflösen und als neue Felder speichern; den Alt-Katalog-Schlüssel mitlesen.
+   - Katalog: gleicher Service-Code über Objekte → ein Angebot (`extras:<Code>`), je Objekt eine Konfiguration; bestehende STAY-Angebote mit demselben Apaleo-Service werden verknüpft. Neue Angebote als Entwurf.
+   - Einstellungen: `extension-night:config:*` → `property_service_settings` (Altfelder aufgelöst).
+   - Vorgänge: `order.id`, `requestId`, `record.id` → `legacy_id` (eindeutig), ohne Namen/E-Mails, mit Löschfrist.
+   - Benutzer: nur Einladungs-Kandidaten mit Rolle; Bilder: in M2 nach Storage.
+3. **Import:** Probelauf und Übernahme mit identischer Logik; Konflikt statt Überschreiben, wenn in STAY nach dem letzten Import geändert; Protokoll in `migration_runs`/`migration_items`.
+4. **Abgleich:** Konfiguration je Objekt und Service, Zähler je Vorgangsart.
+5. **Wiederholung:** beliebig oft auf Staging; Delta-Läufe vor dem Go-live.
 
 ### 3.5 Rückfall
 
-- **Bis M8 jederzeit pro Objekt:** Schreiber auf Extras zurück. Extras-Katalog und -Einstellungen bleiben bis dahin unverändert in Extras (keine Löschung).
-- **Änderungen, die in STAY nach der Umstellung gemacht wurden** (Katalog, Einstellungen), gehen beim Rückfall nicht automatisch nach Extras zurück. Deshalb gilt in der Rückfallfrist: Katalogänderungen sparsam und protokolliert (`admin_audit_events`). Ein Rückschreib-Werkzeug nach Extras ist optional.
-- **Offene Anfragen:** werden vor dem Rückfall in STAY entschieden oder als Liste an das Team gegeben.
-- **Buchungen** stehen ohnehin in Apaleo und gehen nicht verloren.
+- Bis zur Stilllegung jederzeit: Zustand zurück auf `extras_locked`, dann `extras_active`. Extras-Katalog und -Einstellungen bleiben unverändert in Extras.
+- Änderungen in STAY nach dem Go-live gehen nicht automatisch nach Extras zurück; sie sind in `admin_audit_events` protokolliert. Rückschreib-Werkzeug optional (Entscheidung offen).
+- Offene STAY-Anfragen werden vor dem Rückfall entschieden oder als Liste übergeben. Buchungen stehen in Apaleo.
 
 ### 3.6 Risiken und Gegenmaßnahmen
 
-| Risiko                                        | Gegenmaßnahme                                                                                                           |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Doppelte Buchung in der Übergangszeit         | Schreiber-Schalter in beiden Systemen, Live-Prüfung „bereits gebucht“, Idempotenz, eine Umstellung zur Zeit             |
-| Abweichende Preise/Regeln nach der Portierung | Portierte Extras-Tests, Paritätsbericht im Schattenbetrieb (M3)                                                         |
-| Staging schreibt in Produktionsdaten          | Eigene Staging-Datenbank für STAY; Extras-Staging nur mit eigenem KV (siehe `docs/staging/extras-bridge-sicherheit.md`) |
-| Personendaten aus Extras (Namen, E-Mails)     | Datenschutz-Einstufung in M0, Löschfristen, Übernahme nur soweit nötig                                                  |
-| Lange Rückfallfrist bindet Doppelbetrieb      | feste Frist je Objekt, danach M8                                                                                        |
-| Sperren ohne Ablauf (Extras)                  | entfallen in STAY (Datenbank-Transaktionen)                                                                             |
+| Risiko                                            | Gegenmaßnahme                                                                                                     |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Doppelte Buchung beim Wechsel                     | Sperre Extras vor Aktivierung STAY, Trigger-geschützter Schreiberwert, Idempotenz, Live-Prüfung „bereits gebucht“ |
+| Abweichende Preise/Regeln nach der Portierung     | 160 portierte Extras-Tests, Paritätsbericht (M3)                                                                  |
+| Staging schreibt in Produktionsdaten              | Gateway ohne Live-Executor, Objekt-Freigabeliste, eigene Staging-Datenbank                                        |
+| Personendaten aus Extras                          | Minimierung beim Export, keine Namen/E-Mails im Import, Löschfristen                                              |
+| Datenverlust (Extras-Obergrenze 500 Bestellungen) | M0 meldet die Grenze; alles darüber hinaus ist in Extras bereits verloren, Apaleo bleibt Quelle                   |
+| Sperren ohne Ablauf (Extras)                      | entfallen in STAY (Sperrfrist + Übernahme)                                                                        |
 
 ---
 
 ## 4. Priorisierung
 
-1. **M0–M2: Extras-Administration und Servicekonfigurationen in STAY**
-   - Katalog je Objekt mit allen Einstellungen;
-   - Verlängerungsregeln;
-   - Bilder;
-   - Benutzer und Rollen;
-   - Import und Abgleich;
-   - Lesezugriff auf die Historie.
-2. **M3–M4:** eigener Buchungsmotor im Schattenbetrieb, Anfragen/Freigaben, Slack.
-3. **M5–M6:** Umstellung TEST, dann je Objekt.
-4. **M7:** Partnerplattform in derselben Administration. Das Datenmodell ist schon gemeinsam (`offers.kind`), deshalb ohne zweite Struktur.
-5. **M8:** Stilllegung.
+1. **M0–M2:** Bestand, Fundament (fertig), Extras-Administration in STAY.
+2. **M3–M4:** eigene Buchungslogik im Schattenbetrieb, Anfragen/Freigaben, Slack.
+3. **M5–M6:** Generalprobe auf TEST, gemeinsamer Go-live.
+4. **M7:** Partnerplattform (gemeinsames Datenmodell über `offers.kind`).
+5. **M8:** Stilllegung nach erfolgreicher Prüfung.
 
 ## 5. Offene Entscheidungen
 
-1. Zugriff auf die produktiven Extras-Daten für M0 (lesend, Read-only-Token).
-2. Umfang der historischen Personendaten (Gastnamen, E-Mails in Bestellungen/Anfragen) und Löschfristen in STAY.
-3. Benutzerübernahme: Einladung mit neuem Passwort oder einmalige bcrypt-Prüfung.
-4. Rollenmodell: owner/admin/manager/viewer, mit oder ohne Objekt-Einschränkung.
-5. Katalog-Zusammenführung: ein Angebot je Objekt (1:1-Import) oder gemeinsame Angebote über Objekte.
-6. Kleine Änderung in Extras für den Schreiber-Schalter (braucht eure Freigabe für guest-services).
-7. Gast-Benachrichtigung bei Bestätigung/Ablehnung (Extras hat keine).
-8. Reihenfolge der Objekte in M6 und Dauer der Rückfallfrist.
-9. Eigene Supabase-Datenbank für STAY-Production (heute nur Staging).
+Aktuelle Liste: `docs/staging/extras-migration-m1-bericht.md`, Abschnitt „Offene Entscheidungen und Freigaben“.
