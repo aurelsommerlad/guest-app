@@ -155,3 +155,26 @@ export async function resolveExternalMapping(
     );
   return mapping?.internalEntityId;
 }
+
+/** The external id of a property at a provider (e.g. its Apaleo property id). */
+export async function getPropertyExternalId(
+  db: Database,
+  context: TenantContext,
+  propertyId: string,
+  provider: "apaleo" = "apaleo",
+): Promise<string | undefined> {
+  assertTenantContext(context);
+  if (!isEntityKey(propertyId)) return undefined;
+  const [mapping] = await db
+    .select({ externalId: externalMappings.externalId })
+    .from(externalMappings)
+    .where(
+      and(
+        eq(externalMappings.tenantId, context.tenantId),
+        eq(externalMappings.provider, provider),
+        eq(externalMappings.entityType, "property"),
+        eq(externalMappings.internalEntityId, propertyId),
+      ),
+    );
+  return mapping?.externalId;
+}

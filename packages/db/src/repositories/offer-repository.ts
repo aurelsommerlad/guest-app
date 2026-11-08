@@ -234,6 +234,8 @@ export async function listPropertyOffers(
       and(
         eq(offerProperties.tenantId, context.tenantId),
         eq(offerProperties.propertyId, propertyId),
+        // Hidden per property in the admin ("Im Gäste-Portal anzeigen", M2).
+        eq(offerProperties.active, true),
         inArray(offers.status, [...statuses]),
       ),
     )
