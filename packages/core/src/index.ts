@@ -535,3 +535,8 @@ export {
   type PartnerInput,
   partnerSchema,
 } from "./upsell/offer-schema";
+
+/* Extras migration (M1): admin roles and the ported Extras booking rules. */
+export * from "./admin/permissions";
+export * from "./booking/service-rules";
+export * from "./booking/stay-extension";
