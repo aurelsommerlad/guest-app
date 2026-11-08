@@ -21,12 +21,19 @@ const explore = adminModules.find((module) => module.id === "explore") as AdminM
 describe("admin navigation registry", () => {
   it("lists only existing modules, in the long-term group order, without empty groups", () => {
     const groups = visibleNavigation();
-    expect(groups.map((group) => group.label)).toEqual(["Inhalte", "Verwaltung"]);
+    expect(groups.map((group) => group.label)).toEqual(["Inhalte", "Services", "Verwaltung"]);
     expect(groups.flatMap((group) => group.modules.map((module) => module.label))).toEqual([
       "Guide",
       "Explore",
+      "Servicekatalog",
+      "Anfragen",
+      "Bestellungen",
+      "Verlängerungen",
+      "Verlängerungsnächte",
       "Objekte",
       "Team",
+      "Protokoll",
+      "Datenimport",
     ]);
     expect(navigationGroups.map((group) => group.label)).toEqual([
       undefined,
@@ -48,7 +55,7 @@ describe("admin navigation registry", () => {
       scope: { kind: "property", allProperties: "aggregate" },
     };
     const groups = visibleNavigation([...adminModules, inbox]);
-    expect(groups.map((group) => group.label)).toEqual(["Kommunikation", "Inhalte", "Verwaltung"]);
+    expect(groups.map((group) => group.label)).toEqual(["Kommunikation", "Inhalte", "Services", "Verwaltung"]);
     expect(moduleHref(inbox, null)).toBe("/inbox");
     expect(moduleHref(inbox, "hov")).toBe("/inbox/hov");
   });

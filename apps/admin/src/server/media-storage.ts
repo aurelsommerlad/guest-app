@@ -95,7 +95,7 @@ function serverHeaders(config: MediaStorageConfig): Record<string, string> {
  * places can serve several properties) `<tenantId>/<module>/<uuid>.<ext>`.
  */
 export type MediaScope = { tenantId: string; propertyId?: string; module: MediaModule };
-export const MEDIA_MODULES = ["guide", "explore"] as const;
+export const MEDIA_MODULES = ["guide", "explore", "offers"] as const;
 export type MediaModule = (typeof MEDIA_MODULES)[number];
 
 function prefixParts(scope: MediaScope): string[] {

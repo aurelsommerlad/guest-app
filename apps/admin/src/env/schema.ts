@@ -41,6 +41,25 @@ export const serverEnvSchema = z
      * admin account exists at all; remove it afterwards.
      */
     ADMIN_SETUP_TOKEN: z.string().min(32).optional(),
+    /**
+     * Apaleo (M2, services administration): READ-ONLY use – service list and unit groups of
+     * a property, reservation check before a (disabled) write. Optional; without it the
+     * Apaleo service id is entered by hand.
+     */
+    APALEO_CLIENT_ID: z.string().min(1).optional(),
+    APALEO_CLIENT_SECRET: z.string().min(1).optional(),
+    /** Local development only: a fixed service list for the Apaleo TEST property. */
+    APALEO_SERVICE_FIXTURES: z.enum(["on", "off"]).default("off"),
+    /**
+     * Central Apaleo write gateway. Only "disabled" (default) and "simulated" exist; there is
+     * no live mode in this code base. Productive writes need the go-live approval.
+     */
+    APALEO_SERVICE_WRITES: z.enum(["disabled", "simulated"]).default("disabled"),
+    /** Apaleo property ids the (simulated) gateway may target, comma-separated, e.g. TEST. */
+    APALEO_SERVICE_WRITE_PROPERTIES: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]+(,[A-Za-z0-9_-]+)*$/)
+      .optional(),
   })
   .superRefine((env, ctx) => {
     const local = env.APP_ENV === "local";
@@ -63,6 +82,16 @@ export const serverEnvSchema = z
         path: ["SUPABASE_SERVICE_ROLE_KEY"],
         message: "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set together",
       });
+    }
+    if (Boolean(env.APALEO_CLIENT_ID) !== Boolean(env.APALEO_CLIENT_SECRET)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["APALEO_CLIENT_SECRET"],
+        message: "APALEO_CLIENT_ID and APALEO_CLIENT_SECRET must be set together",
+      });
+    }
+    if (env.APALEO_SERVICE_FIXTURES === "on" && !local) {
+      ctx.addIssue({ code: "custom", path: ["APALEO_SERVICE_FIXTURES"], message: "local only" });
     }
     if (env.SUPABASE_URL && !env.SUPABASE_URL.startsWith("https://")) {
       ctx.addIssue({ code: "custom", path: ["SUPABASE_URL"], message: "must use https" });

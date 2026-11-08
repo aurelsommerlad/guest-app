@@ -90,11 +90,14 @@ const serviceDefinitionSchema = z
     property: z.object({ id: z.string() }).loose().optional(),
     availability: z.object({ mode: z.string().optional() }).loose().optional(),
     postNextDay: z.boolean().optional(),
+    defaultGrossPrice: z.object({ amount: z.number(), currency: z.string() }).loose().optional(),
+    pricingUnit: z.string().optional(),
   })
   .loose();
 const servicesListSchema = z.object({ services: z.array(serviceDefinitionSchema) }).loose();
 export type ApaleoServiceDefinition = z.infer<typeof serviceDefinitionSchema>;
 
+const unitGroupsListSchema = () => z.object({ unitGroups: z.array(unitGroupSchema) }).loose();
 const unitGroupSchema = z
   .object({
     id: z.string(),
@@ -155,6 +158,15 @@ export class ApaleoServiceReader {
       "services.listServices",
     );
     return result?.services ?? [];
+  }
+
+  async listUnitGroups(apaleoPropertyId: string): Promise<ApaleoUnitGroup[]> {
+    const result = await this.#client.getList(
+      `/inventory/v1/unit-groups?propertyId=${enc(apaleoPropertyId)}&pageSize=200`,
+      unitGroupsListSchema(),
+      "services.listUnitGroups",
+    );
+    return result?.unitGroups ?? [];
   }
 
   getUnitGroup(unitGroupId: string): Promise<ApaleoUnitGroup> {
