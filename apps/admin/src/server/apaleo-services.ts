@@ -1,7 +1,17 @@
 import "server-only";
 
-import { createServiceWriteStore, getPropertyExternalId } from "@up/db";
-import { ApaleoClient, ApaleoServiceReader, ServiceWriteGateway } from "@up/integrations";
+import {
+  createServiceLockStore,
+  createServiceRecordStore,
+  createServiceWriteStore,
+  getPropertyExternalId,
+} from "@up/db";
+import {
+  ApaleoClient,
+  ApaleoServiceReader,
+  ServiceBookingEngine,
+  ServiceWriteGateway,
+} from "@up/integrations";
 
 import { serverEnv } from "../env/server";
 import { type ApaleoServiceSource, fixtureServiceSource } from "../features/services/apaleo-source";
@@ -70,5 +80,18 @@ export function serviceWriteGateway(): ServiceWriteGateway {
       const reservation = await live.getReservation(reservationId);
       return { property: reservation.property, status: reservation.status };
     },
+  });
+}
+
+/** The STAY booking engine (Extras logic) on a gateway; needs the read-only Apaleo access. */
+export function serviceBookingEngine(gateway: ServiceWriteGateway): ServiceBookingEngine | undefined {
+  const live = apaleoReader();
+  if (!live) return undefined;
+  const db = getDatabase();
+  return new ServiceBookingEngine({
+    reader: live,
+    gateway,
+    records: createServiceRecordStore(db),
+    locks: createServiceLockStore(db),
   });
 }

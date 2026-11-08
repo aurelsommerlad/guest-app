@@ -5,7 +5,7 @@
  * these tables.
  */
 import { isEntityKey, type LocalizedText, type TenantContext } from "@up/core";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { type AnyPgColumn } from "drizzle-orm/pg-core";
 
 import { type Database } from "../client";
@@ -201,6 +201,27 @@ export async function decideOfferRequest(
     });
     return { ok: true } as const;
   });
+}
+
+/** Open requests that can be decided in STAY (imported Extras requests are decided in Extras). */
+export async function countPendingOfferRequests(
+  db: Database,
+  context: TenantContext,
+  scope: Scope = {},
+): Promise<number> {
+  assertTenantContext(context);
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(offerRequests)
+    .where(
+      and(
+        eq(offerRequests.tenantId, context.tenantId),
+        eq(offerRequests.status, "pending"),
+        eq(offerRequests.source, "stay"),
+        propertyFilter(offerRequests.propertyId, scope),
+      ),
+    );
+  return row?.count ?? 0;
 }
 
 /* ── Stay extensions ──────────────────────────────────────────────────────────────────── */

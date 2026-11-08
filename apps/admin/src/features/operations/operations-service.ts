@@ -3,8 +3,9 @@
  * stay extensions, audit log and import runs. Every function authorizes with the admin's
  * role and property access read on this request.
  *
- * Request decisions are prepared but never write to Apaleo: a confirmation goes through the
- * central write gateway, which is `disabled` (or `simulated` on staging). Requests imported
+ * Request decisions never write to Apaleo: a confirmation runs the STAY booking engine (the
+ * Extras approval logic) on top of the central write gateway, which is `disabled` (or
+ * `simulated` on staging). Requests imported
  * from Extras stay with Extras until the joint go-live.
  */
 import { type AdminPermission, type Logger, type StayExtensionSettings } from "@up/core";
@@ -28,7 +29,7 @@ import {
   recordAdminAuditEvent,
   upsertPropertyServiceSettings,
 } from "@up/db";
-import { type ServiceWriteGateway } from "@up/integrations";
+import { type ServiceBookingEngine, type ServiceWriteGateway } from "@up/integrations";
 
 import { type AdminContext } from "../auth/admin-auth-service";
 import { FORBIDDEN_MESSAGE, isAllowed, visibleProperties } from "../auth/authorization";
@@ -38,6 +39,8 @@ export type OperationsDeps = {
   logger: Logger;
   now: () => Date;
   gateway: () => ServiceWriteGateway;
+  /** Booking engine on top of the given gateway; undefined when Apaleo is not configured. */
+  engine?: (gateway: ServiceWriteGateway) => ServiceBookingEngine | undefined;
   apaleoPropertyIdOf: (tenantId: string, propertyId: string) => Promise<string | undefined>;
 };
 
@@ -254,69 +257,84 @@ export async function decideRequest(
   }
 
   const apaleoPropertyId = await deps.apaleoPropertyIdOf(admin.tenantId, request.propertyId);
-  const dates = request.requestedDates?.length
-    ? request.requestedDates
-    : request.requestedDate
-      ? [request.requestedDate]
-      : [];
-  if (!apaleoPropertyId || !request.apaleoServiceId || !dates.length) {
+  if (!apaleoPropertyId || !request.apaleoServiceId) {
     return {
       ok: false,
-      error: "Für diese Anfrage fehlen Apaleo-Objekt, Service oder Datum – keine Buchung möglich.",
+      error: "Für diese Anfrage fehlen Apaleo-Objekt oder Service – keine Buchung möglich.",
     };
   }
-  const outcome = await deps.gateway().execute({
-    tenantId: admin.tenantId,
-    propertyId: request.propertyId,
-    apaleoPropertyId,
-    reservationId: request.externalReservationId,
-    idempotencyKey: `request:${request.id}:confirm`,
-    trigger: "admin",
-    actorAdminId: admin.adminUserId,
-    command: {
-      operation: "book-service",
-      serviceId: request.apaleoServiceId,
-      dates: dates.map((serviceDate) => ({ serviceDate, count: request.quantity ?? 1 })),
-    },
-  });
-  if (outcome.status === "simulated" || outcome.status === "succeeded") {
-    const result = await decideOfferRequest(deps.db, tenantOf(admin), {
-      requestId,
-      decision: "confirmed",
+  const blocked = async (code: string) =>
+    recordAdminAuditEvent(deps.db, tenantOf(admin), {
+      actorType: "admin",
       actorAdminId: admin.adminUserId,
-      now,
-      bookedServiceDates: dates,
-      writeResult: outcome.status,
+      propertyId: request.propertyId,
+      action: "request.confirm_blocked",
+      entityType: "offer_request",
+      entityId: request.id,
+      details: { code },
     });
-    if (!result.ok) return { ok: false, error: "Die Anfrage konnte nicht bestätigt werden." };
-    return {
-      ok: true,
-      message:
-        outcome.status === "simulated"
-          ? "Bestätigt (simuliert – es wurde nichts an Apaleo gesendet)."
-          : "Bestätigt.",
-    };
-  }
-  await recordAdminAuditEvent(deps.db, tenantOf(admin), {
-    actorType: "admin",
-    actorAdminId: admin.adminUserId,
-    propertyId: request.propertyId,
-    action: "request.confirm_blocked",
-    entityType: "offer_request",
-    entityId: request.id,
-    details: { gateway: outcome.status, code: "code" in outcome ? outcome.code : "in_progress" },
-  });
-  if (outcome.status === "blocked" && outcome.code === "writes_disabled") {
+  const gateway = deps.gateway();
+  if (gateway.mode === "disabled") {
+    await blocked("writes_disabled");
     return {
       ok: false,
       error:
         "Buchungen in Apaleo sind aus STAY noch nicht freigegeben. Die Anfrage bleibt offen; der Versuch ist protokolliert.",
     };
   }
-  return {
-    ok: false,
-    error: `Die Buchung wurde nicht ausgeführt (${"code" in outcome ? outcome.code : "läuft bereits"}). Die Anfrage bleibt offen.`,
-  };
+  // The same engine as the guest flow: re-verifies against live Apaleo exactly like Extras
+  // approveRequest, then books through the gateway (simulated on staging).
+  const engine = deps.engine?.(gateway);
+  if (!engine) {
+    await blocked("apaleo_not_configured");
+    return {
+      ok: false,
+      error: "Apaleo ist für STAY nicht eingerichtet – keine Prüfung möglich. Die Anfrage bleibt offen.",
+    };
+  }
+  const result = await engine.approveRequest(
+    { tenantId: admin.tenantId, propertyId: request.propertyId, apaleoPropertyId },
+    request.id,
+    admin.adminUserId,
+  );
+  if (result.ok) {
+    return {
+      ok: true,
+      message: result.alreadyBooked
+        ? "Bestätigt – der Service war in Apaleo bereits mit allen Daten gebucht, es wurde nichts zusätzlich gebucht."
+        : result.simulated
+          ? "Bestätigt (simuliert – es wurde nichts an Apaleo gesendet)."
+          : "Bestätigt.",
+    };
+  }
+  await blocked(result.reason.replace(/[^a-z0-9_]/g, "_").slice(0, 60));
+  return { ok: false, error: `${approvalError(result.reason)} Die Anfrage bleibt offen.` };
+}
+
+const APPROVAL_ERRORS: Record<string, string> = {
+  in_progress: "Diese Anfrage wird gerade bearbeitet.",
+  not_pending: "Diese Anfrage ist bereits entschieden.",
+  handled_in_extras: "Diese Anfrage wird in der Extras-App bearbeitet.",
+  past_stay: "Der Aufenthalt liegt bereits in der Vergangenheit.",
+  no_offer: "Dieser Service wird für die Reservierung nicht mehr angeboten.",
+  inactive: "Dieser Service ist im Katalog nicht mehr aktiv.",
+  dog_limit_exceeded: "Pro Apartment ist maximal ein Hund möglich.",
+  unit_group_restricted: "Dieser Service ist für den gebuchten Apartmenttyp nicht verfügbar.",
+  capacity_exceeded: "Für diese Buchung ist keine weitere Person mehr möglich.",
+  incomplete_dates: "Das erforderliche Datum ist für diesen Service nicht mehr verfügbar.",
+  requested_date_unavailable: "Das angefragte Datum ist nicht mehr verfügbar.",
+  insufficient_availability: "Nicht genügend Verfügbarkeit für die angefragte Menge.",
+  existing_booking_conflict:
+    "Der Service ist auf der Reservierung bereits mit anderen Daten oder einer anderen Menge gebucht. Bitte in Apaleo prüfen.",
+  reservation_property_mismatch: "Die Reservierung gehört nicht zu diesem Objekt.",
+};
+
+function approvalError(reason: string): string {
+  if (APPROVAL_ERRORS[reason]) return APPROVAL_ERRORS[reason];
+  if (reason.startsWith("booking_failed:"))
+    return `Die Buchung wurde nicht ausgeführt (${reason.slice("booking_failed:".length)}).`;
+  if (reason.startsWith("apaleo_")) return "Apaleo ist gerade nicht erreichbar.";
+  return `Die Anfrage konnte nicht bestätigt werden (${reason}).`;
 }
 
 /* ── Orders, extensions ───────────────────────────────────────────────────────────────── */

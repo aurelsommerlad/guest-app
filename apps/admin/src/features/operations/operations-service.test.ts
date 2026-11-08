@@ -1,5 +1,7 @@
 import { createLogger } from "@up/core";
 import {
+  createServiceLockStore,
+  createServiceRecordStore,
   createServiceWriteStore,
   type Database,
   getPropertyServiceSettings,
@@ -8,7 +10,14 @@ import {
   uniquePlacesSeed,
 } from "@up/db";
 import { createTestDatabase, type TestDatabase } from "@up/db/testing";
-import { ServiceWriteGateway, type ServiceWriteMode } from "@up/integrations";
+import {
+  ApaleoClient,
+  ApaleoServiceReader,
+  ServiceBookingEngine,
+  ServiceWriteGateway,
+  type ServiceWriteMode,
+} from "@up/integrations";
+import { ApaleoDouble } from "@up/shadow";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { type AdminContext } from "../auth/admin-auth-service";
@@ -30,6 +39,17 @@ let db: Database;
 let ownerId: string;
 let offerId: string;
 const lookup = vi.fn(() => Promise.resolve({ property: { id: "TEST" }, status: "Confirmed" }));
+// In-memory Apaleo (TEST property, reservation JTKQSYFX-1, 10.–12.11.2026); nothing leaves the process.
+const apaleo = new ApaleoDouble({ arrival: "2026-11-10", departure: "2026-11-12" });
+const reader = new ApaleoServiceReader(
+  new ApaleoClient({
+    clientId: "test",
+    clientSecret: "test",
+    logger: createLogger({ sink: () => undefined }),
+    fetch: apaleo.fetch,
+    retryDelayMs: 0,
+  }),
+);
 
 const deps = (mode: ServiceWriteMode = "disabled"): OperationsDeps => ({
   db,
@@ -41,6 +61,14 @@ const deps = (mode: ServiceWriteMode = "disabled"): OperationsDeps => ({
       allowedApaleoPropertyIds: ["TEST"],
       store: createServiceWriteStore(db),
       lookupReservation: lookup,
+    }),
+  engine: (gateway) =>
+    new ServiceBookingEngine({
+      reader,
+      gateway,
+      records: createServiceRecordStore(db),
+      locks: createServiceLockStore(db),
+      now: () => new Date("2026-11-08T10:00:00Z"),
     }),
   apaleoPropertyIdOf: (_tenant, propertyId) =>
     Promise.resolve(propertyId === "test-run" ? "TEST" : undefined),
@@ -102,6 +130,12 @@ beforeAll(async () => {
            '{"type":"non-refundable"}', '{}') RETURNING id`,
       )
     ).rows[0]?.id ?? "";
+  // Property configuration of the request service (M2 model): parking per night, on request.
+  await test.client.query(
+    `INSERT INTO offer_properties (tenant_id, offer_id, property_id, extras_service_id, active, action_type, booking_rule, fulfillment)
+     VALUES ('unique-places', $1, 'test-run', 'TEST-PKW', true, 'service', 'per_night', 'request')`,
+    [offerId],
+  );
 });
 
 afterAll(async () => {

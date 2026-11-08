@@ -23,17 +23,35 @@ function Brand() {
   );
 }
 
-function SidebarContent({ email }: { email: string }) {
+export type ShellNavigation = {
+  allowedModuleIds?: readonly string[];
+  badges?: Readonly<Record<string, number>>;
+};
+
+function SidebarContent({ email, navigation }: { email: string; navigation: ShellNavigation }) {
   const pathname = usePathname();
   const { activeId } = usePropertyContext();
   return (
     <div className="flex min-h-full flex-col gap-10">
       <Brand />
-      <AdminNav pathname={pathname} activePropertyId={activeId} />
+      <AdminNav
+        pathname={pathname}
+        activePropertyId={activeId}
+        allowedModuleIds={navigation.allowedModuleIds}
+        badges={navigation.badges}
+      />
       <div className="mt-auto flex flex-col gap-1 border-t border-border pt-5">
         <p className="type-caption truncate px-3 text-text-muted" title={email}>
           {email}
         </p>
+        <Link
+          href="/account"
+          aria-current={pathname === "/account" ? "page" : undefined}
+          className="type-body flex min-h-11 items-center gap-3 rounded-control px-3 text-text-muted hover:bg-background hover:text-text"
+        >
+          <Icon name="user" size="md" />
+          Mein Konto
+        </Link>
         <form action={logoutAction}>
           <button
             type="submit"
@@ -49,7 +67,7 @@ function SidebarContent({ email }: { email: string }) {
 }
 
 /** Mobile/tablet navigation: a modal drawer (native dialog: focus trap, Escape, backdrop). */
-function NavigationDrawer({ email }: { email: string }) {
+function NavigationDrawer({ email, navigation }: { email: string; navigation: ShellNavigation }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const pathname = usePathname();
 
@@ -83,7 +101,7 @@ function NavigationDrawer({ email }: { email: string }) {
               onClick={() => dialog.current?.close()}
             />
           </div>
-          <SidebarContent email={email} />
+          <SidebarContent email={email} navigation={navigation} />
         </div>
       </dialog>
     </>
@@ -101,9 +119,11 @@ export function AdminShell({
   email,
   properties,
   rememberedPropertyId,
+  navigation = {},
   children,
 }: {
   email: string;
+  navigation?: ShellNavigation;
   properties: readonly ContextProperty[];
   rememberedPropertyId: string | null;
   children: ReactNode;
@@ -119,7 +139,7 @@ export function AdminShell({
       <div className="min-h-dvh lg:flex">
         <div className="hidden bg-surface lg:block lg:w-64 lg:shrink-0">
           <aside className="sticky top-0 flex h-dvh flex-col overflow-y-auto px-4 py-8">
-            <SidebarContent email={email} />
+            <SidebarContent email={email} navigation={navigation} />
           </aside>
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -127,7 +147,7 @@ export function AdminShell({
           <header className="sticky top-0 z-20 border-b border-border bg-background">
             <div className={cx(CONTAINER, "flex min-h-18 items-center gap-2 py-3")}>
               <div className="-ml-2 lg:hidden">
-                <NavigationDrawer email={email} />
+                <NavigationDrawer email={email} navigation={navigation} />
               </div>
               <PropertySelector />
             </div>

@@ -9,6 +9,7 @@
  *                     /{segment}/{propertyId}… → one property
  *   tenant modules    /{segment}…              → not property-bound (e.g. Objekte, Team)
  */
+import type { AdminPermission } from "@up/core";
 import type { IconName } from "@up/ui";
 
 export type NavigationGroupId =
@@ -40,6 +41,8 @@ export type AdminModule = {
   scope: { kind: "property"; allProperties: "aggregate" | "choose" } | { kind: "tenant" };
   /** Second URL segments that are pages of the module, not property ids (e.g. "new"). */
   reservedSegments?: readonly string[];
+  /** Shown only to admins with this permission (the pages check it again on the server). */
+  permission?: AdminPermission;
 };
 
 export const adminModules: readonly AdminModule[] = [
@@ -50,6 +53,7 @@ export const adminModules: readonly AdminModule[] = [
     segment: "guide",
     icon: "book-open",
     scope: { kind: "property", allProperties: "choose" },
+    permission: "content.read",
   },
   {
     id: "explore",
@@ -60,6 +64,7 @@ export const adminModules: readonly AdminModule[] = [
     // Places belong to the tenant; "Alle Objekte" shows all of them with their assignment.
     scope: { kind: "property", allProperties: "aggregate" },
     reservedSegments: ["places", "new"],
+    permission: "content.read",
   },
   {
     id: "services",
@@ -70,6 +75,7 @@ export const adminModules: readonly AdminModule[] = [
     // One central catalog; "Alle Objekte" shows every service with its properties.
     scope: { kind: "property", allProperties: "aggregate" },
     reservedSegments: ["offers"],
+    permission: "catalog.read",
   },
   {
     id: "requests",
@@ -79,6 +85,7 @@ export const adminModules: readonly AdminModule[] = [
     icon: "bell",
     scope: { kind: "property", allProperties: "aggregate" },
     reservedSegments: ["r"],
+    permission: "requests.read",
   },
   {
     id: "bookings",
@@ -88,6 +95,7 @@ export const adminModules: readonly AdminModule[] = [
     icon: "credit-card",
     scope: { kind: "property", allProperties: "aggregate" },
     reservedSegments: ["b"],
+    permission: "bookings.read",
   },
   {
     id: "extensions",
@@ -97,6 +105,7 @@ export const adminModules: readonly AdminModule[] = [
     icon: "calendar",
     scope: { kind: "property", allProperties: "aggregate" },
     reservedSegments: ["e"],
+    permission: "bookings.read",
   },
   {
     id: "extension-nights",
@@ -105,6 +114,7 @@ export const adminModules: readonly AdminModule[] = [
     segment: "extension-nights",
     icon: "bed",
     scope: { kind: "property", allProperties: "aggregate" },
+    permission: "settings.read",
   },
   {
     id: "properties",
@@ -121,6 +131,7 @@ export const adminModules: readonly AdminModule[] = [
     segment: "team",
     icon: "users",
     scope: { kind: "tenant" },
+    permission: "users.read",
   },
   {
     id: "audit",
@@ -129,6 +140,7 @@ export const adminModules: readonly AdminModule[] = [
     segment: "audit",
     icon: "file-text",
     scope: { kind: "tenant" },
+    permission: "settings.read",
   },
   {
     id: "imports",
@@ -137,15 +149,23 @@ export const adminModules: readonly AdminModule[] = [
     segment: "imports",
     icon: "copy",
     scope: { kind: "tenant" },
+    permission: "migration.run",
   },
 ];
 
 export type ResolvedGroup = { id: NavigationGroupId; label?: string; modules: AdminModule[] };
 
 /** Groups in long-term order, each with its existing modules; empty groups are left out. */
-export function visibleNavigation(modules: readonly AdminModule[] = adminModules): ResolvedGroup[] {
+export function visibleNavigation(
+  modules: readonly AdminModule[] = adminModules,
+  allowedModuleIds?: readonly string[],
+): ResolvedGroup[] {
+  const allowed = (module: AdminModule) => !allowedModuleIds || allowedModuleIds.includes(module.id);
   return navigationGroups
-    .map((group) => ({ ...group, modules: modules.filter((module) => module.group === group.id) }))
+    .map((group) => ({
+      ...group,
+      modules: modules.filter((module) => module.group === group.id && allowed(module)),
+    }))
     .filter((group) => group.modules.length > 0);
 }
 
@@ -219,3 +239,11 @@ export const legacyRedirects = [
     permanent: false,
   },
 ] as const;
+
+/** Module ids an admin may open, from the permission check of the caller. */
+export function allowedModuleIds(
+  isAllowed: (permission: AdminPermission) => boolean,
+  modules: readonly AdminModule[] = adminModules,
+): string[] {
+  return modules.filter((m) => !m.permission || isAllowed(m.permission)).map((m) => m.id);
+}

@@ -90,6 +90,7 @@ export {
   listAdminInvitations,
   listAdminUsers,
   revokeAdminInvitation,
+  changeAdminPassword,
   revokeAllAdminSessions,
   setAdminUserStatus,
   updateAdminAccess,
@@ -305,6 +306,7 @@ export {
   type ServiceBookingDetail,
   type ServiceBookingRow,
   type StayExtensionRow,
+  countPendingOfferRequests,
 } from "./repositories/operations-repository";
 export {
   beginServiceBooking,

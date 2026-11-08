@@ -332,6 +332,48 @@ export async function revokeAllAdminSessions(
   return rows.length;
 }
 
+/**
+ * Own password change: stores the new hash and ends every other live session of the user
+ * (the current one, identified by its token hash, stays). Audited without any secret.
+ */
+export async function changeAdminPassword(
+  db: Database,
+  context: TenantContext,
+  input: { adminUserId: string; passwordHash: string; keepTokenHash: string | null; now: Date },
+): Promise<{ revokedSessions: number }> {
+  assertTenantContext(context);
+  if (!UUID.test(input.adminUserId)) throw new TypeError("Invalid admin user id");
+  return db.transaction(async (tx) => {
+    const updated = await tx
+      .update(adminUsers)
+      .set({ passwordHash: input.passwordHash, updatedAt: input.now })
+      .where(and(eq(adminUsers.tenantId, context.tenantId), eq(adminUsers.id, input.adminUserId)))
+      .returning({ id: adminUsers.id });
+    if (!updated.length) throw new Error("Admin user not found");
+    const revoked = await tx
+      .update(adminSessions)
+      .set({ revokedAt: input.now })
+      .where(
+        and(
+          eq(adminSessions.tenantId, context.tenantId),
+          eq(adminSessions.adminUserId, input.adminUserId),
+          isNull(adminSessions.revokedAt),
+          ...(input.keepTokenHash ? [ne(adminSessions.tokenHash, input.keepTokenHash)] : []),
+        ),
+      )
+      .returning({ id: adminSessions.id });
+    await recordAdminAuditEvent(tx, context, {
+      actorType: "admin",
+      actorAdminId: input.adminUserId,
+      action: "user.password_changed",
+      entityType: "admin_user",
+      entityId: input.adminUserId,
+      details: { revokedSessions: revoked.length },
+    });
+    return { revokedSessions: revoked.length };
+  });
+}
+
 /* ------------------------------------------------------------------------------------------
  * Invitations
  * ---------------------------------------------------------------------------------------- */

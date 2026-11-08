@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
 
+import { countPendingOfferRequests } from "@up/db";
+
 import { AdminShell } from "../../components/AdminShell";
+import { isAllowed, visibleProperties } from "../../features/auth/authorization";
 import { requireAdmin } from "../../features/auth/server";
+import { allowedModuleIds } from "../../navigation";
+import { getDatabase } from "../../server/database";
 import {
   getRememberedPropertyId,
   getTenantProperties,
@@ -14,11 +19,23 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
     getTenantProperties(),
     getRememberedPropertyId(),
   ]);
+  const allowed = allowedModuleIds((permission) => isAllowed(admin, permission));
+  // Open requests that can be decided here, limited to the admin's properties.
+  const openRequests = allowed.includes("requests")
+    ? await countPendingOfferRequests(
+        getDatabase(),
+        { tenantId: admin.tenantId },
+        admin.propertyScope === "all"
+          ? {}
+          : { propertyIds: visibleProperties(admin, properties).map((p) => p.id) },
+      )
+    : 0;
   return (
     <AdminShell
       email={admin.email}
       properties={properties}
       rememberedPropertyId={rememberedPropertyId}
+      navigation={{ allowedModuleIds: allowed, badges: { requests: openRequests } }}
     >
       {children}
     </AdminShell>

@@ -10,6 +10,7 @@ import {
   navigationGroups,
   parseAdminPath,
   selectorHref,
+  allowedModuleIds,
   visibleNavigation,
 } from "./navigation";
 
@@ -148,5 +149,22 @@ describe("selector and sidebar links", () => {
         permanent: false,
       },
     ]);
+  });
+});
+
+describe("navigation by permission", () => {
+  it("hides modules the admin may not open and empty groups", async () => {
+    const { can } = await import("@up/core");
+    const viewer = { role: "viewer" as const, propertyScope: "selected" as const, propertyIds: ["hov"] };
+    const ids = allowedModuleIds((permission) => can(viewer, permission));
+    expect(ids).toContain("requests");
+    expect(ids).toContain("services");
+    expect(ids).not.toContain("team");
+    expect(ids).not.toContain("imports");
+    expect(ids).toContain("audit"); // filtered to the own properties (M2)
+    const groups = visibleNavigation(undefined, ids);
+    expect(groups.flatMap((g) => g.modules.map((m) => m.id)).sort()).toEqual([...ids].sort());
+    const owner = { role: "owner" as const, propertyScope: "all" as const, propertyIds: [] };
+    expect(allowedModuleIds((permission) => can(owner, permission))).toHaveLength(adminModules.length);
   });
 });

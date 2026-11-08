@@ -10,13 +10,19 @@ import { isModuleActive, moduleHref, visibleNavigation } from "../navigation";
 export function AdminNav({
   pathname,
   activePropertyId,
+  allowedModuleIds,
+  badges = {},
 }: {
   pathname: string;
   activePropertyId: string | null;
+  /** Modules the admin may open (undefined = all, e.g. in tests). */
+  allowedModuleIds?: readonly string[];
+  /** Counters per module id, e.g. open requests. */
+  badges?: Readonly<Record<string, number>>;
 }) {
   return (
     <nav aria-label="Hauptnavigation" className="flex flex-col gap-6">
-      {visibleNavigation().map((group) => (
+      {visibleNavigation(undefined, allowedModuleIds).map((group) => (
         <div key={group.id} className="flex flex-col gap-1">
           {group.label && (
             <p className="type-eyebrow px-3 pb-1 text-text-muted" id={`nav-${group.id}`}>
@@ -42,7 +48,15 @@ export function AdminNav({
                     )}
                   >
                     <Icon name={module.icon} size="md" />
-                    {module.label}
+                    <span className="min-w-0 flex-1 truncate">{module.label}</span>
+                    {(badges[module.id] ?? 0) > 0 && (
+                      <span
+                        className="type-caption shrink-0 rounded-full bg-action px-2 py-0.5 text-action-text tabular-nums"
+                        aria-label={`${String(badges[module.id])} offen`}
+                      >
+                        {badges[module.id]}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
