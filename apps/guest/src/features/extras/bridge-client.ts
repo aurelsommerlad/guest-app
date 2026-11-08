@@ -220,6 +220,8 @@ const refusalSchema = z.object({
 export function createExtrasBridge(options: {
   baseUrl: string;
   secret: string;
+  /** Vercel deployment protection bypass (preview deployments only). */
+  protectionBypass?: string;
   fetch?: typeof fetch;
   now?: () => Date;
   onError?: (route: string, detail: { status?: number; error?: string }) => void;
@@ -242,6 +244,9 @@ export function createExtrasBridge(options: {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${signBridgeToken(subject, scope, options.secret, now())}`,
+          ...(options.protectionBypass
+            ? { "x-vercel-protection-bypass": options.protectionBypass }
+            : {}),
         },
         body: JSON.stringify(body ?? {}),
         cache: "no-store",

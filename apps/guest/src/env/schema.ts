@@ -106,6 +106,11 @@ export const serverEnvSchema = clientEnvSchema
      */
     EXTRAS_BRIDGE_URL: z.url().optional(),
     EXTRAS_BRIDGE_SECRET: z.string().min(32).optional(),
+    /**
+     * Only for an SSO-protected Vercel preview of Extras: "Protection Bypass for Automation"
+     * secret, sent as x-vercel-protection-bypass. Never needed for a public domain.
+     */
+    EXTRAS_BRIDGE_PROTECTION_BYPASS: z.string().min(16).optional(),
     /** Server secret for code and contact hashes (HMAC pepper, ADR 0021). */
     OTP_PEPPER: z.string().min(32).optional(),
     EMAIL_DELIVERY: z.enum(EMAIL_DELIVERY_MODES).default("off"),

@@ -53,3 +53,8 @@ Verfügbarkeit, Apaleo-Buchungen und Slack-Freigaben.
   `STAY_BRIDGE_PROPERTY_IDS` (Staging: `TEST`). Ohne diese Werte antworten alle Routen mit 404.
 - Das Deployment der Brücke und der erste echte Buchungsversuch brauchen eine ausdrückliche
   Freigabe.
+
+## Weiterführend
+
+- `docs/staging/extras-bridge-sicherheit.md`: Umgebungen, Speicher, Trennung, Berechtigungen, Slack, fehlende Variablen.
+- `docs/staging/extras-bridge-testplan-JTKQSYFX-1.md`: erster echter Integrationstest (geplant).

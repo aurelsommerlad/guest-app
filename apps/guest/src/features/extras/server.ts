@@ -14,6 +14,9 @@ export function getExtrasBridge(): ExtrasBridge | undefined {
   bridge ??= createExtrasBridge({
     baseUrl: url,
     secret,
+    ...(serverEnv.EXTRAS_BRIDGE_PROTECTION_BYPASS
+      ? { protectionBypass: serverEnv.EXTRAS_BRIDGE_PROTECTION_BYPASS }
+      : {}),
     onError: (route, detail) => {
       logger.warn("extras bridge unavailable", { route, ...detail });
     },

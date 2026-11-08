@@ -203,6 +203,23 @@ describe("bridge client", () => {
     expect(seen[0]?.url).not.toMatch(/JTKQSYFX|Mustermann/);
   });
 
+  it("sends the Vercel protection bypass header only when configured", async () => {
+    const headers: (string | null)[] = [];
+    const make = (protectionBypass?: string) =>
+      createExtrasBridge({
+        baseUrl: "https://extras-preview.test",
+        secret: SECRET,
+        ...(protectionBypass ? { protectionBypass } : {}),
+        fetch: (_url, init) => {
+          headers.push(new Headers(init?.headers).get("x-vercel-protection-bypass"));
+          return Promise.resolve(Response.json(catalog));
+        },
+      });
+    await make().catalog(subject);
+    await make("bypass-0123456789abcdef").catalog(subject);
+    expect(headers).toEqual([null, "bypass-0123456789abcdef"]);
+  });
+
   it("maps refusals, server errors, timeouts and unexpected answers – never guesses", async () => {
     const answer = (response: Response | Error) =>
       createExtrasBridge({
