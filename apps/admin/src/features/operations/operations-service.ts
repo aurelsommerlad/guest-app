@@ -40,7 +40,9 @@ export type OperationsDeps = {
   now: () => Date;
   gateway: () => ServiceWriteGateway;
   /** Booking engine on top of the given gateway; undefined when Apaleo is not configured. */
-  engine?: (gateway: ServiceWriteGateway) => ServiceBookingEngine | undefined;
+  engine?: (
+    gateway: ServiceWriteGateway,
+  ) => ServiceBookingEngine | undefined | Promise<ServiceBookingEngine | undefined>;
   apaleoPropertyIdOf: (tenantId: string, propertyId: string) => Promise<string | undefined>;
 };
 
@@ -284,12 +286,13 @@ export async function decideRequest(
   }
   // The same engine as the guest flow: re-verifies against live Apaleo exactly like Extras
   // approveRequest, then books through the gateway (simulated on staging).
-  const engine = deps.engine?.(gateway);
+  const engine = await deps.engine?.(gateway);
   if (!engine) {
     await blocked("apaleo_not_configured");
     return {
       ok: false,
-      error: "Apaleo ist für STAY nicht eingerichtet – keine Prüfung möglich. Die Anfrage bleibt offen.",
+      error:
+        "Apaleo ist für STAY nicht eingerichtet – keine Prüfung möglich. Die Anfrage bleibt offen.",
     };
   }
   const result = await engine.approveRequest(

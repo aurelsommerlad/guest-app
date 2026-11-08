@@ -117,6 +117,15 @@ export const adminModules: readonly AdminModule[] = [
     permission: "settings.read",
   },
   {
+    id: "shadow",
+    label: "Schattenbetrieb",
+    group: "services",
+    segment: "shadow",
+    icon: "scan",
+    scope: { kind: "property", allProperties: "choose" },
+    permission: "catalog.read",
+  },
+  {
     id: "properties",
     label: "Objekte",
     group: "admin",
@@ -160,7 +169,8 @@ export function visibleNavigation(
   modules: readonly AdminModule[] = adminModules,
   allowedModuleIds?: readonly string[],
 ): ResolvedGroup[] {
-  const allowed = (module: AdminModule) => !allowedModuleIds || allowedModuleIds.includes(module.id);
+  const allowed = (module: AdminModule) =>
+    !allowedModuleIds || allowedModuleIds.includes(module.id);
   return navigationGroups
     .map((group) => ({
       ...group,

@@ -31,7 +31,10 @@ export type AmendReservationPayload = {
   departure: unknown;
   adults: number;
   childrenAges: readonly number[] | null;
-  timeSlices: readonly { ratePlanId: string; totalGrossAmount: { amount: number; currency: string } }[];
+  timeSlices: readonly {
+    ratePlanId: string;
+    totalGrossAmount: { amount: number; currency: string };
+  }[];
   requote: boolean;
 };
 

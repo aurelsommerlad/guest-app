@@ -26,13 +26,62 @@ export const TEST_SERVICES: Record<
     postNextDay: boolean;
   }
 > = {
-  "TEST-ECI": { code: "ECI", name: { de: "Früher Check-in", en: "Early Check-in" }, price: 20, rule: "arrival", mode: "Arrival", postNextDay: false },
-  "TEST-LCO": { code: "LCO", name: { de: "Später Check-out", en: "Late Check-out" }, price: 20, rule: "departure", mode: "Departure", postNextDay: true },
-  "TEST-HUND": { code: "HUND", name: { de: "Hund", en: "Dog fee" }, price: 15, rule: "night", mode: "Daily", postNextDay: false },
-  "TEST-PKW": { code: "PKW", name: { de: "Parkplatz", en: "Car park" }, price: 0, rule: "night", mode: "Daily", postNextDay: false },
-  "TEST-BABY": { code: "BABY", name: { de: "Babybett", en: "Baby cot" }, price: 15, rule: "night", mode: "Daily", postNextDay: false },
-  "TEST-EXTRPERSON": { code: "EXTRPERSON", name: { de: "Zusatzperson", en: "Extra person" }, price: 30, rule: "night", mode: "Daily", postNextDay: false },
-  "TEST-FINALCLEAN": { code: "FINALCLEAN", name: { de: "Endreinigung", en: "Final cleaning on departure" }, price: 139, rule: "none", mode: "Departure", postNextDay: false },
+  "TEST-ECI": {
+    code: "ECI",
+    name: { de: "Früher Check-in", en: "Early Check-in" },
+    price: 20,
+    rule: "arrival",
+    mode: "Arrival",
+    postNextDay: false,
+  },
+  "TEST-LCO": {
+    code: "LCO",
+    name: { de: "Später Check-out", en: "Late Check-out" },
+    price: 20,
+    rule: "departure",
+    mode: "Departure",
+    postNextDay: true,
+  },
+  "TEST-HUND": {
+    code: "HUND",
+    name: { de: "Hund", en: "Dog fee" },
+    price: 15,
+    rule: "night",
+    mode: "Daily",
+    postNextDay: false,
+  },
+  "TEST-PKW": {
+    code: "PKW",
+    name: { de: "Parkplatz", en: "Car park" },
+    price: 0,
+    rule: "night",
+    mode: "Daily",
+    postNextDay: false,
+  },
+  "TEST-BABY": {
+    code: "BABY",
+    name: { de: "Babybett", en: "Baby cot" },
+    price: 15,
+    rule: "night",
+    mode: "Daily",
+    postNextDay: false,
+  },
+  "TEST-EXTRPERSON": {
+    code: "EXTRPERSON",
+    name: { de: "Zusatzperson", en: "Extra person" },
+    price: 30,
+    rule: "night",
+    mode: "Daily",
+    postNextDay: false,
+  },
+  "TEST-FINALCLEAN": {
+    code: "FINALCLEAN",
+    name: { de: "Endreinigung", en: "Final cleaning on departure" },
+    price: 139,
+    rule: "none",
+    mode: "Departure",
+    postNextDay: false,
+  },
 };
 
 export function addDays(date: string, days: number): string {
@@ -62,7 +111,22 @@ export type DoubleOptions = {
 };
 
 export type ApaleoState = {
-  reservations: Record<string, Record<string, unknown> & { id: string; arrival: string; departure: string; adults: number; comment: string; timeSlices: { serviceDate: string; ratePlan: { id: string }; totalGrossAmount: { amount: number; currency: string } }[]; primaryGuest: { vehicleRegistration?: { number: string; countryCode: string } } }>;
+  reservations: Record<
+    string,
+    Record<string, unknown> & {
+      id: string;
+      arrival: string;
+      departure: string;
+      adults: number;
+      comment: string;
+      timeSlices: {
+        serviceDate: string;
+        ratePlan: { id: string };
+        totalGrossAmount: { amount: number; currency: string };
+      }[];
+      primaryGuest: { vehicleRegistration?: { number: string; countryCode: string } };
+    }
+  >;
   services: Record<string, BookedService[]>;
   unitGroups: Record<string, { id: string; code: string; maxPersons: number }>;
   soldOut: string[];
@@ -117,7 +181,11 @@ export class ApaleoDouble {
       services: {
         [id]: [
           {
-            service: { id: "TEST-FINALCLEAN", code: "FINALCLEAN", name: "Final cleaning on departure" },
+            service: {
+              id: "TEST-FINALCLEAN",
+              code: "FINALCLEAN",
+              name: "Final cleaning on departure",
+            },
             dates: [
               {
                 serviceDate: nights.at(-1) ?? arrivalDate,
@@ -158,15 +226,20 @@ export class ApaleoDouble {
   }
 
   readonly fetch: typeof fetch = (input, init) => {
-    const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
+    const url = new URL(
+      typeof input === "string" ? input : input instanceof URL ? input.href : input.url,
+    );
     const method = (init?.method ?? "GET").toUpperCase();
     if (url.hostname === "identity.apaleo.com")
-      return Promise.resolve(Response.json({ access_token: "double", expires_in: 3600, token_type: "Bearer" }));
+      return Promise.resolve(
+        Response.json({ access_token: "double", expires_in: 3600, token_type: "Bearer" }),
+      );
     if (url.hostname !== "api.apaleo.com")
       return Promise.reject(new Error(`apaleo double: request to ${url.hostname} refused`));
     this.beforeRequest?.(method, url.pathname);
     const failure = this.failures.find(
-      (f) => f.times > 0 && f.method === method && (url.pathname + url.search).includes(f.pathIncludes),
+      (f) =>
+        f.times > 0 && f.method === method && (url.pathname + url.search).includes(f.pathIncludes),
     );
     let response: Response;
     if (failure) {
@@ -189,7 +262,10 @@ export class ApaleoDouble {
     else if (c.operation === "amend-occupancy" || c.operation === "amend-stay")
       this.#amend(id, c.payload);
     else if (c.operation === "update-vehicle")
-      this.reservation(id).primaryGuest.vehicleRegistration = { number: c.number, countryCode: c.countryCode };
+      this.reservation(id).primaryGuest.vehicleRegistration = {
+        number: c.number,
+        countryCode: c.countryCode,
+      };
     else if (c.operation === "append-comment") {
       const r = this.reservation(id);
       r.comment = r.comment ? `${r.comment}\n${c.text}` : c.text;
@@ -200,7 +276,11 @@ export class ApaleoDouble {
     id: string,
     serviceId: string,
     count: number | undefined,
-    dates: readonly { serviceDate: string; count?: number; amount?: { amount: number; currency: string } }[],
+    dates: readonly {
+      serviceDate: string;
+      count?: number;
+      amount?: { amount: number; currency: string };
+    }[],
   ) {
     const def = TEST_SERVICES[serviceId];
     if (!def) throw new Error(`unknown service ${serviceId}`);
@@ -210,7 +290,10 @@ export class ApaleoDouble {
       dates: dates.map((d) => ({
         serviceDate: d.serviceDate,
         count: d.count ?? count ?? 1,
-        amount: { grossAmount: d.amount?.amount ?? this.#price(serviceId), currency: d.amount?.currency ?? "EUR" },
+        amount: {
+          grossAmount: d.amount?.amount ?? this.#price(serviceId),
+          currency: d.amount?.currency ?? "EUR",
+        },
         isMandatory: false,
       })),
     };
@@ -223,9 +306,15 @@ export class ApaleoDouble {
     const r = this.reservation(id);
     const oldDeparture = r.departure.slice(0, 10);
     r.arrival = String(body.arrival);
-    r.departure = String(body.departure).length === 10 ? `${String(body.departure)}T10:00:00+01:00` : String(body.departure);
+    r.departure =
+      String(body.departure).length === 10
+        ? `${String(body.departure)}T10:00:00+01:00`
+        : String(body.departure);
     r.adults = Number(body.adults);
-    const slices = (body.timeSlices ?? []) as { ratePlanId: string; totalGrossAmount: { amount: number; currency: string } }[];
+    const slices = (body.timeSlices ?? []) as {
+      ratePlanId: string;
+      totalGrossAmount: { amount: number; currency: string };
+    }[];
     const nights = nightsOf(r.arrival, r.departure);
     r.timeSlices = nights.map((serviceDate, i) => ({
       serviceDate,
@@ -234,7 +323,8 @@ export class ApaleoDouble {
     }));
     if (r.departure.slice(0, 10) !== oldDeparture) {
       for (const s of this.state.services[id] ?? []) {
-        if (s.isMandatory) s.dates = s.dates.map((d) => ({ ...d, serviceDate: nights.at(-1) ?? d.serviceDate }));
+        if (s.isMandatory)
+          s.dates = s.dates.map((d) => ({ ...d, serviceDate: nights.at(-1) ?? d.serviceDate }));
       }
     }
   }
@@ -249,7 +339,12 @@ export class ApaleoDouble {
       .filter(([, s]) => s.rule !== "none")
       .map(([id, s]) => {
         const price = this.#price(id);
-        const dates = s.rule === "arrival" ? [r.arrival.slice(0, 10)] : s.rule === "departure" ? [r.departure.slice(0, 10)] : nights;
+        const dates =
+          s.rule === "arrival"
+            ? [r.arrival.slice(0, 10)]
+            : s.rule === "departure"
+              ? [r.departure.slice(0, 10)]
+              : nights;
         return {
           service: { id, code: s.code, name: s.name.en },
           count: 1,
@@ -276,7 +371,10 @@ export class ApaleoDouble {
     }
     if ((m = /^\/booking\/v1\/reservations\/([^/]+)\/services$/.exec(path)) && method === "GET")
       return Response.json({ services: this.state.services[decodeURIComponent(m[1] ?? "")] ?? [] });
-    if ((m = /^\/booking\/v1\/reservations\/([^/]+)\/service-offers$/.exec(path)) && method === "GET") {
+    if (
+      (m = /^\/booking\/v1\/reservations\/([^/]+)\/service-offers$/.exec(path)) &&
+      method === "GET"
+    ) {
       const r = this.state.reservations[decodeURIComponent(m[1] ?? "")];
       if (!r) return new Response(null, { status: 404 });
       return Response.json({ services: this.#offers(r) });

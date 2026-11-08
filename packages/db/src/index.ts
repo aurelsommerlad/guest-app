@@ -319,3 +319,12 @@ export {
   releaseServiceLock,
   saveServiceBookingItem,
 } from "./repositories/service-engine-repository";
+export {
+  applyImageMigration,
+  type ImageApplyResult,
+  type ImageInfo,
+  type ImageUploader,
+  type PlannedImage,
+  planImageMigration,
+  readImageHeader,
+} from "./extras-import/images";

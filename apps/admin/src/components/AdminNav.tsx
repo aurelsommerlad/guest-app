@@ -51,7 +51,7 @@ export function AdminNav({
                     <span className="min-w-0 flex-1 truncate">{module.label}</span>
                     {(badges[module.id] ?? 0) > 0 && (
                       <span
-                        className="type-caption shrink-0 rounded-full bg-action px-2 py-0.5 text-action-text tabular-nums"
+                        className="type-caption shrink-0 rounded-full bg-cta px-2 py-0.5 text-on-cta tabular-nums"
                         aria-label={`${String(badges[module.id])} offen`}
                       >
                         {badges[module.id]}

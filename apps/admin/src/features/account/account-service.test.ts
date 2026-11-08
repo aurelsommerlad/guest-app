@@ -74,11 +74,20 @@ describe("own password change", () => {
     const current = await session();
     const admin = await resolveAdminSession(deps(), current);
     if (!admin) throw new Error("no session");
-    const result = await changeOwnPassword(deps(), admin, { current: OLD, next: NEW, confirm: NEW }, current);
+    const result = await changeOwnPassword(
+      deps(),
+      admin,
+      { current: OLD, next: NEW, confirm: NEW },
+      current,
+    );
     expect(result.ok && result.revokedSessions).toBeGreaterThanOrEqual(1);
     expect(await resolveAdminSession(deps(), current)).toBeDefined();
     expect(await resolveAdminSession(deps(), other)).toBeUndefined();
-    const relogin = await loginAdmin(deps(), { email: "konto@example.test", password: NEW, clientAddress: "198.51.100.250" });
+    const relogin = await loginAdmin(deps(), {
+      email: "konto@example.test",
+      password: NEW,
+      clientAddress: "198.51.100.250",
+    });
     expect(relogin.ok).toBe(true);
     const audit = await listAdminAuditEvents(db, { tenantId: "unique-places" });
     expect(audit.map((e) => e.action)).toContain("user.password_changed");
@@ -87,13 +96,25 @@ describe("own password change", () => {
   });
 
   it("rate-limits repeated attempts", async () => {
-    const secret = await loginAdmin(deps(), { email: "konto@example.test", password: NEW, clientAddress: "198.51.100.251" });
+    const secret = await loginAdmin(deps(), {
+      email: "konto@example.test",
+      password: NEW,
+      clientAddress: "198.51.100.251",
+    });
     if (!secret.ok) throw new Error("login failed");
     const admin = await resolveAdminSession(deps(), secret.session.secret);
     if (!admin) throw new Error("no session");
     let last;
     for (let i = 0; i < 6; i++)
-      last = await changeOwnPassword(deps(), admin, { current: "falsch-falsch-1", next: "x".repeat(12), confirm: "x".repeat(12) }, secret.session.secret);
-    expect(last).toEqual({ ok: false, error: "Zu viele Versuche. Bitte versuche es in 15 Minuten erneut." });
+      last = await changeOwnPassword(
+        deps(),
+        admin,
+        { current: "falsch-falsch-1", next: "x".repeat(12), confirm: "x".repeat(12) },
+        secret.session.secret,
+      );
+    expect(last).toEqual({
+      ok: false,
+      error: "Zu viele Versuche. Bitte versuche es in 15 Minuten erneut.",
+    });
   });
 });

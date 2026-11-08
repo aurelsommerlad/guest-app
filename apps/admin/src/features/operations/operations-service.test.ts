@@ -17,7 +17,7 @@ import {
   ServiceWriteGateway,
   type ServiceWriteMode,
 } from "@up/integrations";
-import { ApaleoDouble } from "@up/shadow";
+import { ApaleoDouble } from "@up/shadow/apaleo-double";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { type AdminContext } from "../auth/admin-auth-service";

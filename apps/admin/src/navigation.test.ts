@@ -31,6 +31,7 @@ describe("admin navigation registry", () => {
       "Bestellungen",
       "Verlängerungen",
       "Verlängerungsnächte",
+      "Schattenbetrieb",
       "Objekte",
       "Team",
       "Protokoll",
@@ -155,7 +156,11 @@ describe("selector and sidebar links", () => {
 describe("navigation by permission", () => {
   it("hides modules the admin may not open and empty groups", async () => {
     const { can } = await import("@up/core");
-    const viewer = { role: "viewer" as const, propertyScope: "selected" as const, propertyIds: ["hov"] };
+    const viewer = {
+      role: "viewer" as const,
+      propertyScope: "selected" as const,
+      propertyIds: ["hov"],
+    };
     const ids = allowedModuleIds((permission) => can(viewer, permission));
     expect(ids).toContain("requests");
     expect(ids).toContain("services");
@@ -165,6 +170,8 @@ describe("navigation by permission", () => {
     const groups = visibleNavigation(undefined, ids);
     expect(groups.flatMap((g) => g.modules.map((m) => m.id)).sort()).toEqual([...ids].sort());
     const owner = { role: "owner" as const, propertyScope: "all" as const, propertyIds: [] };
-    expect(allowedModuleIds((permission) => can(owner, permission))).toHaveLength(adminModules.length);
+    expect(allowedModuleIds((permission) => can(owner, permission))).toHaveLength(
+      adminModules.length,
+    );
   });
 });

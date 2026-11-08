@@ -38,20 +38,33 @@ import {
 import { compareScenario, type Deviation, type RunResult } from "./compare";
 import { renderMarkdown } from "./report";
 import { EXTENSION_CONFIG, EXTRAS_CATALOG, type Scenario, SCENARIOS } from "./scenarios";
-import { applyToSimulator, readState, type SimState, statePath, writeState } from "./simulator-state";
+import {
+  applyToSimulator,
+  readState,
+  type SimState,
+  statePath,
+  writeState,
+} from "./simulator-state";
 
 type Obj = Record<string, unknown>;
 const RESERVATION = "JTKQSYFX-1";
 const CONTEXT = { tenantId: "unique-places", propertyId: "test-run", apaleoPropertyId: "TEST" };
 
 const args = process.argv.slice(2);
-const outDir = path.resolve(args[args.indexOf("--out") + 1] && args.includes("--out") ? (args[args.indexOf("--out") + 1] ?? ".") : path.join(import.meta.dirname, "../../../../docs/staging"));
-const extrasRepo = path.resolve(process.env.EXTRAS_REPO ?? path.join(import.meta.dirname, "../../../../../guest-services"));
+const outDir = path.resolve(
+  args[args.indexOf("--out") + 1] && args.includes("--out")
+    ? (args[args.indexOf("--out") + 1] ?? ".")
+    : path.join(import.meta.dirname, "../../../../docs/staging"),
+);
+const extrasRepo = path.resolve(
+  process.env.EXTRAS_REPO ?? path.join(import.meta.dirname, "../../../../../guest-services"),
+);
 
 /* ── Isolation before any Extras module is loaded ─────────────────────────────────────── */
 const work = fs.mkdtempSync(path.join(os.tmpdir(), "stay-parity-"));
 for (const key of Object.keys(process.env)) {
-  if (/^(KV_|SLACK_|UPSTASH_|DATABASE_URL|APALEO_SERVICE_WRITES)/.test(key)) Reflect.deleteProperty(process.env, key);
+  if (/^(KV_|SLACK_|UPSTASH_|DATABASE_URL|APALEO_SERVICE_WRITES)/.test(key))
+    Reflect.deleteProperty(process.env, key);
 }
 process.env.APALEO_SIM_STATE = path.join(work, "apaleo-sim.json");
 process.env.APALEO_CLIENT_ID = "parity-simulated";
@@ -59,11 +72,15 @@ process.env.APALEO_CLIENT_SECRET = "parity-simulated";
 process.chdir(work);
 
 await import(path.join(extrasRepo, "test/support/apaleo-simulator.mjs"));
-if (globalThis.fetch.name !== "simulatedFetch") throw new Error("Apaleo simulator is not active – aborting");
+if (globalThis.fetch.name !== "simulatedFetch")
+  throw new Error("Apaleo simulator is not active – aborting");
 
 type ExtrasLib = {
   guest: {
-    getGuestCatalog: (reservation: Obj, propertyId: string) => Promise<{ items: Obj[]; pastStay: boolean }>;
+    getGuestCatalog: (
+      reservation: Obj,
+      propertyId: string,
+    ) => Promise<{ items: Obj[]; pastStay: boolean }>;
     placeGuestOrder: (input: Obj) => Promise<{ booked: Obj[]; failed: Obj[] }>;
     getStayExtensionOffer: (reservation: Obj) => Promise<Obj | null>;
     confirmStayExtension: (input: Obj) => Promise<Obj>;
@@ -101,7 +118,8 @@ function snapshotState(): RunResult["state"] {
   return {
     departure: r?.departure.slice(0, 10) ?? null,
     adults: r?.adults ?? null,
-    timeSlices: r?.timeSlices.map((t) => `${t.serviceDate}:${String(t.totalGrossAmount.amount)}`) ?? [],
+    timeSlices:
+      r?.timeSlices.map((t) => `${t.serviceDate}:${String(t.totalGrossAmount.amount)}`) ?? [],
     vehicle: r?.primaryGuest.vehicleRegistration?.number ?? null,
     comment: (r?.comment ?? "")
       .split("\n")
@@ -110,7 +128,9 @@ function snapshotState(): RunResult["state"] {
     services: (state.services[RESERVATION] ?? [])
       .map((s) => ({
         id: s.service.id,
-        dates: s.dates.map((d) => `${d.serviceDate}×${String(d.count)}@${String(d.amount.grossAmount)}`),
+        dates: s.dates.map(
+          (d) => `${d.serviceDate}×${String(d.count)}@${String(d.amount.grossAmount)}`,
+        ),
       }))
       .sort((a, b) => a.id.localeCompare(b.id)),
     writes: state.calls
@@ -120,7 +140,10 @@ function snapshotState(): RunResult["state"] {
         // Same Apaleo call under STAY's command names: amend-occupancy/amend-stay → amend,
         // update-vehicle/append-comment → PATCH of the reservation.
         if (c.method.startsWith("SIM:"))
-          return c.method.slice(4).replace(/update-vehicle|append-comment/, "patch").replace(/^amend-.*/, "amend");
+          return c.method
+            .slice(4)
+            .replace(/update-vehicle|append-comment/, "patch")
+            .replace(/^amend-.*/, "amend");
         if (c.path.includes("/book-service")) return "book-service";
         if (c.path.includes("/amend")) return "amend";
         return c.method === "PATCH" ? "patch" : `${c.method} ${c.path}`;
@@ -150,7 +173,11 @@ const EXTRAS_APPROVAL_ERRORS: Record<string, string> = {
   "Diese Anfrage wurde bereits bearbeitet.": "not_pending",
 };
 
-async function runExtras(scenario: Scenario, catalog: Record<string, Obj>, config: Obj): Promise<RunResult> {
+async function runExtras(
+  scenario: Scenario,
+  catalog: Record<string, Obj>,
+  config: Obj,
+): Promise<RunResult> {
   fs.mkdirSync(path.join(work, ".data"), { recursive: true });
   fs.writeFileSync(
     path.join(work, ".data/db.json"),
@@ -163,14 +190,24 @@ async function runExtras(scenario: Scenario, catalog: Record<string, Obj>, confi
       const result = await extras.guest.getGuestCatalog(reservation, "TEST");
       steps.push({ kind: "catalog", value: { pastStay: result.pastStay, items: result.items } });
     } else if (step.kind === "extension-offer") {
-      steps.push({ kind: "extension-offer", value: await extras.guest.getStayExtensionOffer(reservation) });
+      steps.push({
+        kind: "extension-offer",
+        value: await extras.guest.getStayExtensionOffer(reservation),
+      });
     } else if (step.kind === "order") {
-      const result = await extras.guest.placeGuestOrder({ reservation, propertyId: "TEST", lines: step.lines, guestName: "Parity" });
+      const result = await extras.guest.placeGuestOrder({
+        reservation,
+        propertyId: "TEST",
+        lines: step.lines,
+        guestName: "Parity",
+      });
       steps.push({
         kind: "order",
         value: {
           booked: result.booked.map((b) => `${String(b.serviceId)}×${String(b.count)}`),
-          failed: result.failed.map((f) => `${String(f.serviceId)}:${EXTRAS_REASONS[String(f.reason)] ?? String(f.reason)}`),
+          failed: result.failed.map(
+            (f) => `${String(f.serviceId)}:${EXTRAS_REASONS[String(f.reason)] ?? String(f.reason)}`,
+          ),
         },
       });
     } else if (step.kind === "extend") {
@@ -178,30 +215,58 @@ async function runExtras(scenario: Scenario, catalog: Record<string, Obj>, confi
       try {
         const result = await extras.guest.confirmStayExtension({
           reservationId: RESERVATION,
-          expectedCurrentDeparture: (offer?.currentDeparture) ?? "",
+          expectedCurrentDeparture: offer?.currentDeparture ?? "",
         });
-        const records = JSON.parse(fs.readFileSync(path.join(work, ".data/db.json"), "utf8")) as Obj;
-        const stored = Object.values((records["stay-extensions:records"] ?? {}) as Obj)[0] as Obj | undefined;
-        steps.push({ kind: "extend", value: { ok: true, newDeparture: result.newDeparture, extensionPrice: result.extensionPrice, status: stored?.status ?? null } });
+        const records = JSON.parse(
+          fs.readFileSync(path.join(work, ".data/db.json"), "utf8"),
+        ) as Obj;
+        const stored = Object.values((records["stay-extensions:records"] ?? {}) as Obj)[0] as
+          Obj | undefined;
+        steps.push({
+          kind: "extend",
+          value: {
+            ok: true,
+            newDeparture: result.newDeparture,
+            extensionPrice: result.extensionPrice,
+            status: stored?.status ?? null,
+          },
+        });
       } catch (error) {
-        steps.push({ kind: "extend", value: { ok: false, reason: (error as { reason?: string }).reason ?? "error" } });
+        steps.push({
+          kind: "extend",
+          value: { ok: false, reason: (error as { reason?: string }).reason ?? "error" },
+        });
       }
     } else {
       const { items } = await extras.guest.getGuestCatalog(reservation, "TEST");
-      const item = items.find((i) => i.serviceId === step.serviceId && i.fulfillmentMode === "request");
+      const item = items.find(
+        (i) => i.serviceId === step.serviceId && i.fulfillmentMode === "request",
+      );
       if (!item) {
         steps.push({ kind: "request", value: { created: false } });
         continue;
       }
-      const record = await extras.requests.createGuestRequest({ reservation, propertyId: "TEST", item, quantity: step.quantity, guestName: "Parity" });
-      const approval = step.approve ? await extras.requests.approveRequest(String(record.requestId)) : null;
+      const record = await extras.requests.createGuestRequest({
+        reservation,
+        propertyId: "TEST",
+        item,
+        quantity: step.quantity,
+        guestName: "Parity",
+      });
+      const approval = step.approve
+        ? await extras.requests.approveRequest(String(record.requestId))
+        : null;
       steps.push({
         kind: "request",
         value: {
           created: true,
           requestedDates: record.requestedServiceDates,
           quoted: record.displayedPrice,
-          approval: approval ? (approval.success ? "ok" : (EXTRAS_APPROVAL_ERRORS[approval.error ?? ""] ?? approval.error ?? "error")) : null,
+          approval: approval
+            ? approval.success
+              ? "ok"
+              : (EXTRAS_APPROVAL_ERRORS[approval.error ?? ""] ?? approval.error ?? "error")
+            : null,
         },
       });
     }
@@ -211,7 +276,11 @@ async function runExtras(scenario: Scenario, catalog: Record<string, Obj>, confi
 
 /* ── STAY run ─────────────────────────────────────────────────────────────────────────── */
 
-async function runStay(scenario: Scenario, catalog: Record<string, Obj>, config: Obj): Promise<RunResult & { importWarnings: string[] }> {
+async function runStay(
+  scenario: Scenario,
+  catalog: Record<string, Obj>,
+  config: Obj,
+): Promise<RunResult & { importWarnings: string[] }> {
   const test = await createTestDatabase();
   try {
     await seedTenant(test.db, uniquePlacesSeed);
@@ -241,7 +310,9 @@ async function runStay(scenario: Scenario, catalog: Record<string, Obj>, config:
       },
       { mode: "apply", snapshotSha256: "0".repeat(64), actorAdminId: ownerId, now: new Date() },
     );
-    const importWarnings = imported.items.flatMap((i) => (i.warnings ?? []).map((w) => `${i.sourceKey}:${w}`));
+    const importWarnings = imported.items.flatMap((i) =>
+      (i.warnings ?? []).map((w) => `${i.sourceKey}:${w}`),
+    );
 
     const client = new ApaleoClient({
       clientId: "parity-simulated",
@@ -250,8 +321,12 @@ async function runStay(scenario: Scenario, catalog: Record<string, Obj>, config:
       retryDelayMs: 0,
       // Token locally (the simulator's token answer lacks token_type); API calls go to the simulator.
       fetch: (input, init) =>
-        String(input instanceof Request ? input.url : input).startsWith("https://identity.apaleo.com")
-          ? Promise.resolve(Response.json({ access_token: "simulated", expires_in: 3600, token_type: "Bearer" }))
+        String(input instanceof Request ? input.url : input).startsWith(
+          "https://identity.apaleo.com",
+        )
+          ? Promise.resolve(
+              Response.json({ access_token: "simulated", expires_in: 3600, token_type: "Bearer" }),
+            )
           : globalThis.fetch(input, init),
     });
     const reader = new ApaleoServiceReader(client);
@@ -275,13 +350,25 @@ async function runStay(scenario: Scenario, catalog: Record<string, Obj>, config:
       n += 1;
       const reservation = await reader.getReservation(RESERVATION);
       if (step.kind === "catalog") {
-        const result = await engine.getGuestCatalog(CONTEXT, reservation, { includeUnpublished: true });
-        steps.push({ kind: "catalog", value: { pastStay: result.pastStay, items: result.items, hidden: result.hidden } });
+        const result = await engine.getGuestCatalog(CONTEXT, reservation, {
+          includeUnpublished: true,
+        });
+        steps.push({
+          kind: "catalog",
+          value: { pastStay: result.pastStay, items: result.items, hidden: result.hidden },
+        });
       } else if (step.kind === "extension-offer") {
-        steps.push({ kind: "extension-offer", value: await engine.getStayExtensionOffer(CONTEXT, RESERVATION) });
+        steps.push({
+          kind: "extension-offer",
+          value: await engine.getStayExtensionOffer(CONTEXT, RESERVATION),
+        });
       } else if (step.kind === "order") {
         await test.client.query(`UPDATE offers SET status = 'published'`); // shadow: imported drafts count as released
-        const result = await engine.placeOrder(CONTEXT, { reservationId: RESERVATION, idempotencyKey: `parity-${scenario.id}-${String(n)}`, lines: step.lines });
+        const result = await engine.placeOrder(CONTEXT, {
+          reservationId: RESERVATION,
+          idempotencyKey: `parity-${scenario.id}-${String(n)}`,
+          lines: step.lines,
+        });
         steps.push({
           kind: "order",
           value:
@@ -294,31 +381,51 @@ async function runStay(scenario: Scenario, catalog: Record<string, Obj>, config:
         });
       } else if (step.kind === "extend") {
         const offer = await engine.getStayExtensionOffer(CONTEXT, RESERVATION);
-        const result = await engine.confirmStayExtension(CONTEXT, { reservationId: RESERVATION, expectedCurrentDeparture: offer?.currentDeparture ?? "" });
+        const result = await engine.confirmStayExtension(CONTEXT, {
+          reservationId: RESERVATION,
+          expectedCurrentDeparture: offer?.currentDeparture ?? "",
+        });
         steps.push({
           kind: "extend",
           value: result.ok
-            ? { ok: true, newDeparture: result.newDeparture, extensionPrice: result.extensionPrice, status: result.status }
+            ? {
+                ok: true,
+                newDeparture: result.newDeparture,
+                extensionPrice: result.extensionPrice,
+                status: result.status,
+              }
             : { ok: false, reason: result.reason },
         });
       } else {
         await test.client.query(`UPDATE offers SET status = 'published'`);
-        const created = await engine.createRequest(CONTEXT, { reservationId: RESERVATION, serviceId: step.serviceId, quantity: step.quantity });
+        const created = await engine.createRequest(CONTEXT, {
+          reservationId: RESERVATION,
+          serviceId: step.serviceId,
+          quantity: step.quantity,
+        });
         if (!created.ok) {
           steps.push({ kind: "request", value: { created: false } });
           continue;
         }
-        const row = await test.client.query<{ requested_dates: string[]; quoted_cents: number | null }>(
+        const row = await test.client.query<{
+          requested_dates: string[];
+          quoted_cents: number | null;
+        }>(
           `SELECT requested_dates::text[] AS requested_dates, quoted_cents FROM offer_requests WHERE id = $1`,
           [created.requestId],
         );
-        const approval = step.approve ? await engine.approveRequest(CONTEXT, created.requestId, ownerId) : null;
+        const approval = step.approve
+          ? await engine.approveRequest(CONTEXT, created.requestId, ownerId)
+          : null;
         steps.push({
           kind: "request",
           value: {
             created: true,
             requestedDates: row.rows[0]?.requested_dates ?? [],
-            quoted: row.rows[0]?.quoted_cents === null || row.rows[0]?.quoted_cents === undefined ? null : row.rows[0].quoted_cents / 100,
+            quoted:
+              row.rows[0]?.quoted_cents === null || row.rows[0]?.quoted_cents === undefined
+                ? null
+                : row.rows[0].quoted_cents / 100,
             approval: approval ? (approval.ok ? "ok" : approval.reason) : null,
           },
         });
@@ -332,7 +439,13 @@ async function runStay(scenario: Scenario, catalog: Record<string, Obj>, config:
 
 /* ── Main ─────────────────────────────────────────────────────────────────────────────── */
 
-const results: { scenario: Scenario; deviations: Deviation[]; importWarnings: string[]; extras: RunResult; stay: RunResult }[] = [];
+const results: {
+  scenario: Scenario;
+  deviations: Deviation[];
+  importWarnings: string[];
+  extras: RunResult;
+  stay: RunResult;
+}[] = [];
 for (const scenario of SCENARIOS) {
   const catalog = structuredClone(EXTRAS_CATALOG);
   scenario.catalog?.(catalog);
@@ -342,15 +455,24 @@ for (const scenario of SCENARIOS) {
   writeState(seed);
   const stayRun = await runStay(scenario, catalog, config);
   const deviations = compareScenario(scenario.id, extrasRun, stayRun);
-  results.push({ scenario, deviations, importWarnings: stayRun.importWarnings, extras: extrasRun, stay: stayRun });
-  console.log(`${scenario.id} ${scenario.title}: ${deviations.length ? `${String(deviations.length)} Abweichung(en)` : "identisch"}`);
+  results.push({
+    scenario,
+    deviations,
+    importWarnings: stayRun.importWarnings,
+    extras: extrasRun,
+    stay: stayRun,
+  });
+  console.log(
+    `${scenario.id} ${scenario.title}: ${deviations.length ? `${String(deviations.length)} Abweichung(en)` : "identisch"}`,
+  );
 }
 
 const report = {
   format: "stay-extras-parity/1",
   createdAt: new Date().toISOString(),
   extrasSource: "aurelsommerlad/guest-services (lokaler Checkout, nur gelesen)",
-  apaleo: "guest-services test/support/apaleo-simulator.mjs (Apaleo TEST, Stand 08.11.2026) – kein Apaleo-Zugriff",
+  apaleo:
+    "guest-services test/support/apaleo-simulator.mjs (Apaleo TEST, Stand 08.11.2026) – kein Apaleo-Zugriff",
   gatewayMode: "simulated",
   scenarios: results.map((r) => ({
     id: r.scenario.id,
@@ -363,7 +485,10 @@ const report = {
   })),
 };
 fs.mkdirSync(outDir, { recursive: true });
-fs.writeFileSync(path.join(outDir, "extras-migration-m3-paritaet.json"), `${JSON.stringify(report, null, 2)}\n`);
+fs.writeFileSync(
+  path.join(outDir, "extras-migration-m3-paritaet.json"),
+  `${JSON.stringify(report, null, 2)}\n`,
+);
 fs.writeFileSync(path.join(outDir, "extras-migration-m3-paritaet-lauf.md"), renderMarkdown(report));
 fs.rmSync(work, { recursive: true, force: true });
 console.log(`Bericht: ${outDir}`);

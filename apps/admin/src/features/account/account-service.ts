@@ -17,8 +17,7 @@ import { type AdminAuthDeps, type AdminContext } from "../auth/admin-auth-servic
 
 export type PasswordChangeInput = { current: string; next: string; confirm: string };
 export type PasswordChangeResult =
-  | { ok: true; revokedSessions: number }
-  | { ok: false; error: string };
+  { ok: true; revokedSessions: number } | { ok: false; error: string };
 
 const LIMIT = { windowMs: 15 * 60 * 1000, max: 5 } as const;
 
@@ -61,7 +60,8 @@ export async function changeOwnPassword(
     {
       adminUserId: admin.adminUserId,
       passwordHash: await hashPassword(next),
-      keepTokenHash: currentSecret && isWellFormedSecret(currentSecret) ? hashSecret(currentSecret) : null,
+      keepTokenHash:
+        currentSecret && isWellFormedSecret(currentSecret) ? hashSecret(currentSecret) : null,
       now: deps.now(),
     },
   );

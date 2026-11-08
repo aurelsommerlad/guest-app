@@ -6,13 +6,79 @@ import { type SimState } from "./simulator-state";
 
 /** The Extras catalog of the TEST property as stored in Extras (catalog:TEST:items). */
 export const EXTRAS_CATALOG: Record<string, Record<string, unknown>> = {
-  "TEST-ECI": { serviceId: "TEST-ECI", code: "ECI", active: true, displayNameDe: "Früher Check-in", displayNameEn: "Early check-in", bookingRule: "arrival_day", fulfillmentMode: "instant", sortOrder: 1 },
-  "TEST-LCO": { serviceId: "TEST-LCO", code: "LCO", active: true, displayNameDe: "Später Check-out", displayNameEn: "Late check-out", bookingRule: "departure_day", fulfillmentMode: "instant", sortOrder: 2 },
-  "TEST-HUND": { serviceId: "TEST-HUND", code: "HUND", active: true, displayNameDe: "Hund", displayNameEn: "Dog", bookingRule: "per_night", fulfillmentMode: "instant", maxOnePerReservation: true, sortOrder: 3 },
-  "TEST-PKW": { serviceId: "TEST-PKW", code: "PKW", active: true, displayNameDe: "Parkplatz", displayNameEn: "Parking", bookingRule: "per_night", fulfillmentMode: "instant", requiresVehicleRegistration: true, sortOrder: 4 },
-  "TEST-BABY": { serviceId: "TEST-BABY", code: "BABY", active: true, displayNameDe: "Babybett", displayNameEn: "Baby cot", bookingRule: "per_stay", fulfillmentMode: "request", sortOrder: 5 },
-  "TEST-EXTRPERSON": { serviceId: "TEST-EXTRPERSON", code: "EXTRPERSON", active: true, displayNameDe: "Zusatzperson", displayNameEn: "Additional guest", actionType: "increase_occupancy", extraPersonPricePerNight: 30, requiresRemainingCapacity: true, fulfillmentMode: "instant", sortOrder: 6 },
-  "TEST-FINALCLEAN": { serviceId: "TEST-FINALCLEAN", code: "FINALCLEAN", active: true, displayNameDe: "Endreinigung", bookingRule: "departure_day", fulfillmentMode: "instant", sortOrder: 7 },
+  "TEST-ECI": {
+    serviceId: "TEST-ECI",
+    code: "ECI",
+    active: true,
+    displayNameDe: "Früher Check-in",
+    displayNameEn: "Early check-in",
+    bookingRule: "arrival_day",
+    fulfillmentMode: "instant",
+    sortOrder: 1,
+  },
+  "TEST-LCO": {
+    serviceId: "TEST-LCO",
+    code: "LCO",
+    active: true,
+    displayNameDe: "Später Check-out",
+    displayNameEn: "Late check-out",
+    bookingRule: "departure_day",
+    fulfillmentMode: "instant",
+    sortOrder: 2,
+  },
+  "TEST-HUND": {
+    serviceId: "TEST-HUND",
+    code: "HUND",
+    active: true,
+    displayNameDe: "Hund",
+    displayNameEn: "Dog",
+    bookingRule: "per_night",
+    fulfillmentMode: "instant",
+    maxOnePerReservation: true,
+    sortOrder: 3,
+  },
+  "TEST-PKW": {
+    serviceId: "TEST-PKW",
+    code: "PKW",
+    active: true,
+    displayNameDe: "Parkplatz",
+    displayNameEn: "Parking",
+    bookingRule: "per_night",
+    fulfillmentMode: "instant",
+    requiresVehicleRegistration: true,
+    sortOrder: 4,
+  },
+  "TEST-BABY": {
+    serviceId: "TEST-BABY",
+    code: "BABY",
+    active: true,
+    displayNameDe: "Babybett",
+    displayNameEn: "Baby cot",
+    bookingRule: "per_stay",
+    fulfillmentMode: "request",
+    sortOrder: 5,
+  },
+  "TEST-EXTRPERSON": {
+    serviceId: "TEST-EXTRPERSON",
+    code: "EXTRPERSON",
+    active: true,
+    displayNameDe: "Zusatzperson",
+    displayNameEn: "Additional guest",
+    actionType: "increase_occupancy",
+    extraPersonPricePerNight: 30,
+    requiresRemainingCapacity: true,
+    fulfillmentMode: "instant",
+    sortOrder: 6,
+  },
+  "TEST-FINALCLEAN": {
+    serviceId: "TEST-FINALCLEAN",
+    code: "FINALCLEAN",
+    active: true,
+    displayNameDe: "Endreinigung",
+    bookingRule: "departure_day",
+    fulfillmentMode: "instant",
+    sortOrder: 7,
+  },
 };
 
 export const EXTENSION_CONFIG = {
@@ -46,14 +112,23 @@ export type Scenario = {
 const R = "JTKQSYFX-1";
 
 export const SCENARIOS: Scenario[] = [
-  { id: "S01", title: "Standardreservierung: Katalog und Verlängerungsangebot", steps: [{ kind: "catalog" }, { kind: "extension-offer" }] },
+  {
+    id: "S01",
+    title: "Standardreservierung: Katalog und Verlängerungsangebot",
+    steps: [{ kind: "catalog" }, { kind: "extension-offer" }],
+  },
   {
     id: "S02",
     title: "Hund bereits gebucht (aus Apaleo direkt)",
     mutate: (s) => {
       (s.services[R] ??= []).push({
         service: { id: "TEST-HUND", code: "HUND", name: "Dog fee" },
-        dates: ["2027-01-12", "2027-01-13"].map((serviceDate) => ({ serviceDate, count: 1, amount: { grossAmount: 15, currency: "EUR" }, isMandatory: false })),
+        dates: ["2027-01-12", "2027-01-13"].map((serviceDate) => ({
+          serviceDate,
+          count: 1,
+          amount: { grossAmount: 15, currency: "EUR" },
+          isMandatory: false,
+        })),
       });
     },
     steps: [{ kind: "catalog" }, { kind: "order", lines: [{ serviceId: "TEST-HUND", count: 1 }] }],
@@ -65,7 +140,10 @@ export const SCENARIOS: Scenario[] = [
       const r = s.reservations[R];
       if (r) r.adults = 5;
     },
-    steps: [{ kind: "catalog" }, { kind: "order", lines: [{ serviceId: "TEST-EXTRPERSON", count: 1 }] }],
+    steps: [
+      { kind: "catalog" },
+      { kind: "order", lines: [{ serviceId: "TEST-EXTRPERSON", count: 1 }] },
+    ],
   },
   {
     id: "S04",
@@ -73,9 +151,17 @@ export const SCENARIOS: Scenario[] = [
     catalog: (c) => {
       if (c["TEST-PKW"]) c["TEST-PKW"].allowedUnitGroupIds = ["TEST-OTHER"];
     },
-    steps: [{ kind: "catalog" }, { kind: "order", lines: [{ serviceId: "TEST-PKW", count: 1, vehiclePlates: ["KN-AB 1"] }] }],
+    steps: [
+      { kind: "catalog" },
+      { kind: "order", lines: [{ serviceId: "TEST-PKW", count: 1, vehiclePlates: ["KN-AB 1"] }] },
+    ],
   },
-  { id: "S05", title: "Vergangener Aufenthalt", env: { arrival: "2026-10-01", departure: "2026-10-03" }, steps: [{ kind: "catalog" }, { kind: "extension-offer" }] },
+  {
+    id: "S05",
+    title: "Vergangener Aufenthalt",
+    env: { arrival: "2026-10-01", departure: "2026-10-03" },
+    steps: [{ kind: "catalog" }, { kind: "extension-offer" }],
+  },
   {
     id: "S06",
     title: "Geänderter Apaleo-Preis (Früher Check-in 25 €)",
@@ -101,7 +187,8 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: "S08",
-    title: "Ungültige Positionen: Menge über Kapazität, Hund ×2, Parken ohne Kennzeichen, Anfrage-Service",
+    title:
+      "Ungültige Positionen: Menge über Kapazität, Hund ×2, Parken ohne Kennzeichen, Anfrage-Service",
     steps: [
       {
         kind: "order",
@@ -119,7 +206,13 @@ export const SCENARIOS: Scenario[] = [
     id: "S09",
     title: "Verlängerung mit Hund und bestehendem Late Check-out",
     steps: [
-      { kind: "order", lines: [{ serviceId: "TEST-HUND", count: 1 }, { serviceId: "TEST-LCO", count: 1 }] },
+      {
+        kind: "order",
+        lines: [
+          { serviceId: "TEST-HUND", count: 1 },
+          { serviceId: "TEST-LCO", count: 1 },
+        ],
+      },
       { kind: "extension-offer" },
       { kind: "extend" },
     ],
@@ -161,7 +254,7 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: "S15",
-    title: "Historischer Wahrheitswert: extensionNightEnabled = \"false\" (Text)",
+    title: 'Historischer Wahrheitswert: extensionNightEnabled = "false" (Text)',
     extensionConfig: { ...EXTENSION_CONFIG, extensionNightEnabled: "false" },
     steps: [{ kind: "extension-offer" }],
   },

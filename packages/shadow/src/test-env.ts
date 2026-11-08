@@ -29,12 +29,52 @@ export const CONTEXT = { tenantId: TENANT, propertyId: PROPERTY, apaleoPropertyI
 
 /** Own-service configuration of the TEST property as in Extras (catalog:TEST). */
 export const TEST_CATALOG = [
-  { serviceId: "TEST-ECI", title: "Früher Check-in", titleEn: "Early check-in", rule: "arrival_day", sort: 1 },
-  { serviceId: "TEST-LCO", title: "Später Check-out", titleEn: "Late check-out", rule: "departure_day", sort: 2 },
-  { serviceId: "TEST-HUND", title: "Hund", titleEn: "Dog", rule: "per_night", sort: 3, maxOne: true },
-  { serviceId: "TEST-PKW", title: "Parkplatz", titleEn: "Parking", rule: "per_night", sort: 4, vehicle: true },
-  { serviceId: "TEST-BABY", title: "Babybett", titleEn: "Baby cot", rule: "per_stay", sort: 5, request: true },
-  { serviceId: "TEST-EXTRPERSON", title: "Zusatzperson", titleEn: "Additional guest", rule: "per_stay", sort: 6, occupancy: 3000 },
+  {
+    serviceId: "TEST-ECI",
+    title: "Früher Check-in",
+    titleEn: "Early check-in",
+    rule: "arrival_day",
+    sort: 1,
+  },
+  {
+    serviceId: "TEST-LCO",
+    title: "Später Check-out",
+    titleEn: "Late check-out",
+    rule: "departure_day",
+    sort: 2,
+  },
+  {
+    serviceId: "TEST-HUND",
+    title: "Hund",
+    titleEn: "Dog",
+    rule: "per_night",
+    sort: 3,
+    maxOne: true,
+  },
+  {
+    serviceId: "TEST-PKW",
+    title: "Parkplatz",
+    titleEn: "Parking",
+    rule: "per_night",
+    sort: 4,
+    vehicle: true,
+  },
+  {
+    serviceId: "TEST-BABY",
+    title: "Babybett",
+    titleEn: "Baby cot",
+    rule: "per_stay",
+    sort: 5,
+    request: true,
+  },
+  {
+    serviceId: "TEST-EXTRPERSON",
+    title: "Zusatzperson",
+    titleEn: "Additional guest",
+    rule: "per_stay",
+    sort: 6,
+    occupancy: 3000,
+  },
 ] as const;
 
 export type ShadowEnv = {
@@ -43,7 +83,11 @@ export type ShadowEnv = {
   apaleo: ApaleoDouble;
   ownerId: string;
   offerIds: Record<string, string>;
-  engine: (options?: { mode?: ServiceWriteMode; now?: Date; apply?: boolean }) => ServiceBookingEngine;
+  engine: (options?: {
+    mode?: ServiceWriteMode;
+    now?: Date;
+    apply?: boolean;
+  }) => ServiceBookingEngine;
   reset: (options?: DoubleOptions) => void;
 };
 

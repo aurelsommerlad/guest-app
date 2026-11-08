@@ -2,7 +2,7 @@ import "server-only";
 
 import {
   apaleoPropertyIdOf,
-  serviceBookingEngine,
+  decisionEngine,
   serviceWriteGateway,
 } from "../../server/apaleo-services";
 import { getDatabase } from "../../server/database";
@@ -15,7 +15,7 @@ export function operationsDeps(): OperationsDeps {
     logger,
     now: () => new Date(),
     gateway: serviceWriteGateway,
-    engine: serviceBookingEngine,
+    engine: decisionEngine,
     apaleoPropertyIdOf,
   };
 }

@@ -4,7 +4,12 @@
  *
  *   DATABASE_URL=… pnpm --filter @up/admin extras:import --target local|staging \
  *     --tenant unique-places --snapshot <dir>/snapshot.json --manifest <dir>/manifest.json \
- *     [--apply] [--report <file>]
+ *     [--apply] [--report <file>] [--images] [--upload-images]
+ *
+ * --images         adds the image migration plan (checksum, type, dimensions, references).
+ * --upload-images  with --apply: uploads referenced images to the storage area "offers"
+ *                  (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GUIDE_MEDIA_BUCKET) and sets them
+ *                  where STAY has no image yet. Never replaces an image chosen in STAY.
  *
  * The production database is refused (its setup and migration are not approved).
  * The snapshot's checksums are verified before anything is read into the database.
@@ -13,6 +18,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import {
+  applyImageMigration,
   assertDatabaseTarget,
   CliUsageError,
   createDatabase,
@@ -20,10 +26,34 @@ import {
   getTenantBySlug,
   importExtrasSnapshot,
   parseDatabaseCliOptions,
+  planImageMigration,
   reconcileExtras,
   renderImportReport,
 } from "@up/db";
 import { type Manifest, type Snapshot, verifySnapshot } from "@up/integrations";
+
+import {
+  createSignedImageUpload,
+  mediaImagePath,
+  publicImageUrl,
+} from "../src/server/media-storage";
+
+function renderImagePlan(plan: ReturnType<typeof planImageMigration>): string {
+  const lines = [
+    "",
+    "## Bilder",
+    "",
+    "| Bild | Bytes | Typ | Größe | SHA-256 | Verwendet von | Hinweise |",
+    "| --- | --- | --- | --- | --- | --- | --- |",
+    ...plan.map(
+      (p) =>
+        `| ${p.imageId.slice(0, 8)} | ${String(p.bytes)} | ${p.info?.type ?? p.storedContentType ?? "–"} | ${
+          p.info ? `${String(p.info.width)}×${String(p.info.height)}` : "–"
+        } | ${p.sha256?.slice(0, 12) ?? "–"} | ${p.references.join(", ") || "–"} | ${p.issues.join(", ") || "–"} |`,
+    ),
+  ];
+  return `${lines.join("\n")}\n`;
+}
 
 function argument(args: readonly string[], name: string): string | undefined {
   const index = args.indexOf(`--${name}`);
@@ -68,7 +98,41 @@ async function main(): Promise<void> {
       actorAdminId: null,
       now: new Date(),
     });
-    const report = renderImportReport(result, await reconcileExtras(db, context, snapshot));
+    let report = renderImportReport(result, await reconcileExtras(db, context, snapshot));
+    if (args.includes("--images") || args.includes("--upload-images")) {
+      const plan = planImageMigration(snapshot);
+      report += renderImagePlan(plan);
+      if (args.includes("--upload-images")) {
+        if (mode !== "apply") throw new CliUsageError("--upload-images requires --apply");
+        const supabaseUrl = process.env["SUPABASE_URL"];
+        const serverKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+        const bucket = process.env["GUIDE_MEDIA_BUCKET"] ?? "guide-media";
+        if (!supabaseUrl || !serverKey) throw new CliUsageError("storage is not configured");
+        const storage = { supabaseUrl, serverKey, bucket };
+        const applied = await applyImageMigration(
+          db,
+          context,
+          snapshot,
+          plan,
+          async ({ bytes, info }) => {
+            const path = mediaImagePath(
+              { tenantId: context.tenantId, module: "offers" },
+              info.type,
+            );
+            const { uploadUrl } = await createSignedImageUpload(storage, path);
+            const response = await fetch(uploadUrl, {
+              method: "PUT",
+              headers: { "Content-Type": info.type },
+              body: Buffer.from(bytes),
+            });
+            if (!response.ok)
+              throw new CliUsageError(`image upload failed (${String(response.status)})`);
+            return { src: publicImageUrl(storage, path) };
+          },
+        );
+        report += `\nBilder hochgeladen: ${String(applied.uploaded)}, gesetzt: ${String(applied.heroImagesSet.length)}, übersprungen: ${String(applied.skipped.length)}\n`;
+      }
+    }
     const reportFile = argument(args, "report");
     if (reportFile) await writeFile(reportFile, report, { mode: 0o600 });
     else console.log(report);

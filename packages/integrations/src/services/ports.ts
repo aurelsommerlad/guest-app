@@ -138,7 +138,9 @@ export type ServiceRecordStore = {
     bookedServiceDates?: readonly string[];
     actorAdminId: string | null;
     now: Date;
-  }): Promise<{ ok: true } | { ok: false; reason: "not-found" | "not-pending" | "handled-in-extras" }>;
+  }): Promise<
+    { ok: true } | { ok: false; reason: "not-found" | "not-pending" | "handled-in-extras" }
+  >;
   addStayExtension(input: {
     tenantId: string;
     propertyId: string;

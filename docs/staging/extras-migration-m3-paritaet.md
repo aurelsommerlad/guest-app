@@ -10,13 +10,13 @@ pnpm --filter @up/shadow parity     # EXTRAS_REPO=<Pfad zu guest-services>, Stan
 
 ## Verfahren
 
-| Baustein | Umsetzung |
-| --- | --- |
-| Extras-Seite | Die echten Extras-Funktionen aus `lib/guest.js`, `lib/requests.js` und `lib/apaleo.js` werden **nur lesend** aus dem lokalen guest-services-Checkout importiert: `getGuestCatalog`, `placeGuestOrder`, `getStayExtensionOffer`, `confirmStayExtension`, `createGuestRequest`, `approveRequest`. Daten liegen in einem temporären lokalen JSON-Speicher. KV- und Slack-Variablen werden vor dem Import entfernt. |
-| STAY-Seite | `ServiceBookingEngine` (`packages/integrations/src/services/booking-engine.ts`) mit PGlite-Datenbank. Gateway im Modus **simuliert**. |
-| Datenweg nach STAY | Ausschließlich über den M1-Import (`importExtrasSnapshot`). Die Konfiguration wird nicht von Hand angelegt. |
-| Apaleo | Für beide Seiten derselbe guest-services-Simulator: Objekt TEST, Reservierung JTKQSYFX-1, Stand 08.11.2026. Er ersetzt `fetch` und weist jeden anderen Host ab. STAYs simulierte Gateway-Befehle wirken auf denselben Simulatorzustand. So lässt sich auch der Endzustand vergleichen. |
-| Vergleich | Feld für Feld, ohne Ausnahmen:<br>• angezeigte Services und Reihenfolge<br>• Preise, Nächte, Daten<br>• Verfügbarkeit, Mengenlimits, Einschränkungen<br>• Texte<br>• Verlängerungsangebot (Phase, Lücke, Rabatt, Zusatzleistungen, Summe)<br>• Buchungsergebnis, Anfrageergebnis<br>• Endzustand in Apaleo: Services, Abreise, Erwachsene, Nachtpreise, Kennzeichen, Kommentar, Folge der Schreibvorgänge |
+| Baustein           | Umsetzung                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extras-Seite       | Die echten Extras-Funktionen aus `lib/guest.js`, `lib/requests.js` und `lib/apaleo.js` werden **nur lesend** aus dem lokalen guest-services-Checkout importiert: `getGuestCatalog`, `placeGuestOrder`, `getStayExtensionOffer`, `confirmStayExtension`, `createGuestRequest`, `approveRequest`. Daten liegen in einem temporären lokalen JSON-Speicher. KV- und Slack-Variablen werden vor dem Import entfernt. |
+| STAY-Seite         | `ServiceBookingEngine` (`packages/integrations/src/services/booking-engine.ts`) mit PGlite-Datenbank. Gateway im Modus **simuliert**.                                                                                                                                                                                                                                                                           |
+| Datenweg nach STAY | Ausschließlich über den M1-Import (`importExtrasSnapshot`). Die Konfiguration wird nicht von Hand angelegt.                                                                                                                                                                                                                                                                                                     |
+| Apaleo             | Für beide Seiten derselbe guest-services-Simulator: Objekt TEST, Reservierung JTKQSYFX-1, Stand 08.11.2026. Er ersetzt `fetch` und weist jeden anderen Host ab. STAYs simulierte Gateway-Befehle wirken auf denselben Simulatorzustand. So lässt sich auch der Endzustand vergleichen.                                                                                                                          |
+| Vergleich          | Feld für Feld, ohne Ausnahmen:<br>• angezeigte Services und Reihenfolge<br>• Preise, Nächte, Daten<br>• Verfügbarkeit, Mengenlimits, Einschränkungen<br>• Texte<br>• Verlängerungsangebot (Phase, Lücke, Rabatt, Zusatzleistungen, Summe)<br>• Buchungsergebnis, Anfrageergebnis<br>• Endzustand in Apaleo: Services, Abreise, Erwachsene, Nachtpreise, Kennzeichen, Kommentar, Folge der Schreibvorgänge       |
 
 Normalisiert werden nur drei technische Dinge, die keine fachlichen Werte betreffen:
 
@@ -28,25 +28,25 @@ Normalisiert werden nur drei technische Dinge, die keine fachlichen Werte betref
 
 17 Szenarien. In den **fachlichen Buchungsergebnissen** sind alle identisch, außer zwei echten Befunden (P-1 und P-2). Abweichende **Texte** sind ein dritter Befund (P-3).
 
-| Szenario | Preise / Verfügbarkeit / Buchung / Endzustand | Texte |
-| --- | --- | --- |
-| S01 Standardreservierung: Katalog und Verlängerungsangebot | identisch | P-3 |
-| S02 Hund bereits in Apaleo gebucht (`maxQuantity` 0, `alreadyBooked`, Bestellung abgewiesen) | identisch | P-3 |
-| S03 Keine Restkapazität (Zusatzperson ausgeblendet, Bestellung abgewiesen) | identisch | P-3 |
-| S04 Apartmenttyp für Parken nicht erlaubt (angezeigt, gesperrt, abgewiesen) | identisch | P-3 |
-| S05 Vergangener Aufenthalt (leerer Katalog, kein Angebot) | identisch | – |
-| S06 Geänderter Apaleo-Preis (25 € statt 20 € angezeigt und gebucht) | identisch | P-3 |
-| S07 Mehrtägig: Hund, 2 Parkplätze mit 2 Kennzeichen, Früher Check-in, 2 Zusatzpersonen | identisch, auch die Folge der 7 Schreibvorgänge | – |
-| S08 Ungültige Positionen: Kapazität, Hund ×2, fehlendes Kennzeichen, Anfrage-Service | identisch, gleiche Fehlergründe | – |
-| S09 Verlängerung mit Hund und bestehendem Late Check-out | identisch:<br>• Nacht 89,10 €<br>• Hund verlängert<br>• LCO auf neue Abreise<br>• Endreinigung verschoben<br>• Status `confirmed` | – |
-| S10 Verlängerung im Haus (Rabatt im Haus) | identisch | – |
-| S11 Folgenacht ausgebucht: kein Angebot | identisch | – |
-| S12 Lücke von genau einer Nacht: Lückenrabatt 15 %, 84,15 € | identisch | – |
-| S13 Anfrage Babybett anlegen und bestätigen (ein book-service, Kommentar) | identisch | – |
-| S14 Anfrage mit zu geringer Verfügbarkeit: Bestätigung abgewiesen | identisch | – |
-| S15 Historischer Wahrheitswert `"false"` | **P-1** | – |
-| S16 Zusatzperson mit leerem Preis | **P-2** | P-3 |
-| S17 Inaktiver Eintrag, fehlende Reihenfolge | identisch | P-3 |
+| Szenario                                                                                     | Preise / Verfügbarkeit / Buchung / Endzustand                                                                                     | Texte |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| S01 Standardreservierung: Katalog und Verlängerungsangebot                                   | identisch                                                                                                                         | P-3   |
+| S02 Hund bereits in Apaleo gebucht (`maxQuantity` 0, `alreadyBooked`, Bestellung abgewiesen) | identisch                                                                                                                         | P-3   |
+| S03 Keine Restkapazität (Zusatzperson ausgeblendet, Bestellung abgewiesen)                   | identisch                                                                                                                         | P-3   |
+| S04 Apartmenttyp für Parken nicht erlaubt (angezeigt, gesperrt, abgewiesen)                  | identisch                                                                                                                         | P-3   |
+| S05 Vergangener Aufenthalt (leerer Katalog, kein Angebot)                                    | identisch                                                                                                                         | –     |
+| S06 Geänderter Apaleo-Preis (25 € statt 20 € angezeigt und gebucht)                          | identisch                                                                                                                         | P-3   |
+| S07 Mehrtägig: Hund, 2 Parkplätze mit 2 Kennzeichen, Früher Check-in, 2 Zusatzpersonen       | identisch, auch die Folge der 7 Schreibvorgänge                                                                                   | –     |
+| S08 Ungültige Positionen: Kapazität, Hund ×2, fehlendes Kennzeichen, Anfrage-Service         | identisch, gleiche Fehlergründe                                                                                                   | –     |
+| S09 Verlängerung mit Hund und bestehendem Late Check-out                                     | identisch:<br>• Nacht 89,10 €<br>• Hund verlängert<br>• LCO auf neue Abreise<br>• Endreinigung verschoben<br>• Status `confirmed` | –     |
+| S10 Verlängerung im Haus (Rabatt im Haus)                                                    | identisch                                                                                                                         | –     |
+| S11 Folgenacht ausgebucht: kein Angebot                                                      | identisch                                                                                                                         | –     |
+| S12 Lücke von genau einer Nacht: Lückenrabatt 15 %, 84,15 €                                  | identisch                                                                                                                         | –     |
+| S13 Anfrage Babybett anlegen und bestätigen (ein book-service, Kommentar)                    | identisch                                                                                                                         | –     |
+| S14 Anfrage mit zu geringer Verfügbarkeit: Bestätigung abgewiesen                            | identisch                                                                                                                         | –     |
+| S15 Historischer Wahrheitswert `"false"`                                                     | **P-1**                                                                                                                           | –     |
+| S16 Zusatzperson mit leerem Preis                                                            | **P-2**                                                                                                                           | P-3   |
+| S17 Inaktiver Eintrag, fehlende Reihenfolge                                                  | identisch                                                                                                                         | P-3   |
 
 ## Abweichungen: Ursache und fachlich richtige Lösung
 
@@ -101,16 +101,16 @@ Keine Abweichung wurde stillschweigend angeglichen. STAY zeigt in P-1 und P-2 da
 
 ## Bewusste Unterschiede (nicht Teil der Parität, weil Extras sie nicht kennt)
 
-| Thema | Extras | STAY | Grund |
-| --- | --- | --- | --- |
-| Schreibweg | direkter Apaleo-Aufruf | jedes Schreiben über das Gateway:<br>• Idempotenzschlüssel je Schreibvorgang<br>• Richtlinie (Modus, Schreiber, Objekt-Freigabe, Reservierung des Objekts)<br>• Protokoll | Nachvollziehbarkeit, keine Doppelbuchung bei Wiederholung |
-| Sperren | `setIfNotExists` **ohne Ablauf**: Nach einem Absturz bleibt die Sperre für immer stehen (z. B. kein zweiter Hund, keine Verlängerung mehr) | `service_locks` mit 120 s Ablauf | Verhindert dauerhaft blockierte Reservierungen |
-| Doppelklick bei der Bestellung | zweiter Klick läuft erneut durch, durch Sperren und Neuprüfung meist abgefangen | Client-Idempotenzschlüssel:<br>• gleiche Bestellung → gespeichertes Ergebnis<br>• parallel → „in Bearbeitung“<br>• abgebrochen → Fortsetzung nach 120 s | Kein doppelter Kommentar, keine doppelte Benachrichtigung |
-| Preisänderung zwischen Anzeige und Buchung | bucht den neuen Preis ohne Rückfrage | wie Extras, wenn die Oberfläche keinen Preis mitschickt. Mit `expectedUnitPrice`: Position mit `price_changed` abgewiesen, nichts geschrieben | Gast bestätigt nie einen anderen Preis als angezeigt |
-| Veröffentlichung | `active` genügt | zusätzlich: Angebot in STAY veröffentlicht. Der Schattenvergleich wertet Entwürfe ein (`includeUnpublished`) | Redaktionelle Freigabe vor dem Go-live |
-| Slack | direkt an den Webhook | nur in die Ausgangswarteschlange (`notification_outbox`, Status `pending`). Es gibt keinen Versand | Keine produktiven Slack-Nachrichten vor M4 |
-| Verlängerung im Modus „simuliert“ ohne Zustand | – | Ohne Simulator-Zustand ändert sich Apaleo nicht. Die Prüfung nach dem Schreiben wird als „nicht prüfbar“ (`skipped_simulated`) gespeichert, nie als bestätigt | Keine falsche Erfolgsmeldung |
-| Zeitstempel im Kommentar | Zeitzone des Servers (Vercel: UTC) | Europe/Berlin | Lesbarkeit für das Team |
+| Thema                                          | Extras                                                                                                                                     | STAY                                                                                                                                                                      | Grund                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Schreibweg                                     | direkter Apaleo-Aufruf                                                                                                                     | jedes Schreiben über das Gateway:<br>• Idempotenzschlüssel je Schreibvorgang<br>• Richtlinie (Modus, Schreiber, Objekt-Freigabe, Reservierung des Objekts)<br>• Protokoll | Nachvollziehbarkeit, keine Doppelbuchung bei Wiederholung |
+| Sperren                                        | `setIfNotExists` **ohne Ablauf**: Nach einem Absturz bleibt die Sperre für immer stehen (z. B. kein zweiter Hund, keine Verlängerung mehr) | `service_locks` mit 120 s Ablauf                                                                                                                                          | Verhindert dauerhaft blockierte Reservierungen            |
+| Doppelklick bei der Bestellung                 | zweiter Klick läuft erneut durch, durch Sperren und Neuprüfung meist abgefangen                                                            | Client-Idempotenzschlüssel:<br>• gleiche Bestellung → gespeichertes Ergebnis<br>• parallel → „in Bearbeitung“<br>• abgebrochen → Fortsetzung nach 120 s                   | Kein doppelter Kommentar, keine doppelte Benachrichtigung |
+| Preisänderung zwischen Anzeige und Buchung     | bucht den neuen Preis ohne Rückfrage                                                                                                       | wie Extras, wenn die Oberfläche keinen Preis mitschickt. Mit `expectedUnitPrice`: Position mit `price_changed` abgewiesen, nichts geschrieben                             | Gast bestätigt nie einen anderen Preis als angezeigt      |
+| Veröffentlichung                               | `active` genügt                                                                                                                            | zusätzlich: Angebot in STAY veröffentlicht. Der Schattenvergleich wertet Entwürfe ein (`includeUnpublished`)                                                              | Redaktionelle Freigabe vor dem Go-live                    |
+| Slack                                          | direkt an den Webhook                                                                                                                      | nur in die Ausgangswarteschlange (`notification_outbox`, Status `pending`). Es gibt keinen Versand                                                                        | Keine produktiven Slack-Nachrichten vor M4                |
+| Verlängerung im Modus „simuliert“ ohne Zustand | –                                                                                                                                          | Ohne Simulator-Zustand ändert sich Apaleo nicht. Die Prüfung nach dem Schreiben wird als „nicht prüfbar“ (`skipped_simulated`) gespeichert, nie als bestätigt             | Keine falsche Erfolgsmeldung                              |
+| Zeitstempel im Kommentar                       | Zeitzone des Servers (Vercel: UTC)                                                                                                         | Europe/Berlin                                                                                                                                                             | Lesbarkeit für das Team                                   |
 
 ## Gleich übernommene Lücken (für M4 vorgeschlagen, nicht still geändert)
 

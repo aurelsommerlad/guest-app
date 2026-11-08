@@ -220,6 +220,16 @@ export class ServiceBookingEngine {
     return this.#gateway.mode;
   }
 
+  /** Reads a reservation (read-only); unknown → null. */
+  async readReservation(reservationId: string): Promise<ReservationForServices | null> {
+    try {
+      return await this.#reader.getReservation(reservationId);
+    } catch (error) {
+      if (error instanceof PmsError && error.kind === "not-found") return null;
+      throw error;
+    }
+  }
+
   /* ── Catalog (Extras getGuestCatalog) ────────────────────────────────────────────────── */
 
   async getGuestCatalog(
@@ -268,11 +278,7 @@ export class ServiceBookingEngine {
     const bookedQuantities = new Map<string, number>();
     if (dogIds.length) {
       const existing = await this.#reader.getBookedServices(reservation.id);
-      for (const id of dogIds)
-        bookedQuantities.set(
-          id,
-          countBookedServiceQuantity(existing, id),
-        );
+      for (const id of dogIds) bookedQuantities.set(id, countBookedServiceQuantity(existing, id));
     }
 
     type Candidate = {
@@ -339,58 +345,60 @@ export class ServiceBookingEngine {
     }
     candidates.sort((a, b) => compareBySortOrder(a.item, b.item));
 
-    const items = candidates.map(({ item, bookingRule, nights, unitPrice, price, serviceDates }) => {
-      const booked = bookedQuantities.get(item.serviceId) ?? 0;
-      const capacityGated =
-        item.requiresRemainingCapacity || item.actionType === "increase_occupancy";
-      return {
-        offerId: item.offerId,
-        serviceId: item.serviceId,
-        // STAY texts; a missing language falls back to the other one (never to the id).
-        displayName: resolveBilingualText({
-          overrideDe: item.title.de,
-          overrideEn: item.title.en,
-          apaleoDe: item.title.de,
-          apaleoEn: item.title.en,
-          finalFallback: item.serviceId,
-        }),
-        description: resolveBilingualText({
-          overrideDe: item.description.de,
-          overrideEn: item.description.en,
-          apaleoDe: item.description.de,
-          apaleoEn: item.description.en,
-          finalFallback: "",
-        }),
-        category: item.category,
-        imageUrl: item.imageUrl,
-        bookingRule,
-        actionType: item.actionType,
-        fulfillmentMode: item.fulfillment,
-        priceUnitLabel: resolveBilingualPriceUnitLabel({
-          overrideDe: item.priceUnitLabel?.de,
-          overrideEn: item.priceUnitLabel?.en,
+    const items = candidates.map(
+      ({ item, bookingRule, nights, unitPrice, price, serviceDates }) => {
+        const booked = bookedQuantities.get(item.serviceId) ?? 0;
+        const capacityGated =
+          item.requiresRemainingCapacity || item.actionType === "increase_occupancy";
+        return {
+          offerId: item.offerId,
+          serviceId: item.serviceId,
+          // STAY texts; a missing language falls back to the other one (never to the id).
+          displayName: resolveBilingualText({
+            overrideDe: item.title.de,
+            overrideEn: item.title.en,
+            apaleoDe: item.title.de,
+            apaleoEn: item.title.en,
+            finalFallback: item.serviceId,
+          }),
+          description: resolveBilingualText({
+            overrideDe: item.description.de,
+            overrideEn: item.description.en,
+            apaleoDe: item.description.de,
+            apaleoEn: item.description.en,
+            finalFallback: "",
+          }),
+          category: item.category,
+          imageUrl: item.imageUrl,
           bookingRule,
-        }),
-        unitPrice,
-        nights,
-        price,
-        serviceDates,
-        unitGroupRestricted: !isUnitGroupAllowed(item.allowedUnitGroupIds, unitGroupId),
-        maxQuantity: capacityGated
-          ? remainingCapacity
-          : item.maxOnePerReservation
-            ? booked >= 1
-              ? 0
-              : 1
+          actionType: item.actionType,
+          fulfillmentMode: item.fulfillment,
+          priceUnitLabel: resolveBilingualPriceUnitLabel({
+            overrideDe: item.priceUnitLabel?.de,
+            overrideEn: item.priceUnitLabel?.en,
+            bookingRule,
+          }),
+          unitPrice,
+          nights,
+          price,
+          serviceDates,
+          unitGroupRestricted: !isUnitGroupAllowed(item.allowedUnitGroupIds, unitGroupId),
+          maxQuantity: capacityGated
+            ? remainingCapacity
+            : item.maxOnePerReservation
+              ? booked >= 1
+                ? 0
+                : 1
+              : null,
+          maxOnePerReservation: item.maxOnePerReservation,
+          alreadyBooked: item.maxOnePerReservation ? booked >= 1 : false,
+          requiresVehicleRegistration: item.requiresVehicleRegistration,
+          existingVehicleRegistration: item.requiresVehicleRegistration
+            ? (reservation.primaryGuest?.vehicleRegistration?.number ?? null)
             : null,
-        maxOnePerReservation: item.maxOnePerReservation,
-        alreadyBooked: item.maxOnePerReservation ? booked >= 1 : false,
-        requiresVehicleRegistration: item.requiresVehicleRegistration,
-        existingVehicleRegistration: item.requiresVehicleRegistration
-          ? (reservation.primaryGuest?.vehicleRegistration?.number ?? null)
-          : null,
-      } satisfies GuestCatalogItem;
-    });
+        } satisfies GuestCatalogItem;
+      },
+    );
     return { items, pastStay: false, hidden };
   }
 
@@ -513,7 +521,8 @@ export class ServiceBookingEngine {
         continue;
       }
       try {
-        if (isOccupancy) await this.#increaseOccupancy(context, bookingId, reservation, item, count);
+        if (isOccupancy)
+          await this.#increaseOccupancy(context, bookingId, reservation, item, count);
         else await this.#bookServiceLine(context, bookingId, reservation, item, count, plates);
         booked.push({ ...item, count });
         await record(item, line, "booked", null);
@@ -572,7 +581,8 @@ export class ServiceBookingEngine {
       const fresh = await this.#reader.getReservation(reservation.id);
       const unitGroupId = getReservationUnitGroupId(fresh);
       const unitGroup = unitGroupId ? await this.#unitGroupOrNull(unitGroupId) : null;
-      if (count > getRemainingCapacity(unitGroup, fresh)) throw new EngineError("capacity_exceeded");
+      if (count > getRemainingCapacity(unitGroup, fresh))
+        throw new EngineError("capacity_exceeded");
       const payload = buildOccupancyAmendmentPayload({
         reservation: fresh,
         timeSlices: fresh.timeSlices,
@@ -598,8 +608,7 @@ export class ServiceBookingEngine {
     const book = async () => {
       if (item.maxOnePerReservation) {
         const fresh = await this.#reader.getBookedServices(reservation.id);
-        if (hasReachedDogLimit(fresh, item.serviceId))
-          throw new EngineError("dog_limit_exceeded");
+        if (hasReachedDogLimit(fresh, item.serviceId)) throw new EngineError("dog_limit_exceeded");
       }
       const run = async () => {
         if (plates) {
@@ -623,18 +632,23 @@ export class ServiceBookingEngine {
             }
           }
         }
-        await this.#mustWrite(context, reservation.id, `order:${bookingId}:${item.serviceId}:book`, {
-          operation: "book-service",
-          serviceId: item.serviceId,
-          count,
-          dates: (item.serviceDates ?? []).map((serviceDate) => ({
-            serviceDate,
+        await this.#mustWrite(
+          context,
+          reservation.id,
+          `order:${bookingId}:${item.serviceId}:book`,
+          {
+            operation: "book-service",
+            serviceId: item.serviceId,
             count,
-            ...(item.unitPrice
-              ? { amount: { amount: item.unitPrice.amount, currency: item.unitPrice.currency } }
-              : {}),
-          })),
-        });
+            dates: (item.serviceDates ?? []).map((serviceDate) => ({
+              serviceDate,
+              count,
+              ...(item.unitPrice
+                ? { amount: { amount: item.unitPrice.amount, currency: item.unitPrice.currency } }
+                : {}),
+            })),
+          },
+        );
       };
       if (plates) await this.#withLock(context, `vehicle:${reservation.id}:${item.serviceId}`, run);
       else await run();
@@ -695,10 +709,13 @@ export class ServiceBookingEngine {
     context: EngineContext,
     requestId: string,
     actorAdminId: string | null,
-  ): Promise<{ ok: true; alreadyBooked: boolean; simulated: boolean } | { ok: false; reason: string }> {
+  ): Promise<
+    { ok: true; alreadyBooked: boolean; simulated: boolean } | { ok: false; reason: string }
+  > {
     const holder = this.#newId();
     const processKey = `reqproc:${requestId}`;
-    if (!(await this.#claim(context, processKey, holder))) return { ok: false, reason: "in_progress" };
+    if (!(await this.#claim(context, processKey, holder)))
+      return { ok: false, reason: "in_progress" };
     try {
       const request = await this.#records.getRequest(context, requestId);
       if (!request || request.propertyId !== context.propertyId)
@@ -723,8 +740,7 @@ export class ServiceBookingEngine {
         );
         if (pastStay) return { ok: false, reason: "past_stay" };
         const offer = offers.find((o) => o.service.id === serviceId) as
-          | ApaleoServiceOffer
-          | undefined;
+          ApaleoServiceOffer | undefined;
         if (!offer) return { ok: false, reason: "no_offer" };
         item = (await this.#records.loadCatalog(context)).find((i) => i.serviceId === serviceId);
         if (!item?.active) return { ok: false, reason: "inactive" };
@@ -753,27 +769,38 @@ export class ServiceBookingEngine {
       const catalogItem = item;
       const state = { alreadyBooked: false, simulated: false };
       const book = async (): Promise<string | null> => {
-        const fresh = (await this.#reader.getBookedServices(reservation.id)) as ApaleoBookedService[];
+        const fresh = (await this.#reader.getBookedServices(
+          reservation.id,
+        )) as ApaleoBookedService[];
         const existing = compareExistingBooking(fresh, serviceId, requiredDates, quantity);
-        if (catalogItem.maxOnePerReservation && hasReachedDogLimit(fresh, serviceId) && existing !== "complete")
+        if (
+          catalogItem.maxOnePerReservation &&
+          hasReachedDogLimit(fresh, serviceId) &&
+          existing !== "complete"
+        )
           return "dog_limit_exceeded";
         if (existing === "conflict") return "existing_booking_conflict";
         state.alreadyBooked = existing === "complete";
         if (state.alreadyBooked) return null;
-        const result = await this.#write(context, reservation.id, `req:${requestId}:book`, {
-          operation: "book-service",
-          serviceId,
-          count: quantity,
-          dates: requiredDates.map((serviceDate) => ({ serviceDate, count: quantity })),
-        }, actorAdminId);
+        const result = await this.#write(
+          context,
+          reservation.id,
+          `req:${requestId}:book`,
+          {
+            operation: "book-service",
+            serviceId,
+            count: quantity,
+            dates: requiredDates.map((serviceDate) => ({ serviceDate, count: quantity })),
+          },
+          actorAdminId,
+        );
         if (!result.ok) return `booking_failed:${result.code}`;
         state.simulated = result.simulated;
         return null;
       };
       let failure: string | null;
       try {
-        const inner = () =>
-          this.#withLock(context, `reqbook:${reservation.id}:${serviceId}`, book);
+        const inner = () => this.#withLock(context, `reqbook:${reservation.id}:${serviceId}`, book);
         failure = catalogItem.maxOnePerReservation
           ? await this.#withLock(context, `dog:${reservation.id}:${serviceId}`, inner)
           : await inner();
@@ -783,10 +810,16 @@ export class ServiceBookingEngine {
       if (failure) return { ok: false, reason: failure };
 
       if (!state.alreadyBooked) {
-        await this.#write(context, reservation.id, `req:${requestId}:comment`, {
-          operation: "append-comment",
-          text: `[Gäste-Portal ${formatDateTime(this.#now())}] Anfrage bestätigt: ${String(quantity)}x ${request.serviceName}`,
-        }, actorAdminId).catch(() => undefined);
+        await this.#write(
+          context,
+          reservation.id,
+          `req:${requestId}:comment`,
+          {
+            operation: "append-comment",
+            text: `[Gäste-Portal ${formatDateTime(this.#now())}] Anfrage bestätigt: ${String(quantity)}x ${request.serviceName}`,
+          },
+          actorAdminId,
+        ).catch(() => undefined);
       }
       const done = await this.#records.completeRequest({
         tenantId: context.tenantId,
@@ -862,7 +895,11 @@ export class ServiceBookingEngine {
   }
 
   /** Offer eligibility + price; null whenever any condition fails (fail closed). */
-  async #computeExtension(context: EngineContext, fresh: ReservationForServices, config: StayExtensionSettings) {
+  async #computeExtension(
+    context: EngineContext,
+    fresh: ReservationForServices,
+    config: StayExtensionSettings,
+  ) {
     if (!config.extensionNightEnabled) return null;
     const allowed =
       (fresh.actions ?? []).find((a) => a.action === "AmendDeparture")?.isAllowed === true;
@@ -906,7 +943,12 @@ export class ServiceBookingEngine {
       if (!fresh || fresh.property.id !== context.apaleoPropertyId) return null;
       const computed = await this.#computeExtension(context, fresh, config);
       if (!computed) return null;
-      return await this.#attachPreview(computed.offer, fresh, computed.arrivalDate, computed.departureDate);
+      return await this.#attachPreview(
+        computed.offer,
+        fresh,
+        computed.arrivalDate,
+        computed.departureDate,
+      );
     } catch {
       // Never let this optional upsell break the catalog (as in Extras).
       return null;
@@ -922,7 +964,9 @@ export class ServiceBookingEngine {
     let extras: StayExtensionOffer["extras"] = [];
     let cityTax: Money | null = null;
     try {
-      const services = (await this.#reader.getBookedServices(reservation.id)) as ApaleoBookedService[];
+      const services = (await this.#reader.getBookedServices(
+        reservation.id,
+      )) as ApaleoBookedService[];
       const { toExtend } = findExtendableServices({
         services,
         arrivalDate,
@@ -973,7 +1017,8 @@ export class ServiceBookingEngine {
       const fresh = await this.#reader.getReservationForExtension(input.reservationId);
       if (!fresh || fresh.property.id !== context.apaleoPropertyId) return unavailable;
       const currentDeparture = getDepartureDate(fresh);
-      if (!currentDeparture || currentDeparture !== input.expectedCurrentDeparture) return unavailable;
+      if (!currentDeparture || currentDeparture !== input.expectedCurrentDeparture)
+        return unavailable;
       const config = await this.#records.getExtensionSettings(context);
       const computed = await this.#computeExtension(context, fresh, config);
       if (!computed) return unavailable;
@@ -1010,7 +1055,11 @@ export class ServiceBookingEngine {
         alreadyDone?: boolean;
         amount?: Money;
         error?: string;
-      }[] = alreadyExtended.map((s) => ({ serviceId: s.serviceId, extended: true, alreadyDone: true }));
+      }[] = alreadyExtended.map((s) => ({
+        serviceId: s.serviceId,
+        extended: true,
+        alreadyDone: true,
+      }));
       for (const service of toExtend) {
         const dates = buildServiceExtensionDates({
           existingDates: service.existingDates,
@@ -1086,10 +1135,15 @@ export class ServiceBookingEngine {
         const after = await this.#reader.getReservationForExtension(fresh.id);
         newDepartureConfirmed = getDepartureDate(after) === offer.newDeparture;
         if (fresh.hasCityTax) {
-          const found = findCityTaxAmount(await this.#reader.listReservationFolios(fresh.id), newNight);
+          const found = findCityTaxAmount(
+            await this.#reader.listReservationFolios(fresh.id),
+            newNight,
+          );
           cityTax = { applicable: true, verified: Boolean(found), amount: found };
         }
-        const servicesAfter = (await this.#reader.getBookedServices(fresh.id)) as ApaleoBookedService[];
+        const servicesAfter = (await this.#reader.getBookedServices(
+          fresh.id,
+        )) as ApaleoBookedService[];
         const mandatoryAfter = mandatoryServiceIds(servicesAfter);
         mandatoryIntact = [...mandatoryBefore].every((id) => mandatoryAfter.has(id));
         for (const move of moves) {

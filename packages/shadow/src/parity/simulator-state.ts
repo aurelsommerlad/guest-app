@@ -31,13 +31,22 @@ export type SimReservation = {
   unit?: { id: string; unitGroupId: string };
   unitGroup: { id: string };
   primaryGuest: { vehicleRegistration?: { number: string; countryCode: string } };
-  timeSlices: { serviceDate: string; ratePlan: { id: string }; totalGrossAmount: { amount: number; currency: string } }[];
+  timeSlices: {
+    serviceDate: string;
+    ratePlan: { id: string };
+    totalGrossAmount: { amount: number; currency: string };
+  }[];
   actions: { action: string; isAllowed: boolean }[];
   hasCityTax: boolean;
 };
 export type SimService = {
   service: { id: string; code: string; name: string };
-  dates: { serviceDate: string; count: number; amount: { grossAmount: number; currency: string }; isMandatory: boolean }[];
+  dates: {
+    serviceDate: string;
+    count: number;
+    amount: { grossAmount: number; currency: string };
+    isMandatory: boolean;
+  }[];
   isMandatory?: boolean;
 };
 
@@ -47,7 +56,8 @@ export const statePath = () => {
   return path;
 };
 
-export const readState = (): SimState => JSON.parse(fs.readFileSync(statePath(), "utf8")) as SimState;
+export const readState = (): SimState =>
+  JSON.parse(fs.readFileSync(statePath(), "utf8")) as SimState;
 export const writeState = (state: SimState) => {
   fs.writeFileSync(statePath(), JSON.stringify(state, null, 2));
 };
@@ -80,7 +90,10 @@ export function applyToSimulator(request: ServiceWriteRequest): void {
       dates: c.dates.map((d) => ({
         serviceDate: d.serviceDate,
         count: d.count ?? c.count ?? 1,
-        amount: { grossAmount: d.amount?.amount ?? def.price, currency: d.amount?.currency ?? "EUR" },
+        amount: {
+          grossAmount: d.amount?.amount ?? def.price,
+          currency: d.amount?.currency ?? "EUR",
+        },
         isMandatory: false,
       })),
     };
@@ -99,12 +112,16 @@ export function applyToSimulator(request: ServiceWriteRequest): void {
     const list = nights(reservation.arrival, reservation.departure);
     reservation.timeSlices = list.map((serviceDate, i) => ({
       serviceDate,
-      ratePlan: { ...reservation.ratePlan, id: body.timeSlices[i]?.ratePlanId ?? reservation.ratePlan.id },
+      ratePlan: {
+        ...reservation.ratePlan,
+        id: body.timeSlices[i]?.ratePlanId ?? reservation.ratePlan.id,
+      },
       totalGrossAmount: body.timeSlices[i]?.totalGrossAmount ?? { amount: 99, currency: "EUR" },
     }));
     if (reservation.departure.slice(0, 10) !== oldDeparture) {
       for (const s of state.services[id] ?? []) {
-        if (s.isMandatory) s.dates = s.dates.map((d) => ({ ...d, serviceDate: list.at(-1) ?? d.serviceDate }));
+        if (s.isMandatory)
+          s.dates = s.dates.map((d) => ({ ...d, serviceDate: list.at(-1) ?? d.serviceDate }));
       }
     }
   } else if (c.operation === "update-vehicle") {

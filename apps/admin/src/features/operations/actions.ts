@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "../auth/server";
@@ -45,5 +46,7 @@ export async function decideRequestAction(
   );
   const key = result.ok ? "notice" : "error";
   const text = result.ok ? result.message : result.error;
+  // The open-request counter lives in the shared layout.
+  if (result.ok) revalidatePath("/", "layout");
   redirect(`/requests/r/${encodeURIComponent(requestId)}?${key}=${encodeURIComponent(text)}`);
 }

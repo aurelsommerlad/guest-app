@@ -15,7 +15,13 @@ export function PasswordForm() {
   return (
     <form action={action} className="flex max-w-120 flex-col gap-5">
       <Field label="Aktuelles Passwort" htmlFor="current">
-        <Input id="current" name="current" type="password" autoComplete="current-password" required />
+        <Input
+          id="current"
+          name="current"
+          type="password"
+          autoComplete="current-password"
+          required
+        />
       </Field>
       <Field
         label="Neues Passwort"

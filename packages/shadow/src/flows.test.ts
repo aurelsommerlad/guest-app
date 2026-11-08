@@ -15,7 +15,8 @@ function freshReservation(options: Parameters<ShadowEnv["reset"]>[0] = {}) {
   env.reset({ reservationId, ...options });
   return reservationId;
 }
-const key = (label: string) => `order-${label}-${String(counter)}-${Math.random().toString(36).slice(2, 8)}`;
+const key = (label: string) =>
+  `order-${label}-${String(counter)}-${Math.random().toString(36).slice(2, 8)}`;
 const simulatedWrites = () => env.apaleo.state.calls.filter((c) => c.method.startsWith("SIM:"));
 
 beforeAll(async () => {
@@ -39,7 +40,11 @@ describe("catalog", () => {
       "TEST-BABY",
       "TEST-EXTRPERSON",
     ]);
-    expect(byId["TEST-ECI"]).toMatchObject({ price: { amount: 20 }, serviceDates: ["2027-01-12"], maxQuantity: null });
+    expect(byId["TEST-ECI"]).toMatchObject({
+      price: { amount: 20 },
+      serviceDates: ["2027-01-12"],
+      maxQuantity: null,
+    });
     expect(byId["TEST-LCO"]).toMatchObject({ price: { amount: 20 }, serviceDates: ["2027-01-14"] });
     expect(byId["TEST-HUND"]).toMatchObject({
       unitPrice: { amount: 15 },
@@ -49,7 +54,10 @@ describe("catalog", () => {
       maxQuantity: 1,
       alreadyBooked: false,
     });
-    expect(byId["TEST-PKW"]).toMatchObject({ requiresVehicleRegistration: true, price: { amount: 0 } });
+    expect(byId["TEST-PKW"]).toMatchObject({
+      requiresVehicleRegistration: true,
+      price: { amount: 0 },
+    });
     expect(byId["TEST-BABY"]).toMatchObject({ fulfillmentMode: "request", price: { amount: 15 } });
     expect(byId["TEST-EXTRPERSON"]).toMatchObject({
       bookingRule: "per_person_per_night",
@@ -82,13 +90,19 @@ describe("guest orders", () => {
     });
     expect(result).toMatchObject({ status: "completed", simulated: true, failed: [] });
     const booked = env.apaleo.booked(id);
-    expect(booked.find((s) => s.service.id === "TEST-HUND")?.dates.map((d) => d.serviceDate)).toEqual([
-      "2027-01-12",
-      "2027-01-13",
+    expect(
+      booked.find((s) => s.service.id === "TEST-HUND")?.dates.map((d) => d.serviceDate),
+    ).toEqual(["2027-01-12", "2027-01-13"]);
+    expect(booked.find((s) => s.service.id === "TEST-PKW")?.dates.map((d) => d.count)).toEqual([
+      2, 2,
     ]);
-    expect(booked.find((s) => s.service.id === "TEST-PKW")?.dates.map((d) => d.count)).toEqual([2, 2]);
-    expect(env.apaleo.reservation(id).primaryGuest.vehicleRegistration).toEqual({ number: "KN-AB 1", countryCode: "DE" });
-    expect(env.apaleo.reservation(id).comment).toContain("Parking vehicles:\n1. KN-AB 1\n2. FN-CD 2");
+    expect(env.apaleo.reservation(id).primaryGuest.vehicleRegistration).toEqual({
+      number: "KN-AB 1",
+      countryCode: "DE",
+    });
+    expect(env.apaleo.reservation(id).comment).toContain(
+      "Parking vehicles:\n1. KN-AB 1\n2. FN-CD 2",
+    );
     expect(env.apaleo.reservation(id).comment).toMatch(/Extras gebucht: 1x Hund, 2x Parkplatz/);
     expect(simulatedWrites().map((c) => c.method)).toEqual([
       "SIM:book-service",
@@ -105,11 +119,23 @@ describe("guest orders", () => {
     const id = freshReservation();
     const k = key("double");
     const engine = env.engine();
-    const first = await engine.placeOrder(CONTEXT, { reservationId: id, idempotencyKey: k, lines: [{ serviceId: "TEST-ECI", count: 1 }] });
+    const first = await engine.placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: k,
+      lines: [{ serviceId: "TEST-ECI", count: 1 }],
+    });
     const writes = simulatedWrites().length;
-    const second = await engine.placeOrder(CONTEXT, { reservationId: id, idempotencyKey: k, lines: [{ serviceId: "TEST-ECI", count: 1 }] });
+    const second = await engine.placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: k,
+      lines: [{ serviceId: "TEST-ECI", count: 1 }],
+    });
     expect(first).toMatchObject({ status: "completed", replayed: false });
-    expect(second).toMatchObject({ status: "completed", replayed: true, bookingId: first.bookingId });
+    expect(second).toMatchObject({
+      status: "completed",
+      replayed: true,
+      bookingId: first.bookingId,
+    });
     expect(simulatedWrites().length).toBe(writes);
   });
 
@@ -118,8 +144,16 @@ describe("guest orders", () => {
     const k = key("parallel-same");
     const engine = env.engine();
     const [a, b] = await Promise.all([
-      engine.placeOrder(CONTEXT, { reservationId: id, idempotencyKey: k, lines: [{ serviceId: "TEST-ECI", count: 1 }] }),
-      engine.placeOrder(CONTEXT, { reservationId: id, idempotencyKey: k, lines: [{ serviceId: "TEST-ECI", count: 1 }] }),
+      engine.placeOrder(CONTEXT, {
+        reservationId: id,
+        idempotencyKey: k,
+        lines: [{ serviceId: "TEST-ECI", count: 1 }],
+      }),
+      engine.placeOrder(CONTEXT, {
+        reservationId: id,
+        idempotencyKey: k,
+        lines: [{ serviceId: "TEST-ECI", count: 1 }],
+      }),
     ]);
     expect([a.status, b.status].sort()).toEqual(["completed", "in_progress"]);
     expect(simulatedWrites().filter((c) => c.method === "SIM:book-service")).toHaveLength(1);
@@ -130,16 +164,26 @@ describe("guest orders", () => {
     const engine = env.engine();
     const results = await Promise.all(
       ["tab-a", "tab-b"].map((tab) =>
-        engine.placeOrder(CONTEXT, { reservationId: id, idempotencyKey: key(tab), lines: [{ serviceId: "TEST-HUND", count: 1 }] }),
+        engine.placeOrder(CONTEXT, {
+          reservationId: id,
+          idempotencyKey: key(tab),
+          lines: [{ serviceId: "TEST-HUND", count: 1 }],
+        }),
       ),
     );
     const statuses = results.map((r) => r.status);
     expect(statuses.filter((s) => s === "completed")).toHaveLength(1);
     const loser = results.find((r) => r.status === "failed");
-    expect(loser && "failed" in loser && loser.failed[0]?.reason).toMatch(/dog_limit_exceeded|in_progress/);
+    expect(loser && "failed" in loser && loser.failed[0]?.reason).toMatch(
+      /dog_limit_exceeded|in_progress/,
+    );
     expect(env.apaleo.booked(id).filter((s) => s.service.id === "TEST-HUND")).toHaveLength(1);
     // A later order sees the booked dog (fresh Apaleo read).
-    const again = await engine.placeOrder(CONTEXT, { reservationId: id, idempotencyKey: key("tab-c"), lines: [{ serviceId: "TEST-HUND", count: 1 }] });
+    const again = await engine.placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("tab-c"),
+      lines: [{ serviceId: "TEST-HUND", count: 1 }],
+    });
     expect(again).toMatchObject({ status: "failed", failed: [{ reason: "dog_limit_exceeded" }] });
   });
 
@@ -151,7 +195,10 @@ describe("guest orders", () => {
       idempotencyKey: key("price"),
       lines: [{ serviceId: "TEST-ECI", count: 1, expectedUnitPrice: 20 }],
     });
-    expect(result).toMatchObject({ status: "failed", failed: [{ serviceId: "TEST-ECI", reason: "price_changed" }] });
+    expect(result).toMatchObject({
+      status: "failed",
+      failed: [{ serviceId: "TEST-ECI", reason: "price_changed" }],
+    });
     expect(simulatedWrites()).toEqual([]);
     // Without an expected price the live price is booked (Extras behaviour).
     const accepted = await env.engine().placeOrder(CONTEXT, {
@@ -160,7 +207,9 @@ describe("guest orders", () => {
       lines: [{ serviceId: "TEST-ECI", count: 1 }],
     });
     expect(accepted.status).toBe("completed");
-    expect(env.apaleo.booked(id).find((s) => s.service.id === "TEST-ECI")?.dates[0]?.amount.grossAmount).toBe(25);
+    expect(
+      env.apaleo.booked(id).find((s) => s.service.id === "TEST-ECI")?.dates[0]?.amount.grossAmount,
+    ).toBe(25);
   });
 
   it("partially failed order: valid lines book, invalid and failing lines are reported", async () => {
@@ -168,8 +217,17 @@ describe("guest orders", () => {
     // The catalog read succeeds; the fresh dog check under the claim fails (Apaleo 503, retried once).
     let servicesReads = 0;
     env.apaleo.beforeRequest = (method, path) => {
-      if (method === "GET" && path.endsWith(`/reservations/${id}/services`) && ++servicesReads === 2)
-        env.apaleo.failures.push({ method: "GET", pathIncludes: `/reservations/${id}/services`, status: 503, times: 2 });
+      if (
+        method === "GET" &&
+        path.endsWith(`/reservations/${id}/services`) &&
+        ++servicesReads === 2
+      )
+        env.apaleo.failures.push({
+          method: "GET",
+          pathIncludes: `/reservations/${id}/services`,
+          status: 503,
+          times: 2,
+        });
     };
     const result = await env.engine().placeOrder(CONTEXT, {
       reservationId: id,
@@ -209,11 +267,21 @@ describe("guest orders", () => {
     });
     expect(aborted.kind).toBe("new");
     const early = env.engine({ now: new Date("2027-01-05T09:01:00Z") });
-    expect(await early.placeOrder(CONTEXT, { reservationId: id, idempotencyKey: k, lines: [{ serviceId: "TEST-ECI", count: 1 }] })).toEqual({
+    expect(
+      await early.placeOrder(CONTEXT, {
+        reservationId: id,
+        idempotencyKey: k,
+        lines: [{ serviceId: "TEST-ECI", count: 1 }],
+      }),
+    ).toEqual({
       status: "in_progress",
       bookingId: aborted.id,
     });
-    const later = await env.engine().placeOrder(CONTEXT, { reservationId: id, idempotencyKey: k, lines: [{ serviceId: "TEST-ECI", count: 1 }] });
+    const later = await env.engine().placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: k,
+      lines: [{ serviceId: "TEST-ECI", count: 1 }],
+    });
     expect(later).toMatchObject({ status: "completed", bookingId: aborted.id });
   });
 
@@ -221,7 +289,11 @@ describe("guest orders", () => {
     const id = freshReservation();
     // Stay extended by staff after the guest loaded the page: the dog covers all three nights.
     env.apaleo.reservation(id).departure = "2027-01-15T10:00:00+01:00";
-    const result = await env.engine().placeOrder(CONTEXT, { reservationId: id, idempotencyKey: key("changed"), lines: [{ serviceId: "TEST-HUND", count: 1 }] });
+    const result = await env.engine().placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("changed"),
+      lines: [{ serviceId: "TEST-HUND", count: 1 }],
+    });
     expect(result.status).toBe("completed");
     expect(env.apaleo.booked(id).find((s) => s.service.id === "TEST-HUND")?.dates).toHaveLength(3);
     // Apartment type no longer allowed for parking.
@@ -234,14 +306,24 @@ describe("guest orders", () => {
       lines: [{ serviceId: "TEST-PKW", count: 1, vehiclePlates: ["KN-X 1"] }],
     });
     expect(restricted).toMatchObject({ failed: [{ reason: "unit_group_restricted" }] });
-    await env.test.client.query(`UPDATE offer_properties SET allowed_unit_group_ids = '{}' WHERE extras_service_id = 'TEST-PKW'`);
+    await env.test.client.query(
+      `UPDATE offer_properties SET allowed_unit_group_ids = '{}' WHERE extras_service_id = 'TEST-PKW'`,
+    );
   });
 
   it("additional guests amend the reservation within the remaining capacity only", async () => {
     const id = freshReservation();
-    const tooMany = await env.engine().placeOrder(CONTEXT, { reservationId: id, idempotencyKey: key("occ-4"), lines: [{ serviceId: "TEST-EXTRPERSON", count: 4 }] });
+    const tooMany = await env.engine().placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("occ-4"),
+      lines: [{ serviceId: "TEST-EXTRPERSON", count: 4 }],
+    });
     expect(tooMany).toMatchObject({ status: "failed", failed: [{ reason: "capacity_exceeded" }] });
-    const ok = await env.engine().placeOrder(CONTEXT, { reservationId: id, idempotencyKey: key("occ-2"), lines: [{ serviceId: "TEST-EXTRPERSON", count: 2 }] });
+    const ok = await env.engine().placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("occ-2"),
+      lines: [{ serviceId: "TEST-EXTRPERSON", count: 2 }],
+    });
     expect(ok.status).toBe("completed");
     const r = env.apaleo.reservation(id);
     expect(r.adults).toBe(4);
@@ -250,8 +332,15 @@ describe("guest orders", () => {
 
   it("with writes disabled nothing is booked and the code is reported", async () => {
     const id = freshReservation();
-    const result = await env.engine({ mode: "disabled" }).placeOrder(CONTEXT, { reservationId: id, idempotencyKey: key("disabled"), lines: [{ serviceId: "TEST-ECI", count: 1 }] });
-    expect(result).toMatchObject({ status: "failed", failed: [{ reason: "booking_failed:writes_disabled" }] });
+    const result = await env.engine({ mode: "disabled" }).placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("disabled"),
+      lines: [{ serviceId: "TEST-ECI", count: 1 }],
+    });
+    expect(result).toMatchObject({
+      status: "failed",
+      failed: [{ reason: "booking_failed:writes_disabled" }],
+    });
     expect(env.apaleo.booked(id)).toHaveLength(1); // only the mandatory final cleaning
   });
 });
@@ -259,7 +348,11 @@ describe("guest orders", () => {
 describe("stay extension", () => {
   it("offers the next night with the pre-arrival standard discount and the extended extras", async () => {
     const id = freshReservation();
-    await env.engine().placeOrder(CONTEXT, { reservationId: id, idempotencyKey: key("ext-dog"), lines: [{ serviceId: "TEST-HUND", count: 1 }] });
+    await env.engine().placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("ext-dog"),
+      lines: [{ serviceId: "TEST-HUND", count: 1 }],
+    });
     const offer = await env.engine().getStayExtensionOffer(CONTEXT, id);
     expect(offer).toMatchObject({
       currentDeparture: "2027-01-14",
@@ -283,27 +376,40 @@ describe("stay extension", () => {
         { serviceId: "TEST-LCO", count: 1 },
       ],
     });
-    const result = await env.engine().confirmStayExtension(CONTEXT, { reservationId: id, expectedCurrentDeparture: "2027-01-14" });
+    const result = await env
+      .engine()
+      .confirmStayExtension(CONTEXT, { reservationId: id, expectedCurrentDeparture: "2027-01-14" });
     expect(result).toMatchObject({ ok: true, newDeparture: "2027-01-15", status: "confirmed" });
     const r = env.apaleo.reservation(id);
     expect(r.departure.slice(0, 10)).toBe("2027-01-15");
     expect(r.timeSlices.map((s) => s.totalGrossAmount.amount)).toEqual([99, 99, 89.1]);
     const booked = env.apaleo.booked(id);
-    expect(booked.find((s) => s.service.id === "TEST-HUND")?.dates.map((d) => d.serviceDate)).toEqual([
-      "2027-01-12",
-      "2027-01-13",
+    expect(
+      booked.find((s) => s.service.id === "TEST-HUND")?.dates.map((d) => d.serviceDate),
+    ).toEqual(["2027-01-12", "2027-01-13", "2027-01-14"]);
+    expect(
+      booked.find((s) => s.service.id === "TEST-LCO")?.dates.map((d) => d.serviceDate),
+    ).toEqual(["2027-01-15"]);
+    expect(booked.find((s) => s.service.id === "TEST-FINALCLEAN")?.dates[0]?.serviceDate).toBe(
       "2027-01-14",
-    ]);
-    expect(booked.find((s) => s.service.id === "TEST-LCO")?.dates.map((d) => d.serviceDate)).toEqual(["2027-01-15"]);
-    expect(booked.find((s) => s.service.id === "TEST-FINALCLEAN")?.dates[0]?.serviceDate).toBe("2027-01-14");
-    const rows = await env.test.client.query<{ status: string; total_additional_cents: number; details: { lateCheckoutMoves: { verified: boolean }[] } }>(
+    );
+    const rows = await env.test.client.query<{
+      status: string;
+      total_additional_cents: number;
+      details: { lateCheckoutMoves: { verified: boolean }[] };
+    }>(
       `SELECT status, total_additional_cents, details FROM stay_extensions WHERE external_reservation_id = $1`,
       [id],
     );
     expect(rows.rows[0]).toMatchObject({ status: "confirmed", total_additional_cents: 10410 });
     expect(rows.rows[0]?.details.lateCheckoutMoves[0]?.verified).toBe(true);
     // A second confirmation (double click / retry) is refused: the departure has moved.
-    expect(await env.engine().confirmStayExtension(CONTEXT, { reservationId: id, expectedCurrentDeparture: "2027-01-14" })).toEqual({
+    expect(
+      await env.engine().confirmStayExtension(CONTEXT, {
+        reservationId: id,
+        expectedCurrentDeparture: "2027-01-14",
+      }),
+    ).toEqual({
       ok: false,
       reason: "stay_extension_unavailable",
     });
@@ -323,13 +429,21 @@ describe("stay extension", () => {
 
   it("without a state double (staging) the result is stored as not verifiable, never as verified", async () => {
     const id = freshReservation();
-    const result = await env.engine({ apply: false }).confirmStayExtension(CONTEXT, { reservationId: id, expectedCurrentDeparture: "2027-01-14" });
+    const result = await env
+      .engine({ apply: false })
+      .confirmStayExtension(CONTEXT, { reservationId: id, expectedCurrentDeparture: "2027-01-14" });
     expect(result).toMatchObject({ ok: true, simulated: true, status: "confirmed" });
-    const rows = await env.test.client.query<{ new_departure_confirmed: boolean; details: { verification: string } }>(
+    const rows = await env.test.client.query<{
+      new_departure_confirmed: boolean;
+      details: { verification: string };
+    }>(
       `SELECT new_departure_confirmed, details FROM stay_extensions WHERE external_reservation_id = $1`,
       [id],
     );
-    expect(rows.rows[0]).toMatchObject({ new_departure_confirmed: false, details: { verification: "skipped_simulated" } });
+    expect(rows.rows[0]).toMatchObject({
+      new_departure_confirmed: false,
+      details: { verification: "skipped_simulated" },
+    });
   });
 });
 
@@ -337,16 +451,37 @@ describe("requests", () => {
   it("creates a request, confirms it once with all dates, refuses a second decision", async () => {
     const id = freshReservation();
     const engine = env.engine();
-    const created = await engine.createRequest(CONTEXT, { reservationId: id, serviceId: "TEST-BABY", quantity: 1 });
+    const created = await engine.createRequest(CONTEXT, {
+      reservationId: id,
+      serviceId: "TEST-BABY",
+      quantity: 1,
+    });
     expect(created.ok).toBe(true);
     const requestId = created.ok ? created.requestId : "";
-    expect(await engine.createRequest(CONTEXT, { reservationId: id, serviceId: "TEST-ECI", quantity: 1 })).toEqual({ ok: false, reason: "not_available" });
+    expect(
+      await engine.createRequest(CONTEXT, {
+        reservationId: id,
+        serviceId: "TEST-ECI",
+        quantity: 1,
+      }),
+    ).toEqual({ ok: false, reason: "not_available" });
     const approved = await engine.approveRequest(CONTEXT, requestId, env.ownerId);
     expect(approved).toEqual({ ok: true, alreadyBooked: false, simulated: true });
-    expect(env.apaleo.booked(id).find((s) => s.service.id === "TEST-BABY")?.dates.map((d) => d.serviceDate)).toEqual(["2027-01-12"]);
+    expect(
+      env.apaleo
+        .booked(id)
+        .find((s) => s.service.id === "TEST-BABY")
+        ?.dates.map((d) => d.serviceDate),
+    ).toEqual(["2027-01-12"]);
     expect(env.apaleo.reservation(id).comment).toMatch(/Anfrage bestätigt: 1x Babybett/);
-    expect(await engine.approveRequest(CONTEXT, requestId, env.ownerId)).toEqual({ ok: false, reason: "not_pending" });
-    expect(await engine.rejectRequest(CONTEXT, requestId, env.ownerId)).toEqual({ ok: false, reason: "not_pending" });
+    expect(await engine.approveRequest(CONTEXT, requestId, env.ownerId)).toEqual({
+      ok: false,
+      reason: "not_pending",
+    });
+    expect(await engine.rejectRequest(CONTEXT, requestId, env.ownerId)).toEqual({
+      ok: false,
+      reason: "not_pending",
+    });
     const outbox = await env.test.client.query<{ template: string; status: string }>(
       `SELECT template, status FROM notification_outbox WHERE dedup_key = $1`,
       [`service-request:${requestId}`],
@@ -357,14 +492,31 @@ describe("requests", () => {
   it("rejection, insufficient availability and disabled writes keep Apaleo untouched", async () => {
     const id = freshReservation();
     const engine = env.engine();
-    const a = await engine.createRequest(CONTEXT, { reservationId: id, serviceId: "TEST-BABY", quantity: 1 });
-    const b = await engine.createRequest(CONTEXT, { reservationId: id, serviceId: "TEST-BABY", quantity: 2 });
-    const c = await engine.createRequest(CONTEXT, { reservationId: id, serviceId: "TEST-BABY", quantity: 1 });
+    const a = await engine.createRequest(CONTEXT, {
+      reservationId: id,
+      serviceId: "TEST-BABY",
+      quantity: 1,
+    });
+    const b = await engine.createRequest(CONTEXT, {
+      reservationId: id,
+      serviceId: "TEST-BABY",
+      quantity: 2,
+    });
+    const c = await engine.createRequest(CONTEXT, {
+      reservationId: id,
+      serviceId: "TEST-BABY",
+      quantity: 1,
+    });
     if (!a.ok || !b.ok || !c.ok) throw new Error("requests not created");
     expect(await engine.rejectRequest(CONTEXT, a.requestId, env.ownerId)).toEqual({ ok: true });
     env.apaleo.state.availability["TEST-BABY"] = { "2027-01-12": 1 };
-    expect(await engine.approveRequest(CONTEXT, b.requestId, env.ownerId)).toEqual({ ok: false, reason: "insufficient_availability" });
-    expect(await env.engine({ mode: "disabled" }).approveRequest(CONTEXT, c.requestId, env.ownerId)).toEqual({
+    expect(await engine.approveRequest(CONTEXT, b.requestId, env.ownerId)).toEqual({
+      ok: false,
+      reason: "insufficient_availability",
+    });
+    expect(
+      await env.engine({ mode: "disabled" }).approveRequest(CONTEXT, c.requestId, env.ownerId),
+    ).toEqual({
       ok: false,
       reason: "booking_failed:writes_disabled",
     });
@@ -389,15 +541,26 @@ describe("requests", () => {
       [CONTEXT.tenantId, env.offerIds["TEST-BABY"], CONTEXT.propertyId, id],
     );
     const requestId = row.rows[0]?.id ?? "";
-    expect(await env.engine().approveRequest(CONTEXT, requestId, env.ownerId)).toEqual({ ok: false, reason: "handled_in_extras" });
-    expect(await env.engine().rejectRequest(CONTEXT, requestId, env.ownerId)).toEqual({ ok: false, reason: "handled_in_extras" });
+    expect(await env.engine().approveRequest(CONTEXT, requestId, env.ownerId)).toEqual({
+      ok: false,
+      reason: "handled_in_extras",
+    });
+    expect(await env.engine().rejectRequest(CONTEXT, requestId, env.ownerId)).toEqual({
+      ok: false,
+      reason: "handled_in_extras",
+    });
   });
 
   it("requests of another property are invisible to this property's engine", async () => {
     const id = freshReservation();
-    const created = await env.engine().createRequest(CONTEXT, { reservationId: id, serviceId: "TEST-BABY", quantity: 1 });
+    const created = await env
+      .engine()
+      .createRequest(CONTEXT, { reservationId: id, serviceId: "TEST-BABY", quantity: 1 });
     if (!created.ok) throw new Error("not created");
     const other = { ...CONTEXT, propertyId: "hov" };
-    expect(await env.engine().approveRequest(other, created.requestId, env.ownerId)).toEqual({ ok: false, reason: "not_found" });
+    expect(await env.engine().approveRequest(other, created.requestId, env.ownerId)).toEqual({
+      ok: false,
+      reason: "not_found",
+    });
   });
 });

@@ -18,7 +18,13 @@ export type RunResult = {
   };
 };
 
-export type Deviation = { scenario: string; step: string; field: string; extras: unknown; stay: unknown };
+export type Deviation = {
+  scenario: string;
+  step: string;
+  field: string;
+  extras: unknown;
+  stay: unknown;
+};
 
 const CATALOG_FIELDS = [
   "actionType",
@@ -36,15 +42,29 @@ const CATALOG_FIELDS = [
   "existingVehicleRegistration",
 ] as const;
 const TEXT_FIELDS = ["displayName", "description", "priceUnitLabel"] as const;
-const OFFER_FIELDS = ["currentDeparture", "newDeparture", "averageNightlyRate", "extensionPrice", "discountPercent", "gap", "phase", "cityTax", "totalPrice"] as const;
+const OFFER_FIELDS = [
+  "currentDeparture",
+  "newDeparture",
+  "averageNightlyRate",
+  "extensionPrice",
+  "discountPercent",
+  "gap",
+  "phase",
+  "cityTax",
+  "totalPrice",
+] as const;
 
-const norm = (value: unknown): string => JSON.stringify(value ?? null, (_k, v: unknown) => (typeof v === "number" ? Math.round(v * 100) / 100 : v));
+const norm = (value: unknown): string =>
+  JSON.stringify(value ?? null, (_k, v: unknown) =>
+    typeof v === "number" ? Math.round(v * 100) / 100 : v,
+  );
 const obj = (value: unknown): Obj => (value && typeof value === "object" ? (value as Obj) : {});
 
 export function compareScenario(scenario: string, extras: RunResult, stay: RunResult): Deviation[] {
   const out: Deviation[] = [];
   const diff = (step: string, field: string, a: unknown, b: unknown) => {
-    if (norm(a) !== norm(b)) out.push({ scenario, step, field, extras: a ?? null, stay: b ?? null });
+    if (norm(a) !== norm(b))
+      out.push({ scenario, step, field, extras: a ?? null, stay: b ?? null });
   };
   extras.steps.forEach((e, index) => {
     const s = stay.steps[index];
@@ -59,24 +79,41 @@ export function compareScenario(scenario: string, extras: RunResult, stay: RunRe
       diff(step, "pastStay", ev.pastStay, sv.pastStay);
       const ei = (ev.items as Obj[] | undefined) ?? [];
       const si = (sv.items as Obj[] | undefined) ?? [];
-      diff(step, "Reihenfolge/angezeigte Services", ei.map((i) => i.serviceId), si.map((i) => i.serviceId));
+      diff(
+        step,
+        "Reihenfolge/angezeigte Services",
+        ei.map((i) => i.serviceId),
+        si.map((i) => i.serviceId),
+      );
       for (const item of ei) {
         const other = si.find((i) => i.serviceId === item.serviceId);
         if (!other) continue;
-        for (const f of CATALOG_FIELDS) diff(step, `${String(item.serviceId)}.${f}`, item[f], other[f]);
-        for (const f of TEXT_FIELDS) diff(step, `${String(item.serviceId)}.${f}`, item[f], other[f]);
+        for (const f of CATALOG_FIELDS)
+          diff(step, `${String(item.serviceId)}.${f}`, item[f], other[f]);
+        for (const f of TEXT_FIELDS)
+          diff(step, `${String(item.serviceId)}.${f}`, item[f], other[f]);
       }
     } else if (e.kind === "extension-offer") {
       diff(step, "Angebot vorhanden", e.value !== null, s.value !== null);
       if (e.value && s.value) {
         for (const f of OFFER_FIELDS) diff(step, f, ev[f], sv[f]);
-        const ex = ((ev.extras as Obj[] | undefined) ?? []).map((x) => `${String(x.serviceId)}@${norm(obj(x.amount).amount)}`);
-        const sx = ((sv.extras as Obj[] | undefined) ?? []).map((x) => `${String(x.serviceId)}@${norm(obj(x.amount).amount)}`);
+        const ex = ((ev.extras as Obj[] | undefined) ?? []).map(
+          (x) => `${String(x.serviceId)}@${norm(obj(x.amount).amount)}`,
+        );
+        const sx = ((sv.extras as Obj[] | undefined) ?? []).map(
+          (x) => `${String(x.serviceId)}@${norm(obj(x.amount).amount)}`,
+        );
         diff(step, "extras", ex, sx);
-        diff(step, "extras.name", ((ev.extras as Obj[] | undefined) ?? []).map((x) => x.name), ((sv.extras as Obj[] | undefined) ?? []).map((x) => x.name));
+        diff(
+          step,
+          "extras.name",
+          ((ev.extras as Obj[] | undefined) ?? []).map((x) => x.name),
+          ((sv.extras as Obj[] | undefined) ?? []).map((x) => x.name),
+        );
       }
     } else {
-      for (const key of new Set([...Object.keys(ev), ...Object.keys(sv)])) diff(step, key, ev[key], sv[key]);
+      for (const key of new Set([...Object.keys(ev), ...Object.keys(sv)]))
+        diff(step, key, ev[key], sv[key]);
     }
   });
   const a = extras.state;
