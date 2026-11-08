@@ -580,8 +580,8 @@
       "partner-terms": "Nach den Bedingungen des Partners"
     },
     "fulfillment": {
-      "instant": "Direkt buchbar",
-      "request": "Auf Anfrage – wir bestätigen persönlich",
+      "instant": "Sofort buchbar – verbindlich",
+      "request": "Unverbindliche Anfrage – wir bestätigen persönlich",
       "link": "Direkt beim Partner"
     },
     "goodToKnow": "Gut zu wissen",
@@ -606,7 +606,7 @@
       "heading": "Gebucht & angefragt",
       "empty": "Hier siehst Du bald alles, was Du gebucht oder angefragt hast.",
       "status": {
-        "pending": "Angefragt",
+        "pending": "Angefragt – noch nicht gebucht",
         "confirmed": "Bestätigt",
         "declined": "Leider nicht möglich",
         "cancelled": "Storniert",
@@ -625,19 +625,19 @@
       "dates": "Zeitraum",
       "nights": "{count, plural, one {# Nacht} other {# Nächte}}",
       "total": "Gesamt",
-      "totalNote": "Verbindlicher Preis. Der Betrag wird Deiner Reservierung hinzugefügt.",
-      "requestNote": "Wir prüfen Deine Anfrage persönlich und melden uns. Kosten entstehen erst, wenn wir bestätigen.",
+      "totalNote": "Der Betrag wird Deiner Buchung hinzugefügt.",
+      "requestNote": "Unverbindliche Anfrage: Wir prüfen sie persönlich und melden uns. Gebucht und berechnet wird erst, wenn wir bestätigen.",
       "submitInstant": "Verbindlich buchen",
-      "submitRequest": "Anfrage senden",
+      "submitRequest": "Unverbindlich anfragen",
       "submitExtension": "Verbindlich verlängern",
       "sending": "Einen Moment …",
       "noPrice": "Für diese Leistung ist gerade kein Preis hinterlegt. Frag uns gerne direkt.",
       "toOverview": "Gebucht & angefragt",
       "done": {
         "booked": "Gebucht.",
-        "bookedText": "{service} ist jetzt Teil Deiner Reservierung.",
+        "bookedText": "{service} ist jetzt verbindlich Teil Deiner Buchung.",
         "requested": "Anfrage gesendet.",
-        "requestedText": "Wir prüfen sie und melden uns bei Dir.",
+        "requestedText": "Noch nicht gebucht: Wir prüfen Deine Anfrage und melden uns bei Dir. Erst mit unserer Bestätigung wird die Leistung gebucht.",
         "extended": "Verlängert.",
         "extendedText": "Deine neue Abreise ist am {date}."
       },
@@ -664,7 +664,9 @@
         "newDeparture": "Neue Abreise",
         "accommodation": "Übernachtung",
         "cityTax": "Kurtaxe"
-      }
+      },
+      "instantNote": "Sofort und verbindlich gebucht – ohne weitere Bestätigung.",
+      "requestTotal": "Voraussichtlicher Preis"
     },
     "houseUnavailable": "Unsere Services können gerade nicht geladen werden. Bitte versuche es später noch einmal."
   }

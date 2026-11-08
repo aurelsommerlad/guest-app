@@ -580,8 +580,8 @@
       "partner-terms": "According to the partner’s terms"
     },
     "fulfillment": {
-      "instant": "Book directly",
-      "request": "On request – we confirm personally",
+      "instant": "Book instantly – binding",
+      "request": "Non-binding request – we confirm personally",
       "link": "Directly with the partner"
     },
     "goodToKnow": "Good to know",
@@ -606,7 +606,7 @@
       "heading": "Booked & requested",
       "empty": "Soon you will see everything you have booked or requested here.",
       "status": {
-        "pending": "Requested",
+        "pending": "Requested – not booked yet",
         "confirmed": "Confirmed",
         "declined": "Unfortunately not possible",
         "cancelled": "Cancelled",
@@ -625,19 +625,19 @@
       "dates": "Period",
       "nights": "{count, plural, one {# night} other {# nights}}",
       "total": "Total",
-      "totalNote": "Binding price. The amount is added to your reservation.",
-      "requestNote": "We check your request personally and get back to you. You are only charged once we confirm.",
+      "totalNote": "The amount is added to your booking.",
+      "requestNote": "Non-binding request: we check it personally and get back to you. It is only booked and charged once we confirm.",
       "submitInstant": "Book now",
-      "submitRequest": "Send request",
+      "submitRequest": "Send non-binding request",
       "submitExtension": "Extend now",
       "sending": "One moment …",
       "noPrice": "There is no price for this service right now. Feel free to ask us directly.",
       "toOverview": "Booked & requested",
       "done": {
         "booked": "Booked.",
-        "bookedText": "{service} is now part of your reservation.",
+        "bookedText": "{service} is now a binding part of your booking.",
         "requested": "Request sent.",
-        "requestedText": "We will check it and get back to you.",
+        "requestedText": "Not booked yet: we check your request and get back to you. The service is only booked once we confirm.",
         "extended": "Extended.",
         "extendedText": "Your new departure is on {date}."
       },
@@ -664,7 +664,9 @@
         "newDeparture": "New departure",
         "accommodation": "Night",
         "cityTax": "City tax"
-      }
+      },
+      "instantNote": "Booked immediately and bindingly – no further confirmation.",
+      "requestTotal": "Expected price"
     },
     "houseUnavailable": "Our services cannot be loaded right now. Please try again later."
   }

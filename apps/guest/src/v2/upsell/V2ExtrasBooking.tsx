@@ -291,12 +291,20 @@ export function V2ExtrasBooking({ booking, title }: { booking: ExtrasBookingView
       )}
 
       <div className="v2-offer-action-price">
-        <span className="v2-field-label">{t("total")}</span>
+        <span className="v2-field-label">{request ? t("requestTotal") : t("total")}</span>
         <span className="v2-offer-action-amount" data-testid="booking-total">
           {total === 0 ? priceText("free") : money(total, currency, locale)}
         </span>
       </div>
-      <p className="v2-small v2-muted">{request ? t("requestNote") : t("totalNote")}</p>
+      {request ? (
+        <p className="v2-small v2-muted" data-testid="booking-note">
+          {t("requestNote")}
+        </p>
+      ) : (
+        <p className="v2-small v2-muted" data-testid="booking-note">
+          {t("instantNote")} {t("totalNote")}
+        </p>
+      )}
 
       {error && (
         <p className="v2-notice" role="alert" data-testid="booking-error">
