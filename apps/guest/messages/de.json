@@ -646,7 +646,8 @@
         "requested": "Angefragt. Wir melden uns bei Dir.",
         "confirmed": "Deine Anfrage ist bestätigt.",
         "declined": "Leider nicht möglich.",
-        "restricted": "Für Dein gebuchtes Apartment leider nicht möglich."
+        "restricted": "Für Dein gebuchtes Apartment leider nicht möglich.",
+        "unavailable": "Gerade nicht verfügbar."
       },
       "errors": {
         "price_changed": "Der Preis hat sich gerade geändert. Bitte prüfe den neuen Preis und bestätige erneut.",
@@ -679,7 +680,9 @@
       "declined": "Leider nicht möglich",
       "restricted": "In Deinem Apartment nicht möglich",
       "requestHint": "Auf Anfrage",
-      "quantityHint": "Anzahl wählbar"
+      "quantityHint": "Anzahl wählbar",
+      "unavailable": "Gerade nicht verfügbar",
+      "details": "Details"
     },
     "extension": {
       "eyebrow": "Eine Nacht länger",
@@ -690,6 +693,13 @@
       "night": "Übernachtung",
       "total": "Gesamt inkl. Leistungen",
       "cta": "Nacht hinzufügen"
+    },
+    "cart": {
+      "choose": "Auswahl",
+      "add": "{service} hinzufügen",
+      "selection": "{count, plural, one {# Leistung ausgewählt} other {# Leistungen ausgewählt}}",
+      "submit": "Auswahl verbindlich buchen",
+      "booked": "gebucht"
     }
   }
 }

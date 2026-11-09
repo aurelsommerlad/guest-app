@@ -42,14 +42,16 @@ const money = z.object({
 const orderSchema = z.object({
   idempotencyKey: uuid,
   serviceId: z.string().regex(/^[A-Za-z0-9_-]{1,120}$/),
-  count: z.number().int().min(1).max(20),
-  vehiclePlates: z.array(z.string().trim().min(1).max(20)).max(20).optional(),
+  // No flat limit of STAY's own: the source checks capacity and availability before booking.
+  // 999 only guards against nonsense input.
+  count: z.number().int().min(1).max(999),
+  vehiclePlates: z.array(z.string().trim().min(1).max(20)).max(999).optional(),
   expectedPrice: money,
 });
 const requestSchema = z.object({
   idempotencyKey: uuid,
   serviceId: z.string().regex(/^[A-Za-z0-9_-]{1,120}$/),
-  quantity: z.number().int().min(1).max(20),
+  quantity: z.number().int().min(1).max(999),
 });
 const extensionSchema = z.object({
   idempotencyKey: uuid,
@@ -174,4 +176,59 @@ export async function extendStay(
   return result.kind === "ok"
     ? { kind: "extended", newDeparture: result.value.newDeparture }
     : failure(result);
+}
+
+/* ── Collective booking ("Sammelbuchung", as the Extras page books several services at once) ── */
+
+export type CartLineOutcome = { serviceId: string; outcome: BookingOutcome };
+
+const cartSchema = z
+  .object({
+    cartKey: uuid,
+    lines: z
+      .array(
+        orderSchema.omit({ idempotencyKey: true }).extend({
+          serviceId: z.string().regex(/^[A-Za-z0-9_-]{1,120}$/),
+        }),
+      )
+      .min(1)
+      .max(30),
+  })
+  .refine((cart) => new Set(cart.lines.map((line) => line.serviceId)).size === cart.lines.length, {
+    message: "duplicate service",
+  });
+
+/**
+ * One stable idempotency key per cart line (UUID shape, derived from the cart key and the
+ * service): repeating the same confirmation never books a line twice, a new cart books anew.
+ */
+export function cartLineKey(cartKey: string, serviceId: string): string {
+  const hex = hashSecret(`${cartKey}:${serviceId}`)
+    .replace(/[^0-9a-f]/g, "")
+    .padEnd(32, "0");
+  const variant = ((parseInt(hex.charAt(16), 16) & 0x3) | 0x8).toString(16);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
+/**
+ * Books every selected instant service – line by line, exactly like Extras' own order (each
+ * line is checked and booked on its own; one refused line never cancels the others). Every line
+ * carries its own binding price; a changed price refuses only that line.
+ */
+export async function bookCart(
+  deps: BookingDeps,
+  context: GuestContext,
+  raw: unknown,
+): Promise<{ kind: "cart"; lines: CartLineOutcome[] } | BookingOutcome> {
+  const input = cartSchema.safeParse(raw);
+  if (!input.success) return { kind: "error", reason: "invalid" };
+  const lines: CartLineOutcome[] = [];
+  for (const line of input.data.lines) {
+    const outcome = await bookExtra(deps, context, {
+      ...line,
+      idempotencyKey: cartLineKey(input.data.cartKey, line.serviceId),
+    });
+    lines.push({ serviceId: line.serviceId, outcome });
+  }
+  return { kind: "cart", lines };
 }

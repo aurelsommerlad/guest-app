@@ -4,14 +4,28 @@ import { getDatabase } from "../../server/database";
 import { logger } from "../../server/logger";
 import { getGuestContext } from "../guest-context/server";
 import { getStayJourney } from "../journey/server";
-import { bookExtra, type BookingOutcome, extendStay, requestExtra } from "./booking-service";
+import {
+  bookCart,
+  bookExtra,
+  type BookingOutcome,
+  type CartLineOutcome,
+  extendStay,
+  requestExtra,
+} from "./booking-service";
 import { getExtrasBridge } from "./server";
 
 /**
  * Server actions of the booking flow. The stay comes from the guest session only; the input is
  * validated in the booking service; Extras re-checks price and availability before booking.
  */
-async function run(action: typeof bookExtra, input: unknown): Promise<BookingOutcome> {
+async function run<T>(
+  action: (
+    deps: Parameters<typeof bookExtra>[0],
+    context: Parameters<typeof bookExtra>[1],
+    input: unknown,
+  ) => Promise<T>,
+  input: unknown,
+): Promise<T | BookingOutcome> {
   const result = await getGuestContext();
   if (result.kind !== "context") return { kind: "error", reason: "unavailable" };
   const journey = await getStayJourney(result.context);
@@ -38,4 +52,10 @@ export async function requestExtraAction(input: unknown): Promise<BookingOutcome
 
 export async function extendStayAction(input: unknown): Promise<BookingOutcome> {
   return run(extendStay, input);
+}
+
+export async function bookCartAction(
+  input: unknown,
+): Promise<{ kind: "cart"; lines: CartLineOutcome[] } | BookingOutcome> {
+  return run(bookCart, input);
 }

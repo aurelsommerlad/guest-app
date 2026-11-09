@@ -101,6 +101,12 @@ export type GuestCatalogItem = {
   serviceDates: string[] | null;
   unitGroupRestricted: boolean;
   maxQuantity: number | null;
+  /**
+   * Units Apaleo reports as available on every required date (lowest value); null = Apaleo
+   * reports no limit. Extras itself only checks this for requests; STAY also uses it to cap the
+   * guest's quantity choice.
+   */
+  availableCount: number | null;
   maxOnePerReservation: boolean;
   alreadyBooked: boolean;
   requiresVehicleRegistration: boolean;
@@ -323,6 +329,7 @@ export class ServiceBookingEngine {
       unitPrice: Money | null;
       price: Money | null;
       serviceDates: string[] | null;
+      availableCount?: number | null;
     };
     const candidates: Candidate[] = [];
     for (const item of curated) {
@@ -376,7 +383,23 @@ export class ServiceBookingEngine {
       const price = unitPrice
         ? { amount: round2(unitPrice.amount * nights), currency: unitPrice.currency }
         : null;
-      candidates.push({ item, bookingRule, nights, unitPrice, price, serviceDates: dates });
+      const counts = dates
+        .map((date) => {
+          const entry = offer.dates?.find((d) => d.serviceDate === date);
+          const value = entry?.availableCount ?? offer.availableCount;
+          return typeof value === "number" && Number.isFinite(value) ? value : null;
+        })
+        .filter((value): value is number => value !== null);
+      const availableCount = counts.length ? Math.max(0, Math.min(...counts)) : null;
+      candidates.push({
+        item,
+        bookingRule,
+        nights,
+        unitPrice,
+        price,
+        serviceDates: dates,
+        availableCount,
+      });
     }
     candidates.sort((a, b) => compareBySortOrder(a.item, b.item));
 
@@ -392,7 +415,7 @@ export class ServiceBookingEngine {
     );
 
     const items = candidates.map(
-      ({ item, bookingRule, nights, unitPrice, price, serviceDates }, index) => {
+      ({ item, bookingRule, nights, unitPrice, price, serviceDates, availableCount }, index) => {
         const apaleo = localized[index];
         const booked = bookedQuantities.get(item.serviceId) ?? 0;
         const capacityGated =
@@ -453,6 +476,7 @@ export class ServiceBookingEngine {
                 ? 0
                 : 1
               : null,
+          availableCount: availableCount ?? null,
           maxOnePerReservation: item.maxOnePerReservation,
           alreadyBooked: item.maxOnePerReservation ? booked >= 1 : false,
           requiresVehicleRegistration: item.requiresVehicleRegistration,

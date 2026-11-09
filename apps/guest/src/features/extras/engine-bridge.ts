@@ -63,6 +63,7 @@ function item(entry: GuestCatalogItem, bookedCount: number): ExtrasItem {
     serviceDates: entry.serviceDates ?? [],
     restricted: entry.unitGroupRestricted,
     maxQuantity: entry.maxQuantity,
+    availableCount: entry.availableCount,
     maxOnePerReservation: entry.maxOnePerReservation,
     bookedCount,
     requiresVehicleRegistration: entry.requiresVehicleRegistration,

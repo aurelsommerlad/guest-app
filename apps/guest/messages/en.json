@@ -646,7 +646,8 @@
         "requested": "Requested. We will get back to you.",
         "confirmed": "Your request is confirmed.",
         "declined": "Unfortunately not possible.",
-        "restricted": "Unfortunately not possible for your apartment type."
+        "restricted": "Unfortunately not possible for your apartment type.",
+        "unavailable": "Currently not available."
       },
       "errors": {
         "price_changed": "The price has just changed. Please check the new price and confirm again.",
@@ -679,7 +680,9 @@
       "declined": "Unfortunately not possible",
       "restricted": "Not possible in your apartment",
       "requestHint": "On request",
-      "quantityHint": "Choose a quantity"
+      "quantityHint": "Choose a quantity",
+      "unavailable": "Currently not available",
+      "details": "Details"
     },
     "extension": {
       "eyebrow": "One more night",
@@ -690,6 +693,13 @@
       "night": "Night",
       "total": "Total incl. services",
       "cta": "Add the night"
+    },
+    "cart": {
+      "choose": "Select",
+      "add": "Add {service}",
+      "selection": "{count, plural, one {# service selected} other {# services selected}}",
+      "submit": "Book selection",
+      "booked": "booked"
     }
   }
 }

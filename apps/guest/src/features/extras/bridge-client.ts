@@ -42,6 +42,8 @@ export const extrasItemSchema = z.object({
   serviceDates: z.array(z.string()),
   restricted: z.boolean(),
   maxQuantity: z.number().int().min(0).nullable(),
+  /** Units Apaleo reports as available (lowest over the dates); absent/null = no limit known. */
+  availableCount: z.number().int().min(0).nullable().optional(),
   maxOnePerReservation: z.boolean(),
   bookedCount: z.number().int().min(0),
   requiresVehicleRegistration: z.boolean(),

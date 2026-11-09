@@ -251,7 +251,7 @@ export function V2ExtrasBooking({ booking, title }: { booking: ExtrasBookingView
               type="button"
               className="v2-icon-button"
               aria-label={t("increase")}
-              disabled={count >= booking.maxQuantity || pending}
+              disabled={(booking.maxQuantity !== null && count >= booking.maxQuantity) || pending}
               onClick={() => {
                 resize(count + 1);
               }}

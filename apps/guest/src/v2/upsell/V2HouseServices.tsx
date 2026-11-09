@@ -1,10 +1,10 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import Image from "next/image";
 
 import { type OfferView } from "../../features/upsell/offer-view";
 import { Link } from "../../i18n/navigation";
 import { V2Arrow } from "../components/glyphs";
 import { formatMoney, formatOfferPrice } from "./format";
+import { type CartRow, V2ServiceCart } from "./V2ServiceCart";
 
 function day(value: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
@@ -83,67 +83,44 @@ export async function V2ExtensionHighlight({ offer }: { offer: OfferView }) {
 
 /**
  * Own services as Extras lists them – picture, text, price with its unit, the fitting action and
- * any restriction right at the service – set as quiet hairline rows instead of shop cards. The
- * booking itself (quantity, plates, confirmation) happens on the service page.
+ * any restriction right at the service – with a shared selection to book several at once. The
+ * rows are prepared here (texts, prices); the selection lives in the client list.
  */
 export async function V2HouseServiceRows({ offers }: { offers: OfferView[] }) {
   if (offers.length === 0) return null;
   const t = await getTranslations("services");
   const locale = await getLocale();
-  return (
-    <ul className="v2-service-rows" data-testid="house-services">
-      {offers.map((offer) => {
-        const booking = offer.booking?.kind === "service" ? offer.booking : undefined;
-        const state = booking?.state ?? "open";
-        const request = booking?.fulfillment === "request";
-        const action =
-          state === "open" ? (request ? t("list.request") : t("list.book")) : t(`list.${state}`);
-        return (
-          <li
-            key={offer.id}
-            className="v2-service-row"
-            data-offer-id={offer.id}
-            data-state={state}
-            data-image={offer.image ? "yes" : "no"}
-          >
-            <Link href={offer.href}>
-              {offer.image && (
-                <span className="v2-service-thumb" aria-hidden>
-                  <Image
-                    src={offer.image.src}
-                    alt=""
-                    fill
-                    sizes="88px"
-                    style={{ objectFit: "cover" }}
-                  />
-                </span>
-              )}
-              <span className="v2-service-text">
-                <span className="v2-service-title">{offer.title}</span>
-                {offer.teaser && offer.teaser.trim() !== offer.title.trim() && (
-                  <span className="v2-small v2-muted v2-service-teaser">{offer.teaser}</span>
-                )}
-                <span className="v2-service-meta">
-                  <span className="v2-service-price">
-                    {formatOfferPrice(offer.price, t, locale)}
-                  </span>
-                  {request && state === "open" && (
-                    <span className="v2-muted">{t("list.requestHint")}</span>
-                  )}
-                </span>
-                <span
-                  className={
-                    state === "restricted" ? "v2-service-state is-blocked" : "v2-service-state"
-                  }
-                >
-                  <span>{action}</span>
-                  {state === "open" && <V2Arrow />}
-                </span>
-              </span>
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
+  const rows: CartRow[] = offers.map((offer) => {
+    const booking = offer.booking?.kind === "service" ? offer.booking : undefined;
+    const state = booking?.state ?? "open";
+    const selectable =
+      booking &&
+      state === "open" &&
+      booking.fulfillment === "instant" &&
+      booking.unitCents !== null &&
+      booking.maxQuantity !== 0
+        ? {
+            serviceId: booking.serviceId,
+            unitCents: booking.unitCents,
+            nights: booking.nights,
+            currency: booking.currency,
+            maxQuantity: booking.maxQuantity,
+            quantity: booking.quantity,
+            requiresPlate: booking.requiresPlate,
+            existingPlate: booking.existingPlate,
+          }
+        : null;
+    return {
+      id: offer.id,
+      href: offer.href,
+      title: offer.title,
+      teaser: offer.teaser && offer.teaser.trim() !== offer.title.trim() ? offer.teaser : null,
+      image: offer.image ? { src: offer.image.src } : null,
+      priceText: formatOfferPrice(offer.price, t, locale),
+      state,
+      request: booking?.fulfillment === "request",
+      selectable,
+    };
+  });
+  return <V2ServiceCart rows={rows} />;
 }

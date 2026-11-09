@@ -36,8 +36,13 @@ export default async function LocaleLayout({ children }: Readonly<{ children: Re
           // Client forms of the online check-in and the access code reveal.
           checkIn: messages.checkIn,
           stay: { access: messages.stay.access },
-          // Booking flow of "Services & Erlebnisse" (Phase 2).
-          services: { booking: messages.services.booking, price: messages.services.price },
+          // Booking flow and shared selection (cart) of "Services & Erlebnisse".
+          services: {
+            booking: messages.services.booking,
+            price: messages.services.price,
+            list: messages.services.list,
+            cart: messages.services.cart,
+          },
         }}
       >
         {children}

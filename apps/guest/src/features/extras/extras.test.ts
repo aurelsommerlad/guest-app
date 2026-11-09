@@ -21,10 +21,17 @@ import { findPropertyById } from "../../config/properties";
 import { guestContext } from "../check-in/test-context";
 import { type GuestContext } from "../guest-context/guest-context";
 import { type StayJourney } from "../journey/stay-journey";
-import { EXTENSION_OFFER_ID, mergeExtras } from "../upsell/extras-merge";
+import { EXTENSION_OFFER_ID, mergeExtras, quantityLimit } from "../upsell/extras-merge";
 import { previewHouseServiceSource } from "../upsell/house-services";
 import { loadOfferCatalog, type UpsellDeps } from "../upsell/upsell-service";
-import { bookExtra, extendStay, requestExtra, type BookingDeps } from "./booking-service";
+import {
+  bookCart,
+  bookExtra,
+  cartLineKey,
+  extendStay,
+  requestExtra,
+  type BookingDeps,
+} from "./booking-service";
 import {
   type BridgeResult,
   createExtrasBridge,
@@ -605,5 +612,166 @@ describe("booking service", () => {
       });
     }
     expect(last).toEqual({ kind: "error", reason: "rate_limited" });
+  });
+});
+
+describe("quantity (no flat cap – settings, capacity, availability)", () => {
+  it("takes the lowest of the sources' limits and none of STAY's own", () => {
+    expect(quantityLimit({ maxQuantity: null, availableCount: null })).toBeNull();
+    expect(quantityLimit({ maxQuantity: null })).toBeNull();
+    expect(quantityLimit({ maxQuantity: 7, availableCount: null })).toBe(7); // capacity
+    expect(quantityLimit({ maxQuantity: null, availableCount: 12 })).toBe(12); // Apaleo
+    expect(quantityLimit({ maxQuantity: 7, availableCount: 3 })).toBe(3);
+    expect(quantityLimit({ maxQuantity: 1, availableCount: 9 })).toBe(1); // one per reservation
+  });
+
+  it("offers a quantity for every service except one per reservation, above four as well", () => {
+    const first = catalog.items[0];
+    if (!first) throw new Error("fixture");
+    const merged = mergeExtras({
+      tenantId: "unique-places",
+      propertyId: "test-run",
+      locale: "de",
+      editorial: [],
+      catalog: {
+        ...catalog,
+        items: [
+          { ...first, serviceId: "TEST-ECI", bookedCount: 0, maxQuantity: null },
+          {
+            ...first,
+            serviceId: "TEST-PKW",
+            bookedCount: 0,
+            maxQuantity: null,
+            availableCount: 9,
+          },
+          {
+            ...first,
+            serviceId: "TEST-HUND",
+            bookedCount: 0,
+            maxQuantity: 1,
+            maxOnePerReservation: true,
+          },
+          {
+            ...first,
+            serviceId: "TEST-SOLD",
+            bookedCount: 0,
+            maxQuantity: null,
+            availableCount: 0,
+          },
+        ],
+      },
+      overview: undefined,
+    });
+    const booking = (id: string) => merged.live.get(`extras-${id}`)?.booking;
+    expect(booking("TEST-ECI")).toMatchObject({ quantity: true, maxQuantity: null });
+    expect(booking("TEST-PKW")).toMatchObject({ quantity: true, maxQuantity: 9 });
+    expect(booking("TEST-HUND")).toMatchObject({ quantity: false, maxQuantity: 1 });
+    expect(booking("TEST-SOLD")).toMatchObject({ state: "unavailable", maxQuantity: 0 });
+  });
+
+  it("accepts large quantities on the server (the source checks them)", async () => {
+    const { bridge, calls } = fakeBridge();
+    const outcome = await bookExtra(
+      { db, logger: silent, extras: bridge, now: () => new Date(), timeZone: "Europe/Berlin" },
+      testRunContext({ externalReservationId: "QTY-1" }),
+      {
+        idempotencyKey: crypto.randomUUID(),
+        serviceId: "TEST-PKW",
+        count: 12,
+        vehiclePlates: Array.from({ length: 12 }, (_, i) => `M AB ${String(i)}`),
+        expectedPrice: { amountCents: 12 * 1200, currency: "EUR" },
+      },
+    );
+    expect(outcome.kind).toBe("booked");
+    expect(calls).toEqual(["order:TEST-PKW"]);
+  });
+});
+
+describe("collective booking (Sammelbuchung)", () => {
+  const deps = (extras: ExtrasBridge): BookingDeps => ({
+    db,
+    logger: silent,
+    extras,
+    now: () => new Date(),
+    timeZone: "Europe/Berlin",
+  });
+
+  it("books every line on its own, with its own price and a stable key per line", async () => {
+    const seen: { serviceId: string; key: string; price: number }[] = [];
+    const { bridge } = fakeBridge();
+    const order = bridge.order.bind(bridge);
+    bridge.order = (subject, input) => {
+      seen.push({
+        serviceId: input.serviceId,
+        key: input.idempotencyKey,
+        price: input.expectedPrice.amountCents,
+      });
+      return input.serviceId === "TEST-LCO"
+        ? Promise.resolve({
+            kind: "refused",
+            reason: "price_changed",
+            price: { amountCents: 2500, currency: "EUR" },
+          })
+        : order(subject, input);
+    };
+    const cartKey = crypto.randomUUID();
+    const lines = [
+      { serviceId: "TEST-ECI", count: 2, expectedPrice: { amountCents: 4000, currency: "EUR" } },
+      { serviceId: "TEST-LCO", count: 1, expectedPrice: { amountCents: 2000, currency: "EUR" } },
+      {
+        serviceId: "TEST-PKW",
+        count: 2,
+        vehiclePlates: ["M AB 1", "M AB 2"],
+        expectedPrice: { amountCents: 4800, currency: "EUR" },
+      },
+    ];
+    const result = await bookCart(
+      deps(bridge),
+      testRunContext({ externalReservationId: "CART-1" }),
+      {
+        cartKey,
+        lines,
+      },
+    );
+    expect(result.kind).toBe("cart");
+    if (result.kind !== "cart") return;
+    expect(result.lines.map((l) => [l.serviceId, l.outcome.kind])).toEqual([
+      ["TEST-ECI", "booked"],
+      ["TEST-LCO", "error"], // only this line is refused – the others are booked
+      ["TEST-PKW", "booked"],
+    ]);
+    expect(result.lines[1]?.outcome).toMatchObject({
+      reason: "price_changed",
+      price: { amountCents: 2500 },
+    });
+    expect(seen.map((s) => s.price)).toEqual([4000, 2000, 4800]);
+    expect(seen.map((s) => s.key)).toEqual(lines.map((l) => cartLineKey(cartKey, l.serviceId)));
+    // A repeated confirmation uses the very same keys (the source answers it as a replay).
+    expect(cartLineKey(cartKey, "TEST-ECI")).toBe(seen[0]?.key);
+    expect(cartLineKey(crypto.randomUUID(), "TEST-ECI")).not.toBe(seen[0]?.key);
+    expect(cartLineKey(cartKey, "TEST-ECI")).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+  });
+
+  it("refuses empty carts, duplicate lines and malformed input without calling the source", async () => {
+    const { bridge, calls } = fakeBridge();
+    const line = {
+      serviceId: "TEST-ECI",
+      count: 1,
+      expectedPrice: { amountCents: 2000, currency: "EUR" },
+    };
+    for (const input of [
+      { cartKey: crypto.randomUUID(), lines: [] },
+      { cartKey: crypto.randomUUID(), lines: [line, line] },
+      { cartKey: "nope", lines: [line] },
+      { cartKey: crypto.randomUUID(), lines: [{ ...line, count: 0 }] },
+    ]) {
+      expect(await bookCart(deps(bridge), testRunContext(), input)).toEqual({
+        kind: "error",
+        reason: "invalid",
+      });
+    }
+    expect(calls).toEqual([]);
   });
 });

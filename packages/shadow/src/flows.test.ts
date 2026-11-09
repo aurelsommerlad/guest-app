@@ -245,6 +245,37 @@ describe("guest orders", () => {
     expect(again).toMatchObject({ status: "failed", failed: [{ reason: "dog_limit_exceeded" }] });
   });
 
+  it("concurrent extra-person selections from two tabs never exceed the remaining capacity", async () => {
+    // 2 adults + 1 child in a unit for 6 → 3 places left; both tabs want 2.
+    const id = freshReservation();
+    const engine = env.engine();
+    const results = await Promise.all(
+      ["cart-a", "cart-b"].map((tab) =>
+        engine.placeOrder(CONTEXT, {
+          reservationId: id,
+          idempotencyKey: key(tab),
+          lines: [{ serviceId: "TEST-EXTRPERSON", count: 2 }],
+        }),
+      ),
+    );
+    expect(results.filter((r) => r.status === "completed")).toHaveLength(1);
+    expect(env.apaleo.state.reservations[id]?.adults).toBe(4);
+    // The rest of the capacity (1) is still bookable, more is refused.
+    const over = await engine.placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("cart-c"),
+      lines: [{ serviceId: "TEST-EXTRPERSON", count: 2 }],
+    });
+    expect(over.status).toBe("failed");
+    const rest = await engine.placeOrder(CONTEXT, {
+      reservationId: id,
+      idempotencyKey: key("cart-d"),
+      lines: [{ serviceId: "TEST-EXTRPERSON", count: 1 }],
+    });
+    expect(rest.status).toBe("completed");
+    expect(env.apaleo.state.reservations[id]?.adults).toBe(5);
+  });
+
   it("price change between display and booking fails the line instead of booking the new price", async () => {
     const id = freshReservation();
     env.apaleo.state.priceOverrides["TEST-ECI"] = 25;

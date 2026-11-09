@@ -18,7 +18,8 @@ import {
 import { type OfferPriceView } from "./offer-view";
 
 /** "restricted": not bookable for the booked apartment type – shown with the reason, as in Extras. */
-export type ExtrasState = "open" | "booked" | "requested" | "confirmed" | "declined" | "restricted";
+export type ExtrasState =
+  "open" | "booked" | "requested" | "confirmed" | "declined" | "restricted" | "unavailable";
 
 export type ExtrasBookingView =
   | {
@@ -31,9 +32,13 @@ export type ExtrasBookingView =
       currency: string;
       /** Nights the unit price applies to (per-night services), else 1. */
       nights: number;
-      /** Highest quantity the guest may choose (from Extras' limits). */
-      maxQuantity: number;
-      /** Whether a quantity choice makes sense at all. */
+      /**
+       * Highest quantity the guest may choose, from the service settings (one per reservation),
+       * the reservation's remaining capacity and Apaleo's availability; null = no limit (Extras
+       * offers an open stepper then).
+       */
+      maxQuantity: number | null;
+      /** Whether a quantity choice exists (Extras: every service except "one per reservation"). */
       quantity: boolean;
       requiresPlate: boolean;
       existingPlate: string | null;
@@ -148,11 +153,16 @@ function priceOf(item: ExtrasItem, locale: "de" | "en"): OfferPriceView {
   };
 }
 
-const QUANTITY_CAP = 4;
+/** Quantity limit exactly as the sources define it – no flat cap of STAY's own. */
+export function quantityLimit(item: Pick<ExtrasItem, "maxQuantity" | "availableCount">) {
+  const limits = [item.maxQuantity, item.availableCount].filter(
+    (value): value is number => typeof value === "number",
+  );
+  return limits.length ? Math.max(0, Math.min(...limits)) : null;
+}
 
 function bookingOf(item: ExtrasItem, state: ExtrasState): ExtrasBookingView {
-  const limit = item.maxQuantity ?? QUANTITY_CAP;
-  const maxQuantity = Math.max(0, Math.min(limit, QUANTITY_CAP));
+  const maxQuantity = quantityLimit(item);
   return {
     kind: "service",
     serviceId: item.serviceId,
@@ -162,13 +172,8 @@ function bookingOf(item: ExtrasItem, state: ExtrasState): ExtrasBookingView {
     currency: item.unitPrice?.currency ?? "EUR",
     nights: item.nights ?? 1,
     maxQuantity,
-    // A quantity only where Extras itself offers one: more guests, more cars, more cots.
-    quantity:
-      maxQuantity > 1 &&
-      !item.maxOnePerReservation &&
-      (item.actionType === "increase_occupancy" ||
-        item.requiresVehicleRegistration ||
-        item.fulfillment === "request"),
+    // As in Extras: a stepper for every service; "one per reservation" is always exactly one.
+    quantity: !item.maxOnePerReservation && (maxQuantity === null || maxQuantity > 1),
     requiresPlate: item.requiresVehicleRegistration,
     existingPlate: item.existingVehicleRegistration,
     serviceDates: item.serviceDates,
@@ -256,8 +261,12 @@ export function mergeExtras(input: {
             ? "confirmed"
             : "open";
     if (state !== "open" && state !== "restricted") taken.add(offer.id);
+    const booking = bookingOf(item, state);
+    // Nothing left to choose (no capacity or nothing available in Apaleo): shown, not bookable.
+    if (booking.kind === "service" && booking.state === "open" && booking.maxQuantity === 0)
+      booking.state = "unavailable";
     offers.push(offer);
-    live.set(offer.id, { price: priceOf(item, locale), booking: bookingOf(item, state) });
+    live.set(offer.id, { price: priceOf(item, locale), booking });
     offerIdByService.set(item.serviceId, offer.id);
   });
 

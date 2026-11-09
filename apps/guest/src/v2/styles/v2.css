@@ -1254,3 +1254,55 @@ select.v2-input {
 .v2-service-row[data-image="no"] a {
   grid-template-columns: 1fr;
 }
+.v2-service-row {
+  padding-bottom: 4px;
+}
+.v2-service-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin: -4px 0 14px;
+}
+.v2-service-row[data-image="yes"] .v2-service-pick {
+  padding-left: 104px;
+}
+.v2-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.v2-stepper output {
+  min-width: 22px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 300;
+}
+.v2-service-plate {
+  flex-basis: 100%;
+}
+.v2-cart-results {
+  margin-top: 18px;
+  padding: 14px 0;
+  border-top: 1px solid var(--v2-ink);
+}
+.v2-cart-bar {
+  position: sticky;
+  bottom: calc(var(--v2-nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
+  z-index: 5;
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 16px 18px 18px;
+  background: var(--v2-paper-raised);
+  border-top: 1px solid var(--v2-ink);
+  box-shadow: 0 -10px 24px -18px var(--v2-photo-shade);
+}
+.v2-cart-total {
+  margin: 2px 0;
+  font-size: 24px;
+  font-weight: 300;
+  font-variant-numeric: lining-nums tabular-nums;
+}
