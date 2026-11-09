@@ -29,6 +29,8 @@ export type EngineCatalogItem = {
   extraPersonPricePerNight: number | null;
   currency: string | null;
   priceUnitLabel: { de?: string; en?: string } | null;
+  /** Imported Extras text fields; while set, guests see Extras' text logic (parity). */
+  extrasTexts?: Record<string, string> | null;
   requiresRemainingCapacity: boolean;
   requiresVehicleRegistration: boolean;
   maxOnePerReservation: boolean;

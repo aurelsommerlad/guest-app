@@ -207,6 +207,51 @@ describe("service catalog", () => {
     ).toBe(false);
   });
 
+  it("keeps Extras' text logic until a text is decided in STAY", async () => {
+    const id = await createCatalogOffer(db, up, {
+      ...offerInput,
+      slug: { de: "extras-text", en: "extras-text" },
+      actorAdminId: actor,
+    });
+    await savePropertyConfig(db, up, {
+      offerId: id,
+      propertyId: "hov",
+      config: config({ extrasServiceId: "ALTUS-TXT" }),
+      actorAdminId: actor,
+      now,
+    });
+    const setTexts = () =>
+      client.query(
+        `UPDATE offer_properties SET extras_texts = '{"displayName":"Car park"}' WHERE offer_id = $1`,
+        [id],
+      );
+    const active = async () =>
+      (await getCatalogOffer(db, up, id))?.properties.find((p) => p.propertyId === "hov")
+        ?.extrasTextsActive;
+    const save = (overrides: Partial<PropertyConfigInput>) =>
+      savePropertyConfig(db, up, {
+        offerId: id,
+        propertyId: "hov",
+        config: config({ extrasServiceId: "ALTUS-TXT", ...overrides }),
+        actorAdminId: actor,
+        now,
+      });
+
+    await setTexts();
+    expect(await active()).toBe(true);
+    await save({ sortOrder: 4 }); // no text decision – stays
+    expect(await active()).toBe(true);
+    await save({ sortOrder: 4, titleOverride: { de: "Parkplatz" } }); // text edited – ends
+    expect(await active()).toBe(false);
+
+    await setTexts();
+    await save({ sortOrder: 4, titleOverride: { de: "Parkplatz" }, extrasTextsActive: false });
+    expect(await active()).toBe(false); // unticked – ends
+    await setTexts();
+    await save({ sortOrder: 4, titleOverride: { de: "Parkplatz" }, extrasTextsActive: true });
+    expect(await active()).toBe(true); // ticked, nothing changed – stays
+  });
+
   it("removes an offer from one property", async () => {
     expect(
       await removePropertyConfig(db, up, { offerId, propertyId: "huesle", actorAdminId: actor }),

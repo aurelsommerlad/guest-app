@@ -262,13 +262,25 @@ export {
 export {
   catalogMembers,
   configOf,
+  configWithWarnings,
+  extrasTextsOf,
   type ExtrasSnapshotLike,
   importExtrasSnapshot,
   type ImportAction,
   type ImportItem,
   type ImportOptions,
   type ImportResult,
+  mapExtensionSettings,
+  UNMATCHABLE_UNIT_GROUP,
 } from "./extras-import/importer";
+export {
+  compareExtrasConfiguration,
+  type ConfigParityReport,
+  type FieldParity,
+  PARITY_CATEGORY_LABELS,
+  type ParityCategory,
+  renderConfigParityMarkdown,
+} from "./extras-import/config-parity";
 export {
   type CatalogComparison,
   reconcileExtras,
@@ -323,6 +335,7 @@ export {
 } from "./repositories/service-engine-repository";
 export {
   applyImageMigration,
+  externalImageReferences,
   type ImageApplyResult,
   type ImageInfo,
   type ImageUploader,

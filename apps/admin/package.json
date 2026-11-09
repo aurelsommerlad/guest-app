@@ -13,7 +13,8 @@
     "test": "vitest run",
     "admin-user:create": "tsx scripts/admin-user.ts",
     "extras:export": "tsx scripts/extras-export.ts",
-    "extras:import": "tsx scripts/extras-import.ts"
+    "extras:import": "tsx scripts/extras-import.ts",
+    "extras:config-parity": "tsx scripts/extras-config-parity.ts"
   },
   "dependencies": {
     "@up/core": "workspace:*",

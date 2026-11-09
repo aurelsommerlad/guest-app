@@ -108,7 +108,8 @@ export async function loadEngineCatalog(db: Database, context: TenantContext, pr
         sql`${offerProperties.extrasServiceId} IS NOT NULL`,
       ),
     )
-    .orderBy(asc(offerProperties.sortOrder));
+    // Ties: oldest configuration first (Extras keeps the order in which items were saved).
+    .orderBy(asc(offerProperties.sortOrder), asc(offerProperties.createdAt), asc(offers.id));
   return rows.map(({ offer, config }) => {
     const fulfillment = config.fulfillment ?? offer.fulfillment;
     return {
@@ -125,6 +126,7 @@ export async function loadEngineCatalog(db: Database, context: TenantContext, pr
         config.extraPersonPriceCents === null ? null : config.extraPersonPriceCents / 100,
       currency: config.currency,
       priceUnitLabel: config.priceUnitLabel ?? null,
+      extrasTexts: config.extrasTexts ?? null,
       requiresRemainingCapacity: config.requiresRemainingCapacity,
       requiresVehicleRegistration: config.requiresVehicleRegistration,
       maxOnePerReservation: config.maxOnePerReservation,

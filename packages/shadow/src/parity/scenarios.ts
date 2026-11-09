@@ -275,4 +275,45 @@ export const SCENARIOS: Scenario[] = [
     },
     steps: [{ kind: "catalog" }],
   },
+  {
+    id: "S18",
+    title:
+      "Extras-Standard: keine eigenen Sprachtexte, nur allgemeiner Text (Apaleo-Namen vorrangig)",
+    catalog: (c) => {
+      // Fresh Extras admin rows store the Apaleo name once in displayName/description and leave
+      // the language fields empty – the usual production shape.
+      for (const item of Object.values(c)) {
+        item.displayName = item.serviceId === "TEST-PKW" ? "Car park" : item.displayNameDe;
+        item.description = item.serviceId === "TEST-PKW" ? "Underground" : "";
+        item.priceUnitLabel = item.serviceId === "TEST-PKW" ? "pro Stellplatz" : "";
+        delete item.displayNameDe;
+        delete item.displayNameEn;
+      }
+    },
+    steps: [{ kind: "catalog" }],
+  },
+  {
+    id: "S19",
+    title: "Verlängerungsnacht: Mindestbelegung leer gespeichert (Extras: kein Angebot)",
+    extensionConfig: { ...EXTENSION_CONFIG, minSellableStayNights: null },
+    steps: [{ kind: "extension-offer" }],
+  },
+  {
+    id: "S20",
+    title: "Apartmenttyp-Beschränkung nur mit ungültigen Einträgen",
+    catalog: (c) => {
+      if (c["TEST-HUND"]) c["TEST-HUND"].allowedUnitGroupIds = ["kein gültiger Typ"];
+    },
+    steps: [{ kind: "catalog" }, { kind: "order", lines: [{ serviceId: "TEST-HUND", count: 1 }] }],
+  },
+  {
+    id: "S21",
+    title: 'Unbekannte Buchungsart ("Request") und Reihenfolge als Text/Dezimalzahl',
+    catalog: (c) => {
+      if (c["TEST-BABY"]) c["TEST-BABY"].fulfillmentMode = "Request";
+      if (c["TEST-HUND"]) c["TEST-HUND"].sortOrder = "0";
+      if (c["TEST-PKW"]) c["TEST-PKW"].sortOrder = 1.5;
+    },
+    steps: [{ kind: "catalog" }],
+  },
 ];

@@ -14,7 +14,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import { type Database } from "../client";
 import { offerProperties, offers } from "../schema";
-import { type ExtrasSnapshotLike } from "./importer";
+import { catalogMembers, type ExtrasSnapshotLike } from "./importer";
 
 type Obj = Record<string, unknown>;
 const obj = (v: unknown): Obj =>
@@ -92,16 +92,13 @@ export function planImageMigration(snapshot: ExtrasSnapshotLike): PlannedImage[]
     if (match?.[1]) stored.set(match[1].toLowerCase(), obj(entry.value));
   }
   const references = new Map<string, Set<string>>();
-  for (const entry of snapshot.entries) {
-    const match = /^catalog:([^:]+):items$/.exec(entry.key);
-    if (!match?.[1]) continue;
-    for (const item of Object.values(obj(entry.value)).map(obj)) {
-      const id = typeof item.imageUrl === "string" ? IMAGE_URL.exec(item.imageUrl)?.[1] : undefined;
-      if (!id) continue;
-      const key = id.toLowerCase();
-      if (!references.has(key)) references.set(key, new Set());
-      references.get(key)?.add(`${match[1]}:${String(item.serviceId)}`);
-    }
+  // Same item set as the catalog import – including legacy array catalogs.
+  for (const { apaleoPropertyId, item } of catalogMembers(snapshot)) {
+    const id = typeof item.imageUrl === "string" ? IMAGE_URL.exec(item.imageUrl)?.[1] : undefined;
+    if (!id) continue;
+    const key = id.toLowerCase();
+    if (!references.has(key)) references.set(key, new Set());
+    references.get(key)?.add(`${apaleoPropertyId}:${String(item.serviceId)}`);
   }
   const ids = [...new Set([...stored.keys(), ...references.keys()])].sort();
   return ids.map((imageId) => {
@@ -139,6 +136,25 @@ export function planImageMigration(snapshot: ExtrasSnapshotLike): PlannedImage[]
       issues,
     };
   });
+}
+
+/**
+ * Catalog images that are not Extras uploads (any other URL). They are not copied – each one is
+ * listed so it can be checked and uploaded in STAY before the go-live.
+ */
+export function externalImageReferences(
+  snapshot: ExtrasSnapshotLike,
+): { reference: string; url: string }[] {
+  const result: { reference: string; url: string }[] = [];
+  for (const { apaleoPropertyId, item } of catalogMembers(snapshot)) {
+    const url = typeof item.imageUrl === "string" ? item.imageUrl.trim() : "";
+    if (!url || IMAGE_URL.test(url)) continue;
+    result.push({
+      reference: `${apaleoPropertyId}:${String(item.serviceId)}`,
+      url: url.slice(0, 300),
+    });
+  }
+  return result.sort((a, b) => a.reference.localeCompare(b.reference));
 }
 
 export type ImageUploader = (input: {

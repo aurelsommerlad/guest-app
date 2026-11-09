@@ -105,6 +105,10 @@ function configForm(formData: FormData): PropertyConfigForm {
     titleOverrideEn: field(formData, "titleOverrideEn", 200),
     teaserOverrideDe: field(formData, "teaserOverrideDe", 400),
     teaserOverrideEn: field(formData, "teaserOverrideEn", 400),
+    // The checkbox exists only while Extras' text logic is active (marker field).
+    ...(formData.get("extrasTextsShown") === "1"
+      ? { extrasTextsActive: flag("extrasTextsActive") }
+      : {}),
   };
 }
 

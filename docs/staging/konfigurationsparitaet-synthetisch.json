@@ -1,0 +1,1171 @@
+{
+  "basis": "synthetic",
+  "snapshotSha256": "1f73727e19b562afab10820f30e32dff9f98e999560f01e2304b559f852318b1",
+  "generatedAt": "2026-11-09T06:47:37.388Z",
+  "summary": {
+    "identical": 100,
+    "intended": 9,
+    "missing": 1,
+    "faulty": 3,
+    "unverified": 2
+  },
+  "properties": [
+    {
+      "apaleoPropertyId": "LEGACY",
+      "services": [
+        {
+          "serviceId": "LEGACY-LCO",
+          "code": "LCO",
+          "offerGroup": "LCO",
+          "fields": [
+            {
+              "field": "serviceId",
+              "stored": "LEGACY-LCO",
+              "extrasEffect": "Apaleo-Service",
+              "stayValue": "LEGACY-LCO",
+              "stayEffect": "Apaleo-Service",
+              "category": "identical"
+            },
+            {
+              "field": "code",
+              "stored": "LCO",
+              "extrasEffect": "letzter Titel-Rückfall",
+              "stayValue": "LCO",
+              "stayEffect": "Angebotsgruppe (gleicher Code = ein Angebot) und letzter Titel-Rückfall",
+              "category": "identical"
+            },
+            {
+              "field": "active",
+              "stored": true,
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "requiresRemainingCapacity",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "requiresVehicleRegistration",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "maxOnePerReservation",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "actionType",
+              "stored": "(fehlt)",
+              "extrasEffect": "service",
+              "stayValue": "service",
+              "stayEffect": "service",
+              "category": "identical"
+            },
+            {
+              "field": "bookingRule",
+              "stored": "departure_day",
+              "extrasEffect": "departure_day",
+              "stayValue": "departure_day",
+              "stayEffect": "departure_day",
+              "category": "identical"
+            },
+            {
+              "field": "fulfillmentMode",
+              "stored": "(fehlt)",
+              "extrasEffect": "instant",
+              "stayValue": "instant",
+              "stayEffect": "instant",
+              "category": "identical"
+            },
+            {
+              "field": "allowedUnitGroupIds",
+              "stored": "(fehlt)",
+              "extrasEffect": "alle Apartmenttypen",
+              "stayValue": [],
+              "stayEffect": "alle Apartmenttypen",
+              "category": "identical"
+            },
+            {
+              "field": "sortOrder",
+              "stored": 1,
+              "extrasEffect": 1,
+              "stayValue": 1,
+              "stayEffect": 1,
+              "category": "identical"
+            },
+            {
+              "field": "displayName",
+              "stored": "Late check-out",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            }
+          ],
+          "importWarnings": []
+        }
+      ],
+      "extension": {
+        "fields": [
+          {
+            "field": "extensionNightEnabled",
+            "stored": "false",
+            "extrasEffect": "Angebot möglich",
+            "stayValue": false,
+            "stayEffect": "aus",
+            "category": "intended",
+            "reason": "p1_boolean"
+          },
+          {
+            "field": "extensionDiscountPreArrivalOneNightGap",
+            "stored": "(fehlt)",
+            "extrasEffect": "20 %",
+            "stayValue": 20,
+            "stayEffect": "20 %",
+            "category": "identical",
+            "reason": "legacy_flat_field"
+          },
+          {
+            "field": "extensionDiscountPreArrivalStandard",
+            "stored": "(fehlt)",
+            "extrasEffect": "15 %",
+            "stayValue": 15,
+            "stayEffect": "15 %",
+            "category": "identical",
+            "reason": "legacy_flat_field"
+          },
+          {
+            "field": "extensionDiscountInHouseOneNightGap",
+            "stored": "(fehlt)",
+            "extrasEffect": "20 %",
+            "stayValue": 20,
+            "stayEffect": "20 %",
+            "category": "identical",
+            "reason": "legacy_flat_field"
+          },
+          {
+            "field": "extensionDiscountInHouseStandard",
+            "stored": "(fehlt)",
+            "extrasEffect": "15 %",
+            "stayValue": 15,
+            "stayEffect": "15 %",
+            "category": "identical",
+            "reason": "legacy_flat_field"
+          },
+          {
+            "field": "minSellableStayNights",
+            "stored": "(fehlt)",
+            "extrasEffect": "Angebot bei Lücke 1 oder > 2",
+            "stayValue": 2,
+            "stayEffect": "Angebot bei Lücke 1 oder > 2",
+            "category": "identical"
+          },
+          {
+            "field": "extensionDiscountOneNightGap",
+            "stored": 20,
+            "extrasEffect": "Rückfall für nicht gespeicherte Phasen-Rabatte",
+            "stayValue": "in die vier Phasen-Rabatte übernommen",
+            "stayEffect": "wie Extras",
+            "category": "identical"
+          },
+          {
+            "field": "extensionDiscountStandard",
+            "stored": 15,
+            "extrasEffect": "Rückfall für nicht gespeicherte Phasen-Rabatte",
+            "stayValue": "in die vier Phasen-Rabatte übernommen",
+            "stayEffect": "wie Extras",
+            "category": "identical"
+          }
+        ],
+        "importWarnings": [
+          "boolean_normalized:extensionNightEnabled",
+          "legacy_discount:extensionDiscountPreArrivalOneNightGap<-extensionDiscountOneNightGap",
+          "legacy_discount:extensionDiscountPreArrivalStandard<-extensionDiscountStandard",
+          "legacy_discount:extensionDiscountInHouseOneNightGap<-extensionDiscountOneNightGap",
+          "legacy_discount:extensionDiscountInHouseStandard<-extensionDiscountStandard",
+          "p1_boolean_differs:extensionNightEnabled"
+        ]
+      },
+      "order": {
+        "extras": [
+          "LEGACY-LCO"
+        ],
+        "stay": [
+          "LEGACY-LCO"
+        ],
+        "category": "identical"
+      }
+    },
+    {
+      "apaleoPropertyId": "TEST",
+      "services": [
+        {
+          "serviceId": "TEST-ALT",
+          "code": "ALT",
+          "offerGroup": "ALT",
+          "fields": [
+            {
+              "field": "serviceId",
+              "stored": "TEST-ALT",
+              "extrasEffect": "Apaleo-Service",
+              "stayValue": "TEST-ALT",
+              "stayEffect": "Apaleo-Service",
+              "category": "identical"
+            },
+            {
+              "field": "code",
+              "stored": "ALT",
+              "extrasEffect": "letzter Titel-Rückfall",
+              "stayValue": "ALT",
+              "stayEffect": "Angebotsgruppe (gleicher Code = ein Angebot) und letzter Titel-Rückfall",
+              "category": "identical"
+            },
+            {
+              "field": "active",
+              "stored": "false",
+              "extrasEffect": true,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "intended",
+              "reason": "hidden_in_extras_by_unknown_mode"
+            },
+            {
+              "field": "requiresRemainingCapacity",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "requiresVehicleRegistration",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "maxOnePerReservation",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "actionType",
+              "stored": "(fehlt)",
+              "extrasEffect": "service",
+              "stayValue": "service",
+              "stayEffect": "service",
+              "category": "identical"
+            },
+            {
+              "field": "bookingRule",
+              "stored": "weekly",
+              "extrasEffect": "per_stay",
+              "stayValue": "per_stay",
+              "stayEffect": "per_stay",
+              "category": "intended",
+              "reason": "unknown_rule_label_default"
+            },
+            {
+              "field": "fulfillmentMode",
+              "stored": "Request",
+              "extrasEffect": "hidden",
+              "stayValue": "instant",
+              "stayEffect": "hidden",
+              "category": "intended",
+              "reason": "unknown_mode_imported_inactive"
+            },
+            {
+              "field": "allowedUnitGroupIds",
+              "stored": "(fehlt)",
+              "extrasEffect": "alle Apartmenttypen",
+              "stayValue": [],
+              "stayEffect": "alle Apartmenttypen",
+              "category": "identical"
+            },
+            {
+              "field": "sortOrder",
+              "stored": "3",
+              "extrasEffect": "ohne Reihenfolge (am Ende)",
+              "stayValue": 9999,
+              "stayEffect": "ohne Reihenfolge (am Ende)",
+              "category": "identical",
+              "reason": "sort_order_not_a_number"
+            },
+            {
+              "field": "displayName",
+              "stored": "Alt",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            }
+          ],
+          "importWarnings": [
+            "unknown_booking_rule",
+            "unknown_fulfillment_hidden_in_extras",
+            "sort_order_not_a_number",
+            "boolean_normalized:active",
+            "p1_boolean_differs:active"
+          ]
+        },
+        {
+          "serviceId": "TEST-BABY",
+          "code": "BABY",
+          "offerGroup": "BABY",
+          "fields": [
+            {
+              "field": "serviceId",
+              "stored": "TEST-BABY",
+              "extrasEffect": "Apaleo-Service",
+              "stayValue": "TEST-BABY",
+              "stayEffect": "Apaleo-Service",
+              "category": "identical"
+            },
+            {
+              "field": "code",
+              "stored": "BABY",
+              "extrasEffect": "letzter Titel-Rückfall",
+              "stayValue": "BABY",
+              "stayEffect": "Angebotsgruppe (gleicher Code = ein Angebot) und letzter Titel-Rückfall",
+              "category": "identical"
+            },
+            {
+              "field": "active",
+              "stored": true,
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "requiresRemainingCapacity",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "requiresVehicleRegistration",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "maxOnePerReservation",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "actionType",
+              "stored": "(fehlt)",
+              "extrasEffect": "service",
+              "stayValue": "service",
+              "stayEffect": "service",
+              "category": "identical"
+            },
+            {
+              "field": "bookingRule",
+              "stored": "per_stay",
+              "extrasEffect": "per_stay",
+              "stayValue": "per_stay",
+              "stayEffect": "per_stay",
+              "category": "identical"
+            },
+            {
+              "field": "fulfillmentMode",
+              "stored": "request",
+              "extrasEffect": "request",
+              "stayValue": "request",
+              "stayEffect": "request",
+              "category": "identical"
+            },
+            {
+              "field": "allowedUnitGroupIds",
+              "stored": "(fehlt)",
+              "extrasEffect": "alle Apartmenttypen",
+              "stayValue": [],
+              "stayEffect": "alle Apartmenttypen",
+              "category": "identical"
+            },
+            {
+              "field": "sortOrder",
+              "stored": 5,
+              "extrasEffect": 5,
+              "stayValue": 5,
+              "stayEffect": 5,
+              "category": "identical"
+            },
+            {
+              "field": "displayNameDe",
+              "stored": "Babybett",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "imageUrl",
+              "stored": "/api/images/33333333-3333-4333-8333-333333333333",
+              "extrasEffect": "Bild",
+              "stayValue": "Bildmigration",
+              "stayEffect": "Bild problematisch: unreadable",
+              "category": "faulty"
+            }
+          ],
+          "importWarnings": []
+        },
+        {
+          "serviceId": "TEST-ECI",
+          "code": "ECI",
+          "offerGroup": "ECI",
+          "fields": [
+            {
+              "field": "serviceId",
+              "stored": "TEST-ECI",
+              "extrasEffect": "Apaleo-Service",
+              "stayValue": "TEST-ECI",
+              "stayEffect": "Apaleo-Service",
+              "category": "identical"
+            },
+            {
+              "field": "code",
+              "stored": "ECI",
+              "extrasEffect": "letzter Titel-Rückfall",
+              "stayValue": "ECI",
+              "stayEffect": "Angebotsgruppe (gleicher Code = ein Angebot) und letzter Titel-Rückfall",
+              "category": "identical"
+            },
+            {
+              "field": "active",
+              "stored": true,
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "requiresRemainingCapacity",
+              "stored": false,
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "requiresVehicleRegistration",
+              "stored": false,
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "maxOnePerReservation",
+              "stored": false,
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "actionType",
+              "stored": "service",
+              "extrasEffect": "service",
+              "stayValue": "service",
+              "stayEffect": "service",
+              "category": "identical"
+            },
+            {
+              "field": "bookingRule",
+              "stored": "arrival_day",
+              "extrasEffect": "arrival_day",
+              "stayValue": "arrival_day",
+              "stayEffect": "arrival_day",
+              "category": "identical"
+            },
+            {
+              "field": "fulfillmentMode",
+              "stored": "instant",
+              "extrasEffect": "instant",
+              "stayValue": "instant",
+              "stayEffect": "instant",
+              "category": "identical"
+            },
+            {
+              "field": "allowedUnitGroupIds",
+              "stored": [],
+              "extrasEffect": "alle Apartmenttypen",
+              "stayValue": [],
+              "stayEffect": "alle Apartmenttypen",
+              "category": "identical"
+            },
+            {
+              "field": "sortOrder",
+              "stored": 1,
+              "extrasEffect": 1,
+              "stayValue": 1,
+              "stayEffect": 1,
+              "category": "identical"
+            },
+            {
+              "field": "displayName",
+              "stored": "Early check-in",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "displayNameDe",
+              "stored": "",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "displayNameEn",
+              "stored": "",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "description",
+              "stored": "",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "descriptionDe",
+              "stored": "",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "descriptionEn",
+              "stored": "",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "priceUnitLabel",
+              "stored": "",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "priceUnitLabelDe",
+              "stored": "",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "priceUnitLabelEn",
+              "stored": "",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "name",
+              "stored": "Early check-in",
+              "extrasEffect": "ohne Wirkung für Gäste (Apaleo-Name beim Speichern)",
+              "stayValue": "Rückfall für den STAY-Titel",
+              "stayEffect": "ohne Wirkung, solange die Extras-Textlogik aktiv ist",
+              "category": "identical"
+            },
+            {
+              "field": "category",
+              "stored": "",
+              "extrasEffect": "ohne Wirkung für Gäste (nur im Extras-Admin)",
+              "stayValue": "STAY-Kategorie aus Regeln abgeleitet",
+              "stayEffect": "Gruppierung in der STAY-Oberfläche",
+              "category": "intended",
+              "reason": "free_text_category_not_used_by_guests"
+            }
+          ],
+          "importWarnings": []
+        },
+        {
+          "serviceId": "TEST-EXTRPERSON",
+          "code": "EXTRPERSON",
+          "offerGroup": "EXTRPERSON",
+          "fields": [
+            {
+              "field": "serviceId",
+              "stored": "TEST-EXTRPERSON",
+              "extrasEffect": "Apaleo-Service",
+              "stayValue": "TEST-EXTRPERSON",
+              "stayEffect": "Apaleo-Service",
+              "category": "identical"
+            },
+            {
+              "field": "code",
+              "stored": "EXTRPERSON",
+              "extrasEffect": "letzter Titel-Rückfall",
+              "stayValue": "EXTRPERSON",
+              "stayEffect": "Angebotsgruppe (gleicher Code = ein Angebot) und letzter Titel-Rückfall",
+              "category": "identical"
+            },
+            {
+              "field": "active",
+              "stored": true,
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "requiresRemainingCapacity",
+              "stored": true,
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "requiresVehicleRegistration",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "maxOnePerReservation",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "actionType",
+              "stored": "increase_occupancy",
+              "extrasEffect": "increase_occupancy",
+              "stayValue": "increase_occupancy",
+              "stayEffect": "increase_occupancy",
+              "category": "identical"
+            },
+            {
+              "field": "bookingRule",
+              "stored": "(fehlt)",
+              "extrasEffect": "per_stay",
+              "stayValue": "per_stay",
+              "stayEffect": "per_stay",
+              "category": "identical"
+            },
+            {
+              "field": "fulfillmentMode",
+              "stored": "instant",
+              "extrasEffect": "instant",
+              "stayValue": "instant",
+              "stayEffect": "instant",
+              "category": "identical"
+            },
+            {
+              "field": "extraPersonPricePerNight",
+              "stored": null,
+              "extrasEffect": "0.00 € pro Person/Nacht",
+              "stayValue": null,
+              "stayEffect": "nicht buchbar (Konfigurationsfehler)",
+              "category": "intended",
+              "reason": "p2_price"
+            },
+            {
+              "field": "allowedUnitGroupIds",
+              "stored": "(fehlt)",
+              "extrasEffect": "alle Apartmenttypen",
+              "stayValue": [],
+              "stayEffect": "alle Apartmenttypen",
+              "category": "identical"
+            },
+            {
+              "field": "sortOrder",
+              "stored": 6,
+              "extrasEffect": 6,
+              "stayValue": 6,
+              "stayEffect": 6,
+              "category": "identical"
+            },
+            {
+              "field": "displayName",
+              "stored": "Zusatzperson",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            }
+          ],
+          "importWarnings": [
+            "config_error:missing_extra_person_price",
+            "p2_extra_person_price_differs"
+          ]
+        },
+        {
+          "serviceId": "TEST-HUND",
+          "code": "HUND",
+          "offerGroup": "HUND",
+          "fields": [
+            {
+              "field": "serviceId",
+              "stored": "TEST-HUND",
+              "extrasEffect": "Apaleo-Service",
+              "stayValue": "TEST-HUND",
+              "stayEffect": "Apaleo-Service",
+              "category": "identical"
+            },
+            {
+              "field": "code",
+              "stored": "HUND",
+              "extrasEffect": "letzter Titel-Rückfall",
+              "stayValue": "HUND",
+              "stayEffect": "Angebotsgruppe (gleicher Code = ein Angebot) und letzter Titel-Rückfall",
+              "category": "identical"
+            },
+            {
+              "field": "active",
+              "stored": "true",
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "requiresRemainingCapacity",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "requiresVehicleRegistration",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "maxOnePerReservation",
+              "stored": "true",
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "actionType",
+              "stored": "(fehlt)",
+              "extrasEffect": "service",
+              "stayValue": "service",
+              "stayEffect": "service",
+              "category": "identical"
+            },
+            {
+              "field": "bookingRule",
+              "stored": "per_night",
+              "extrasEffect": "per_night",
+              "stayValue": "per_night",
+              "stayEffect": "per_night",
+              "category": "identical"
+            },
+            {
+              "field": "fulfillmentMode",
+              "stored": "instant",
+              "extrasEffect": "instant",
+              "stayValue": "instant",
+              "stayEffect": "instant",
+              "category": "identical"
+            },
+            {
+              "field": "allowedUnitGroupIds",
+              "stored": [
+                "TEST-DOG",
+                "kein gültiger Typ"
+              ],
+              "extrasEffect": "nur TEST-DOG, kein gültiger Typ",
+              "stayValue": [
+                "TEST-DOG"
+              ],
+              "stayEffect": "nur TEST-DOG",
+              "category": "intended"
+            },
+            {
+              "field": "sortOrder",
+              "stored": null,
+              "extrasEffect": "ohne Reihenfolge (am Ende)",
+              "stayValue": 9999,
+              "stayEffect": "ohne Reihenfolge (am Ende)",
+              "category": "identical"
+            },
+            {
+              "field": "displayName",
+              "stored": "Dog",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            }
+          ],
+          "importWarnings": [
+            "invalid_unit_group_ids_dropped",
+            "boolean_normalized:active",
+            "boolean_normalized:maxOnePerReservation"
+          ]
+        },
+        {
+          "serviceId": "TEST-PKW",
+          "code": "PKW",
+          "offerGroup": "PKW",
+          "fields": [
+            {
+              "field": "serviceId",
+              "stored": "TEST-PKW",
+              "extrasEffect": "Apaleo-Service",
+              "stayValue": "TEST-PKW",
+              "stayEffect": "Apaleo-Service",
+              "category": "identical"
+            },
+            {
+              "field": "code",
+              "stored": "PKW",
+              "extrasEffect": "letzter Titel-Rückfall",
+              "stayValue": "PKW",
+              "stayEffect": "Angebotsgruppe (gleicher Code = ein Angebot) und letzter Titel-Rückfall",
+              "category": "identical"
+            },
+            {
+              "field": "active",
+              "stored": true,
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "requiresRemainingCapacity",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "requiresVehicleRegistration",
+              "stored": true,
+              "extrasEffect": true,
+              "stayValue": true,
+              "stayEffect": true,
+              "category": "identical"
+            },
+            {
+              "field": "maxOnePerReservation",
+              "stored": "(fehlt)",
+              "extrasEffect": false,
+              "stayValue": false,
+              "stayEffect": false,
+              "category": "identical"
+            },
+            {
+              "field": "actionType",
+              "stored": "(fehlt)",
+              "extrasEffect": "service",
+              "stayValue": "service",
+              "stayEffect": "service",
+              "category": "identical"
+            },
+            {
+              "field": "bookingRule",
+              "stored": "per_night",
+              "extrasEffect": "per_night",
+              "stayValue": "per_night",
+              "stayEffect": "per_night",
+              "category": "identical"
+            },
+            {
+              "field": "fulfillmentMode",
+              "stored": "instant",
+              "extrasEffect": "instant",
+              "stayValue": "instant",
+              "stayEffect": "instant",
+              "category": "identical"
+            },
+            {
+              "field": "allowedUnitGroupIds",
+              "stored": "(fehlt)",
+              "extrasEffect": "alle Apartmenttypen",
+              "stayValue": [],
+              "stayEffect": "alle Apartmenttypen",
+              "category": "identical"
+            },
+            {
+              "field": "sortOrder",
+              "stored": 1.5,
+              "extrasEffect": 1.5,
+              "stayValue": 2,
+              "stayEffect": 2,
+              "category": "unverified",
+              "reason": "sort_order_rounded"
+            },
+            {
+              "field": "displayName",
+              "stored": "Car park",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "priceUnitLabel",
+              "stored": "pro Stellplatz",
+              "extrasEffect": "Extras-Textlogik (eigener Text → Apaleo → allgemeiner Text)",
+              "stayValue": "unverändert in extras_texts",
+              "stayEffect": "dieselbe Textlogik bis zur ersten Textänderung in STAY",
+              "category": "identical"
+            },
+            {
+              "field": "imageUrl",
+              "stored": "https://cdn.example/parken.jpg",
+              "extrasEffect": "Bild",
+              "stayValue": "nicht übernommen (externe Adresse)",
+              "stayEffect": "kein Bild",
+              "category": "missing",
+              "reason": "external_image_url"
+            }
+          ],
+          "importWarnings": [
+            "sort_order_rounded"
+          ]
+        }
+      ],
+      "extension": {
+        "fields": [
+          {
+            "field": "extensionNightEnabled",
+            "stored": true,
+            "extrasEffect": "kein Angebot (Mindestbelegung ungültig)",
+            "stayValue": false,
+            "stayEffect": "aus",
+            "category": "intended",
+            "reason": "invalid_min_in_extras_imported_off"
+          },
+          {
+            "field": "extensionDiscountPreArrivalOneNightGap",
+            "stored": 12.5,
+            "extrasEffect": "12.5 %",
+            "stayValue": 13,
+            "stayEffect": "13 %",
+            "category": "faulty",
+            "reason": "discount_rounded_or_clamped"
+          },
+          {
+            "field": "extensionDiscountPreArrivalStandard",
+            "stored": 10,
+            "extrasEffect": "10 %",
+            "stayValue": 10,
+            "stayEffect": "10 %",
+            "category": "identical"
+          },
+          {
+            "field": "extensionDiscountInHouseOneNightGap",
+            "stored": 20,
+            "extrasEffect": "20 %",
+            "stayValue": 20,
+            "stayEffect": "20 %",
+            "category": "identical"
+          },
+          {
+            "field": "extensionDiscountInHouseStandard",
+            "stored": 100,
+            "extrasEffect": "100 %",
+            "stayValue": 90,
+            "stayEffect": "90 %",
+            "category": "faulty",
+            "reason": "discount_rounded_or_clamped"
+          },
+          {
+            "field": "minSellableStayNights",
+            "stored": null,
+            "extrasEffect": "ungültig – kein Angebot",
+            "stayValue": 2,
+            "stayEffect": "Angebot bei Lücke 1 oder > 2",
+            "category": "intended"
+          }
+        ],
+        "importWarnings": [
+          "invalid_min_nights_defaulted",
+          "extension_off_invalid_min_in_extras",
+          "discount_rounded:extensionDiscountPreArrivalOneNightGap",
+          "discount_clamped:extensionDiscountInHouseStandard"
+        ]
+      },
+      "order": {
+        "extras": [
+          "TEST-ECI",
+          "TEST-PKW",
+          "TEST-BABY",
+          "TEST-EXTRPERSON",
+          "TEST-HUND"
+        ],
+        "stay": [
+          "TEST-ECI",
+          "TEST-PKW",
+          "TEST-BABY",
+          "TEST-EXTRPERSON",
+          "TEST-HUND"
+        ],
+        "category": "identical"
+      }
+    }
+  ],
+  "affected": {
+    "p1": [
+      {
+        "reference": "LEGACY:extension",
+        "field": "extensionNightEnabled",
+        "stored": "false"
+      },
+      {
+        "reference": "TEST:TEST-ALT",
+        "field": "active",
+        "stored": "false"
+      }
+    ],
+    "p2": [
+      {
+        "reference": "TEST:TEST-EXTRPERSON",
+        "stored": null,
+        "extras": 0,
+        "stay": null
+      }
+    ],
+    "p4": [
+      {
+        "reference": "TEST:TEST-BABY"
+      }
+    ],
+    "extensionEffect": [
+      {
+        "apaleoPropertyId": "TEST",
+        "reason": "invalid_min_in_extras"
+      },
+      {
+        "apaleoPropertyId": "TEST",
+        "reason": "discount_changed:extensionDiscountPreArrivalOneNightGap"
+      },
+      {
+        "apaleoPropertyId": "TEST",
+        "reason": "discount_changed:extensionDiscountInHouseStandard"
+      }
+    ]
+  },
+  "unknownFields": [
+    {
+      "reference": "TEST:TEST-ALT",
+      "field": "price"
+    }
+  ],
+  "images": {
+    "planned": 1,
+    "issues": [
+      {
+        "imageId": "33333333-3333-4333-8333-333333333333",
+        "issues": [
+          "unreadable"
+        ],
+        "references": [
+          "TEST:TEST-BABY"
+        ]
+      }
+    ],
+    "external": [
+      {
+        "reference": "TEST:TEST-PKW",
+        "url": "https://cdn.example/parken.jpg"
+      }
+    ]
+  },
+  "operations": {
+    "keys": {
+      "catalog:*": 2,
+      "extension-night:config:*": 2,
+      "image:*": 1,
+      "orders": 1,
+      "requests:*": 1,
+      "stay-extensions:*": 1,
+      "users": 1
+    },
+    "users": {
+      "admin": 1,
+      "manager": 1,
+      "viewer": 1
+    },
+    "orders": 0,
+    "requests": {
+      "pending": 1,
+      "approved": 1
+    },
+    "extensionRecords": 0,
+    "findings": [
+      {
+        "area": "Slack",
+        "category": "missing",
+        "note": "Extras sendet alle neuen Anfragen an EINEN Webhook (Umgebungsvariable, nicht im Export). In STAY braucht jeder Standort mit Anfrage-Services ein Slack-Ziel: TEST. Wird beim Go-live gesetzt (Import-Option --slack-route)."
+      },
+      {
+        "area": "Benutzer und Rollen",
+        "category": "intended",
+        "note": "Extras: globale Rollen admin/manager/viewer ohne Standortrechte, Passwort-Hashes. STAY: Einladungen mit Rolle und Standortrechten; Passwörter werden nie übernommen."
+      },
+      {
+        "area": "Veröffentlichung",
+        "category": "intended",
+        "note": "Neue Angebote entstehen als Entwurf; erst die Veröffentlichung beim Go-live macht sie für Gäste sichtbar (Prüfliste)."
+      },
+      {
+        "area": "Bestellhistorie",
+        "category": "intended",
+        "note": "Extras behält nur die letzten 500 Bestellungen (ältere sind dort bereits verloren). STAY übernimmt alle vorhandenen ohne Gastnamen."
+      }
+    ]
+  }
+}

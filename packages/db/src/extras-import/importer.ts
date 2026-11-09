@@ -20,6 +20,14 @@ import { createHash } from "node:crypto";
 import {
   canonicalJson,
   DEFAULT_AVAILABILITY,
+  extrasExtensionConfig,
+  extrasExtensionEffectivelyEnabled,
+  extrasExtraPersonPrice,
+  extrasFulfillmentReach,
+  extrasTruthy,
+  extrasUnitGroupRestriction,
+  type ExtrasTexts,
+  SORT_ORDER_LAST,
   normalizeBoolean,
   parsePriceToCents,
   resolveStayExtensionSettingsDetailed,
@@ -83,6 +91,12 @@ export type ImportOptions = {
    * legally relevant documents themselves (invoices, folios) stay in Apaleo.
    */
   recordRetentionDays?: number;
+  /**
+   * Extras posts every new request to ONE Slack webhook (environment, not in the snapshot).
+   * When given, this STAY route name is set for every imported property that has no route yet –
+   * the same single channel as today. Never replaces a route chosen in STAY.
+   */
+  slackRoute?: string;
 };
 
 const sha = (value: unknown) => createHash("sha256").update(canonicalJson(value)).digest("hex");
@@ -134,6 +148,56 @@ export function catalogMembers(snapshot: ExtrasSnapshotLike): CatalogMember[] {
   return members.filter((m) => SERVICE_ID.test(str(m.item.serviceId)));
 }
 
+/**
+ * Placeholder kept in allowed_unit_group_ids when Extras restricts an item to entries that can
+ * never match (e.g. malformed ids): the item stays restricted for every apartment type, as in
+ * Extras, instead of silently becoming unrestricted.
+ */
+export const UNMATCHABLE_UNIT_GROUP = "__extras_no_match__";
+
+/**
+ * Extras sort order → STAY integer. Extras sorts only real finite numbers (lib/catalogSort.js);
+ * everything else comes last. Each interpretation that could change the order is reported.
+ */
+function sortOrderOf(value: unknown, warnings: string[]): number {
+  if (value === null || value === undefined || value === "") return SORT_ORDER_LAST;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    if (value >= SORT_ORDER_LAST || value < 0) warnings.push("sort_order_outside_admin_range");
+    if (!Number.isInteger(value)) warnings.push("sort_order_rounded");
+    // Integer column; values beyond ±1e9 are clamped (never seen, but must not fail the import).
+    return Math.max(-1_000_000_000, Math.min(1_000_000_000, Math.round(value)));
+  }
+  // Text such as "3": Extras ignores it (sorts last), STAY would read 3 – keep Extras' order.
+  warnings.push("sort_order_not_a_number");
+  return SORT_ORDER_LAST;
+}
+
+/**
+ * The Extras text fields of an item, verbatim (trimmed). Kept per property so the guest view
+ * can follow Extras' text logic – Apaleo texts before the generic fields – until texts are
+ * edited in STAY.
+ */
+export function extrasTextsOf(item: Obj): ExtrasTexts {
+  const keys = [
+    "displayName",
+    "displayNameDe",
+    "displayNameEn",
+    "description",
+    "descriptionDe",
+    "descriptionEn",
+    "priceUnitLabel",
+    "priceUnitLabelDe",
+    "priceUnitLabelEn",
+    "code",
+  ] as const;
+  const texts: ExtrasTexts = {};
+  for (const key of keys) {
+    const value = str(item[key]).slice(0, 2000);
+    if (value) texts[key] = value;
+  }
+  return texts;
+}
+
 export function groupKeyOf(item: Obj): string {
   const code = str(item.code);
   return /^[A-Za-z0-9_-]{1,120}$/.test(code) ? code : str(item.serviceId);
@@ -149,6 +213,8 @@ export function configWithWarnings(item: Obj) {
   const flag = (key: string) => {
     const result = normalizeBoolean(item[key]);
     if (result.normalized && item[key] !== undefined) warnings.push(`boolean_normalized:${key}`);
+    // P-1: Extras reads every flag by JavaScript truthiness ("false" and "0" are true there).
+    if (extrasTruthy(item[key]) !== result.value) warnings.push(`p1_boolean_differs:${key}`);
     return result.value;
   };
   const actionType = item.actionType === "increase_occupancy" ? "increase_occupancy" : "service";
@@ -167,6 +233,10 @@ export function configWithWarnings(item: Obj) {
   const fulfillment: "instant" | "request" = isOccupancy ? "instant" : storedFulfillment;
   if (isOccupancy && storedFulfillment !== "instant")
     warnings.push("occupancy_fulfillment_forced_instant");
+  // An unknown booking mode ("Request", "manual" …) reaches neither guest flow in Extras – the
+  // item is invisible there. Imported as inactive so it does not suddenly become bookable.
+  const hiddenByFulfillment = extrasFulfillmentReach(item.fulfillmentMode) === "hidden";
+  if (hiddenByFulfillment) warnings.push("unknown_fulfillment_hidden_in_extras");
   let extraPersonPriceCents: number | null = null;
   if (isOccupancy) {
     const parsed = parsePriceToCents(item.extraPersonPricePerNight);
@@ -174,20 +244,36 @@ export function configWithWarnings(item: Obj) {
     else if (Number.isNaN(parsed) || parsed < 0 || parsed > 10_000_000)
       warnings.push("config_error:invalid_extra_person_price");
     else extraPersonPriceCents = parsed;
+    // P-2: Extras uses Number(value) – null/"" are offered for 0 €, "35,50" is hidden.
+    const extras = extrasExtraPersonPrice(item.extraPersonPricePerNight);
+    const extrasCents = extras === null ? null : Math.round(extras * 100);
+    if (extrasCents !== extraPersonPriceCents) warnings.push("p2_extra_person_price_differs");
   }
   const requiresCapacity = flag("requiresRemainingCapacity");
   if (isOccupancy && !requiresCapacity) warnings.push("occupancy_capacity_rule_forced");
   const labelDe = str(item.priceUnitLabelDe) || str(item.priceUnitLabel);
   const labelEn = str(item.priceUnitLabelEn);
+  const extrasGroups = extrasUnitGroupRestriction(item.allowedUnitGroupIds);
   const rawGroups = Array.isArray(item.allowedUnitGroupIds)
     ? item.allowedUnitGroupIds.map(str).filter(Boolean)
     : [];
-  const unitGroups = rawGroups.filter((id) => /^[A-Za-z0-9_-]{1,80}$/.test(id)).slice(0, 50);
+  let unitGroups = rawGroups.filter((id) => /^[A-Za-z0-9_-]{1,80}$/.test(id));
   if (unitGroups.length !== rawGroups.length) warnings.push("invalid_unit_group_ids_dropped");
-  const sortOrder = num(item.sortOrder);
+  if (unitGroups.length > 50) {
+    unitGroups = unitGroups.slice(0, 50);
+    warnings.push("unit_group_ids_truncated");
+  }
+  // Extras restricts as soon as the list is non-empty, even if no entry can ever match. An
+  // empty STAY list would mean "every apartment type" – keep the item restricted instead.
+  if (extrasGroups.restricted && unitGroups.length === 0) {
+    unitGroups = [UNMATCHABLE_UNIT_GROUP];
+    warnings.push("unit_groups_unmatchable_kept_restricted");
+  }
+  const sortOrder = sortOrderOf(item.sortOrder, warnings);
+  const active = flag("active");
   const config = {
     extrasServiceId: str(item.serviceId),
-    active: flag("active"),
+    active: active && !hiddenByFulfillment,
     actionType,
     bookingRule,
     fulfillment,
@@ -201,7 +287,7 @@ export function configWithWarnings(item: Obj) {
     requiresVehicleRegistration: flag("requiresVehicleRegistration"),
     maxOnePerReservation: flag("maxOnePerReservation"),
     allowedUnitGroupIds: unitGroups,
-    sortOrder: sortOrder ?? 1000,
+    sortOrder,
   } as const;
   for (const issue of serviceConfigIssues(config)) {
     if (!warnings.includes(`config_error:${issue}`)) warnings.push(`config_error:${issue}`);
@@ -282,6 +368,8 @@ export async function importExtrasSnapshot(
 
       await importCatalog(tx, context, snapshot, mapProperty, add, options.now);
       await importSettings(tx, context, snapshot, mapProperty, add, options.now);
+      if (options.slackRoute !== undefined)
+        await importSlackRoutes(tx, context, snapshot, mapProperty, add, options);
       await importHistory(tx, context, snapshot, mapProperty, add, options.now, {
         operational: retentionDays,
         records: recordRetentionDays,
@@ -522,6 +610,7 @@ async function upsertPropertyConfig(
     add(warnings.length ? { ...item, warnings } : item);
   };
   const texts = textsOf(member.item);
+  const extrasTexts = extrasTextsOf(member.item);
   const titleOverride =
     texts.title.de !== str(offer.title.de) ||
     (texts.title.en && texts.title.en !== str(offer.title.en))
@@ -571,6 +660,7 @@ async function upsertPropertyConfig(
       ...config,
       titleOverride,
       teaserOverride,
+      extrasTexts,
       ...bookkeeping,
       createdAt: now,
     });
@@ -622,7 +712,11 @@ async function upsertPropertyConfig(
   const stayOwned = existing.importedHash === null;
   await tx
     .update(offerProperties)
-    .set({ ...config, ...(stayOwned ? {} : { titleOverride, teaserOverride }), ...bookkeeping })
+    .set({
+      ...config,
+      ...(stayOwned ? {} : { titleOverride, teaserOverride, extrasTexts }),
+      ...bookkeeping,
+    })
     .where(
       and(
         eq(offerProperties.tenantId, context.tenantId),
@@ -638,6 +732,150 @@ async function upsertPropertyConfig(
     targetId: `${offer.id}:${propertyId}`,
     ...(stayOwned ? { reason: "linked_stay_configuration" } : {}),
   });
+}
+
+/**
+ * Extras extension config → STAY property settings, keeping the effect Extras has today.
+ *
+ * - The minimum sellable stay is compared as `gap > min`; for whole-night gaps
+ *   `gap > 2.5` equals `gap > 2`, so fractions are floored (identical decisions).
+ * - A minimum Extras reads as < 1 (stored null, "", 0, negative) makes Extras answer
+ *   "invalid_config" – no offer although the switch is on. STAY cannot store such a minimum;
+ *   the switch is imported as off so guests see the same (nothing), and it is reported.
+ * - Discounts are whole percent 0–90 in STAY. Rounding or clamping changes the price and is
+ *   reported per field.
+ * - The switch follows P-1 (STAY reads "false" as off, Extras as on); differences are reported.
+ */
+export function mapExtensionSettings(stored: Record<string, unknown>) {
+  const { settings: s, notes } = resolveStayExtensionSettingsDetailed(stored);
+  const extras = extrasExtensionConfig(stored);
+  const out = [...notes];
+  const discount = (key: string, value: number) => {
+    const rounded = Math.round(value);
+    const clamped = Math.min(90, Math.max(0, rounded));
+    if (rounded !== value) out.push(`discount_rounded:${key}`);
+    if (clamped !== rounded) out.push(`discount_clamped:${key}`);
+    return clamped;
+  };
+  let minNights = Math.floor(extras.minSellableStayNights);
+  if (!Number.isInteger(extras.minSellableStayNights) && minNights >= 1)
+    out.push("min_nights_floored_same_decisions");
+  if (minNights > 30) {
+    minNights = 30;
+    out.push("min_nights_clamped");
+  }
+  const extrasEffective = extrasExtensionEffectivelyEnabled(extras);
+  let enabled = s.extensionNightEnabled;
+  if (extras.extensionNightEnabled !== s.extensionNightEnabled)
+    out.push("p1_boolean_differs:extensionNightEnabled");
+  if (minNights < 1) {
+    if (enabled && extras.extensionNightEnabled) out.push("extension_off_invalid_min_in_extras");
+    if (enabled) enabled = false;
+    minNights = s.minSellableStayNights;
+  }
+  // Only reported where Extras would really show offers but STAY would not (or vice versa).
+  if (enabled !== extrasEffective && !out.includes("p1_boolean_differs:extensionNightEnabled"))
+    out.push("extension_effect_differs");
+  return {
+    values: {
+      extensionNightEnabled: enabled,
+      discountPreArrivalOneNightGap: discount(
+        "extensionDiscountPreArrivalOneNightGap",
+        extras.extensionDiscountPreArrivalOneNightGap,
+      ),
+      discountPreArrivalStandard: discount(
+        "extensionDiscountPreArrivalStandard",
+        extras.extensionDiscountPreArrivalStandard,
+      ),
+      discountInHouseOneNightGap: discount(
+        "extensionDiscountInHouseOneNightGap",
+        extras.extensionDiscountInHouseOneNightGap,
+      ),
+      discountInHouseStandard: discount(
+        "extensionDiscountInHouseStandard",
+        extras.extensionDiscountInHouseStandard,
+      ),
+      minSellableStayNights: minNights,
+    },
+    notes: out,
+  };
+}
+
+const SLACK_ROUTE = /^[a-z0-9-]{1,40}$/;
+
+async function importSlackRoutes(
+  tx: Tx,
+  context: TenantContext,
+  snapshot: ExtrasSnapshotLike,
+  mapProperty: MapProperty,
+  add: Add,
+  options: ImportOptions,
+) {
+  const route = options.slackRoute ?? "";
+  if (!SLACK_ROUTE.test(route)) throw new Error("invalid slack route");
+  const apaleoIds = [...new Set(catalogMembers(snapshot).map((m) => m.apaleoPropertyId))].sort();
+  for (const apaleoId of apaleoIds) {
+    const propertyId = await mapProperty(apaleoId);
+    if (!propertyId) continue; // already reported as property_not_mapped by the catalog
+    const item = (action: ImportAction, reason?: string): ImportItem => ({
+      entityType: "slack_route",
+      sourceKey: apaleoId,
+      sourceHash: sha({ route }),
+      action,
+      targetId: propertyId,
+      ...(reason ? { reason } : {}),
+    });
+    const [existing] = await tx
+      .select({
+        slackRoute: propertyServiceSettings.slackRoute,
+        importedAt: propertyServiceSettings.importedAt,
+        updatedAt: propertyServiceSettings.updatedAt,
+      })
+      .from(propertyServiceSettings)
+      .where(
+        and(
+          eq(propertyServiceSettings.tenantId, context.tenantId),
+          eq(propertyServiceSettings.propertyId, propertyId),
+        ),
+      );
+    if (!existing) {
+      // Defaults equal Extras without a stored extension config (switched off). importedAt is
+      // set so a later settings import still counts the row as imported, not as STAY's own.
+      await tx.insert(propertyServiceSettings).values({
+        tenantId: context.tenantId,
+        propertyId,
+        slackRoute: route,
+        importedAt: options.now,
+        createdAt: options.now,
+        updatedAt: options.now,
+      });
+      add(item("create"));
+    } else if (existing.slackRoute === route) {
+      add(item("unchanged"));
+    } else if (existing.slackRoute) {
+      add(item("skip", "route_set_in_stay"));
+    } else {
+      // updated_at moves with every write. A row that was not edited in STAY since its import
+      // keeps that status (imported_at follows), so the next settings import is not a conflict.
+      const untouched =
+        existing.importedAt !== null &&
+        existing.updatedAt.getTime() <= existing.importedAt.getTime() + 1000;
+      await tx
+        .update(propertyServiceSettings)
+        .set(
+          untouched
+            ? { slackRoute: route, importedAt: options.now, updatedAt: options.now }
+            : { slackRoute: route },
+        )
+        .where(
+          and(
+            eq(propertyServiceSettings.tenantId, context.tenantId),
+            eq(propertyServiceSettings.propertyId, propertyId),
+          ),
+        );
+      add(item("update"));
+    }
+  }
 }
 
 async function importSettings(
@@ -665,18 +903,12 @@ async function importSettings(
       });
       continue;
     }
-    const { settings: s, notes } = resolveStayExtensionSettingsDetailed(stored);
+    const { values: mapped, notes } = mapExtensionSettings(stored);
     const report: Add = (item) => {
       add(notes.length ? { ...item, warnings: notes } : item);
     };
-    const clamp = (n: number) => Math.min(90, Math.max(0, Math.round(n)));
     const values = {
-      extensionNightEnabled: s.extensionNightEnabled,
-      discountPreArrivalOneNightGap: clamp(s.extensionDiscountPreArrivalOneNightGap),
-      discountPreArrivalStandard: clamp(s.extensionDiscountPreArrivalStandard),
-      discountInHouseOneNightGap: clamp(s.extensionDiscountInHouseOneNightGap),
-      discountInHouseStandard: clamp(s.extensionDiscountInHouseStandard),
-      minSellableStayNights: Math.min(30, Math.max(1, Math.round(s.minSellableStayNights))),
+      ...mapped,
       importedHash: hash,
       importedAt: now,
       updatedAt: now,
@@ -949,12 +1181,67 @@ async function importHistory(
       })
       .onConflictDoNothing({ target: [offerRequests.tenantId, offerRequests.legacyId] })
       .returning({ id: offerRequests.id });
+    if (row) {
+      add({
+        entityType: "request",
+        sourceKey,
+        sourceHash: hash,
+        action: "create",
+        targetId: row.id,
+      });
+      continue;
+    }
+    // Already imported. (The Extras decision time is not kept: handled_at belongs to a STAY
+    // admin.) Extras stays leading for its own requests until the go-live (they are
+    // read-only in STAY), so a decision taken in Extras meanwhile is mirrored – otherwise STAY
+    // would still show it as open and it could be decided a second time.
+    const [existing] = await tx
+      .select({
+        id: offerRequests.id,
+        source: offerRequests.source,
+        status: offerRequests.status,
+        bookedServiceDates: offerRequests.bookedServiceDates,
+        slackNotifiedAt: offerRequests.slackNotifiedAt,
+      })
+      .from(offerRequests)
+      .where(
+        and(eq(offerRequests.tenantId, context.tenantId), eq(offerRequests.legacyId, legacyId)),
+      );
+    const next = {
+      status,
+      bookedServiceDates: dates(request.bookedServiceDates),
+      slackNotifiedAt: str(request.slackNotifiedAt) ? new Date(str(request.slackNotifiedAt)) : null,
+    };
+    const differs =
+      existing !== undefined &&
+      (existing.status !== next.status ||
+        JSON.stringify(existing.bookedServiceDates ?? null) !==
+          JSON.stringify(next.bookedServiceDates) ||
+        existing.slackNotifiedAt?.getTime() !== next.slackNotifiedAt?.getTime());
+    if (existing?.source === "extras" && differs) {
+      await tx
+        .update(offerRequests)
+        .set({ ...next, updatedAt: now })
+        .where(
+          and(eq(offerRequests.tenantId, context.tenantId), eq(offerRequests.id, existing.id)),
+        );
+      add({
+        entityType: "request",
+        sourceKey,
+        sourceHash: hash,
+        action: "update",
+        targetId: existing.id,
+        reason: "synced_from_extras",
+      });
+      continue;
+    }
     add({
       entityType: "request",
       sourceKey,
       sourceHash: hash,
-      action: row ? "create" : "unchanged",
-      ...(row ? { targetId: row.id } : {}),
+      action: existing?.source === "extras" || !existing ? "unchanged" : "conflict",
+      ...(existing ? { targetId: existing.id } : {}),
+      ...(existing && existing.source !== "extras" ? { reason: "legacy_id_used_by_stay" } : {}),
     });
   }
 

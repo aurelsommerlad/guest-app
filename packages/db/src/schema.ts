@@ -704,6 +704,12 @@ export const offerProperties = pgTable(
     teaserOverride: jsonb("teaser_override").$type<LocalizedText>(),
     bodyOverride: jsonb("body_override").$type<LocalizedText>(),
     heroImageOverride: jsonb("hero_image_override").$type<ContentImage>(),
+    /**
+     * Configuration parity: the Extras text fields of an imported item, verbatim. While set,
+     * guests see Extras' text logic (curated override → Apaleo text → generic field); the
+     * first text edit in STAY clears it and STAY's own texts apply.
+     */
+    extrasTexts: jsonb("extras_texts").$type<Record<string, string>>(),
     /** Partner offers: price and availability for this property (null = the offer's). */
     priceOverride: jsonb("price_override").$type<OfferPrice>(),
     availabilityOverride: jsonb("availability_override").$type<OfferAvailability>(),
@@ -782,6 +788,11 @@ export const offerProperties = pgTable(
     check(
       "offer_properties_imported_hash_valid",
       sql`${t.importedHash} IS NULL OR ${isSha256Hex(t.importedHash)}`,
+    ),
+    check(
+      "offer_properties_extras_texts_valid",
+      sql`${t.extrasTexts} IS NULL OR (jsonb_typeof(${t.extrasTexts}) = 'object'
+        AND pg_column_size(${t.extrasTexts}) <= 16384)`,
     ),
   ],
 ).enableRLS();

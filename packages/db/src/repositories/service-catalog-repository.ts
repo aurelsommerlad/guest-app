@@ -43,6 +43,12 @@ export type CatalogPropertyConfig = {
   allowedUnitGroupIds: string[];
   titleOverride: LocalizedText | null;
   teaserOverride: LocalizedText | null;
+  /**
+   * Configuration parity: guests see Extras' text logic (curated override → Apaleo text →
+   * generic field) for this imported item. Saving with false, or changing a text or price unit
+   * label, ends it for good; STAY's texts apply from then on.
+   */
+  extrasTextsActive: boolean;
   legacyKey: string | null;
   importedAt: Date | null;
   updatedAt: Date;
@@ -84,6 +90,7 @@ function toConfig(row: typeof offerProperties.$inferSelect): CatalogPropertyConf
     allowedUnitGroupIds: [...row.allowedUnitGroupIds],
     titleOverride: row.titleOverride,
     teaserOverride: row.teaserOverride,
+    extrasTextsActive: row.extrasTexts !== null,
     legacyKey: row.legacyKey,
     importedAt: row.importedAt,
     updatedAt: row.updatedAt,
@@ -327,8 +334,11 @@ export async function setCatalogOfferStatus(
 
 export type PropertyConfigInput = Omit<
   CatalogPropertyConfig,
-  "propertyId" | "legacyKey" | "importedAt" | "updatedAt" | "currency"
->;
+  "propertyId" | "legacyKey" | "importedAt" | "updatedAt" | "currency" | "extrasTextsActive"
+> & {
+  /** false ends Extras' text logic; omitted keeps it (unless a text changes). */
+  extrasTextsActive?: boolean;
+};
 
 const CONFIG_FIELDS = [
   "extrasServiceId",
@@ -346,6 +356,8 @@ const CONFIG_FIELDS = [
   "titleOverride",
   "teaserOverride",
 ] as const;
+
+const TEXT_FIELDS = new Set<string>(["titleOverride", "teaserOverride", "priceUnitLabel"]);
 
 export type ConfigSaveResult =
   { ok: true; created: boolean } | { ok: false; reason: "not-found" | "service-in-use" };
@@ -409,8 +421,9 @@ export async function savePropertyConfig(
         ),
       )
       .for("update");
+    const { extrasTextsActive: keepExtrasTexts, ...config } = input.config;
     const values = {
-      ...input.config,
+      ...config,
       allowedUnitGroupIds: [...input.config.allowedUnitGroupIds],
       currency: input.config.extraPersonPriceCents === null ? null : "EUR",
       updatedBy: input.actorAdminId,
@@ -418,13 +431,17 @@ export async function savePropertyConfig(
     };
     if (existing) {
       const before = toConfig(existing);
-      const changedFields = CONFIG_FIELDS.filter(
+      const changedFields: string[] = CONFIG_FIELDS.filter(
         (field) => JSON.stringify(before[field]) !== JSON.stringify(input.config[field]),
       );
+      // Extras' text logic ends with the first text decision made in STAY.
+      const textEdited = changedFields.some((field) => TEXT_FIELDS.has(field));
+      const endExtrasTexts = before.extrasTextsActive && (textEdited || keepExtrasTexts === false);
+      if (endExtrasTexts) changedFields.push("extrasTexts");
       if (!changedFields.length) return { ok: true, created: false } as const;
       await tx
         .update(offerProperties)
-        .set(values)
+        .set(endExtrasTexts ? { ...values, extrasTexts: null } : values)
         .where(
           and(
             eq(offerProperties.tenantId, context.tenantId),

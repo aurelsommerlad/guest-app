@@ -18,6 +18,7 @@ import {
   parsePriceToCents,
   type ServiceConfigIssue,
   serviceConfigIssues,
+  SORT_ORDER_LAST,
 } from "@up/core";
 import {
   type CatalogOffer,
@@ -377,6 +378,8 @@ export type PropertyConfigForm = {
   titleOverrideEn: string;
   teaserOverrideDe: string;
   teaserOverrideEn: string;
+  /** Only sent when the configuration still follows Extras' text logic (checkbox shown). */
+  extrasTextsActive?: boolean;
 };
 
 const SERVICE_ID = /^[A-Za-z0-9_-]{1,120}$/;
@@ -409,7 +412,8 @@ export function parsePropertyConfigForm(
     }
     extraPersonPriceCents = parsed;
   }
-  const sortOrder = form.sortOrder.trim() === "" ? 0 : Number(form.sortOrder);
+  // Empty = "without order": after every numbered service, as in Extras.
+  const sortOrder = form.sortOrder.trim() === "" ? SORT_ORDER_LAST : Number(form.sortOrder);
   if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 9999) {
     return { ok: false, error: "Die Reihenfolge ist eine ganze Zahl von 0 bis 9999." };
   }
@@ -439,6 +443,9 @@ export function parsePropertyConfigForm(
       allowedUnitGroupIds: groups,
       titleOverride: title,
       teaserOverride: teaser,
+      ...(form.extrasTextsActive === undefined
+        ? {}
+        : { extrasTextsActive: form.extrasTextsActive }),
     },
   };
 }
@@ -503,6 +510,7 @@ export function emptyConfig(): CatalogPropertyConfig {
     fulfillment: "instant",
     extraPersonPriceCents: null,
     currency: null,
+    extrasTextsActive: false,
     priceUnitLabel: null,
     requiresRemainingCapacity: false,
     requiresVehicleRegistration: false,

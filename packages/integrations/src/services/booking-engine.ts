@@ -55,6 +55,7 @@ import {
   PmsError,
   resolveBilingualPriceUnitLabel,
   resolveBilingualText,
+  resolveExtrasCatalogTexts,
   resolveRequiredDates,
   round2,
   type StayExtensionSettings,
@@ -381,9 +382,10 @@ export class ServiceBookingEngine {
 
     // Missing English STAY texts are taken from Apaleo's own translation (one read per item,
     // in parallel, only where needed) before falling back to German – as Extras does.
+    // Imported items with Extras texts always read Apaleo's texts, exactly like Extras.
     const localized = await Promise.all(
       candidates.map(({ item }) =>
-        item.title.en.trim() && item.description.en.trim()
+        !item.extrasTexts && item.title.en.trim() && item.description.en.trim()
           ? Promise.resolve(null)
           : this.#reader.getServiceLocalized(item.serviceId),
       ),
@@ -395,34 +397,50 @@ export class ServiceBookingEngine {
         const booked = bookedQuantities.get(item.serviceId) ?? 0;
         const capacityGated =
           item.requiresRemainingCapacity || item.actionType === "increase_occupancy";
+        // Configuration parity: imported, not yet edited in STAY → Extras' own text logic.
+        const extrasTexts = item.extrasTexts
+          ? resolveExtrasCatalogTexts({
+              texts: item.extrasTexts,
+              apaleo: apaleo ?? null,
+              serviceId: item.serviceId,
+              bookingRule,
+              actionType: item.actionType,
+            })
+          : null;
         return {
           offerId: item.offerId,
           serviceId: item.serviceId,
           // STAY text → Apaleo translation (same language) → STAY text of the other language.
-          displayName: resolveBilingualText({
-            overrideDe: item.title.de,
-            overrideEn: item.title.en || apaleo?.name.en,
-            apaleoDe: item.title.de,
-            apaleoEn: item.title.en,
-            finalFallback: item.serviceId,
-          }),
-          description: resolveBilingualText({
-            overrideDe: item.description.de,
-            overrideEn: item.description.en || apaleo?.description.en,
-            apaleoDe: item.description.de,
-            apaleoEn: item.description.en,
-            finalFallback: "",
-          }),
+          displayName:
+            extrasTexts?.displayName ??
+            resolveBilingualText({
+              overrideDe: item.title.de,
+              overrideEn: item.title.en || apaleo?.name.en,
+              apaleoDe: item.title.de,
+              apaleoEn: item.title.en,
+              finalFallback: item.serviceId,
+            }),
+          description:
+            extrasTexts?.description ??
+            resolveBilingualText({
+              overrideDe: item.description.de,
+              overrideEn: item.description.en || apaleo?.description.en,
+              apaleoDe: item.description.de,
+              apaleoEn: item.description.en,
+              finalFallback: "",
+            }),
           category: item.category,
           imageUrl: item.imageUrl,
           bookingRule,
           actionType: item.actionType,
           fulfillmentMode: item.fulfillment,
-          priceUnitLabel: resolveBilingualPriceUnitLabel({
-            overrideDe: item.priceUnitLabel?.de,
-            overrideEn: item.priceUnitLabel?.en,
-            bookingRule,
-          }),
+          priceUnitLabel:
+            extrasTexts?.priceUnitLabel ??
+            resolveBilingualPriceUnitLabel({
+              overrideDe: item.priceUnitLabel?.de,
+              overrideEn: item.priceUnitLabel?.en,
+              bookingRule,
+            }),
           unitPrice,
           nights,
           price,

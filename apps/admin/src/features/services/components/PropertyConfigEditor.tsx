@@ -26,6 +26,8 @@ export type ConfigEditorValues = {
   allowedUnitGroupIds: string[];
   titleOverride: LocalizedText | null;
   teaserOverride: LocalizedText | null;
+  /** Imported from Extras and texts not yet decided in STAY. */
+  extrasTextsActive?: boolean;
 };
 
 export type ApaleoChoice =
@@ -320,17 +322,37 @@ export function PropertyConfigEditor({
             label="Gästen an diesem Objekt anzeigen"
             defaultChecked={values.active}
           />
-          <Field label="Reihenfolge" htmlFor="config-sort" hint="Kleinere Zahlen zuerst.">
+          <Field
+            label="Reihenfolge"
+            htmlFor="config-sort"
+            hint="Kleinere Zahlen zuerst. Leer = ohne Reihenfolge (am Ende, wie in Extras)."
+          >
             <Input
               id="config-sort"
               name="sortOrder"
               type="number"
               min={0}
               max={9999}
-              defaultValue={values.sortOrder}
+              defaultValue={values.sortOrder >= 9999 ? "" : values.sortOrder}
               className="max-w-40"
             />
           </Field>
+          {values.extrasTextsActive && (
+            <div className="space-y-1">
+              <input type="hidden" name="extrasTextsShown" value="1" />
+              <Toggle
+                name="extrasTextsActive"
+                label="Texte wie in Extras (Apaleo-Texte vorrangig)"
+                defaultChecked
+              />
+              <p className="type-small text-text-muted">
+                Aus Extras übernommen: Gäste sehen den eigenen Namen aus Extras, sonst den aktuellen
+                Apaleo-Namen und erst danach den allgemeinen Text – wie bisher. Wer hier einen
+                Titel, eine Beschreibung oder eine Preiseinheit ändert oder den Haken entfernt,
+                schaltet dauerhaft auf die STAY-Texte um.
+              </p>
+            </div>
+          )}
           <LocalizedPair label="Abweichender Titel (optional)">
             <Input
               name="titleOverrideDe"

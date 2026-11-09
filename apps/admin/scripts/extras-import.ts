@@ -4,9 +4,11 @@
  *
  *   DATABASE_URL=… pnpm --filter @up/admin extras:import --target local|staging \
  *     --tenant unique-places --snapshot <dir>/snapshot.json --manifest <dir>/manifest.json \
- *     [--apply] [--report <file>] [--images] [--upload-images]
+ *     [--apply] [--report <file>] [--images] [--upload-images] [--slack-route <name>]
  *
  * --images         adds the image migration plan (checksum, type, dimensions, references).
+ * --slack-route    Slack route for every imported property without one (Extras posts all
+ *                  requests to one webhook; the webhook itself stays in the environment).
  * --upload-images  with --apply: uploads referenced images to the storage area "offers"
  *                  (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GUIDE_MEDIA_BUCKET) and sets them
  *                  where STAY has no image yet. Never replaces an image chosen in STAY.
@@ -97,6 +99,7 @@ async function main(): Promise<void> {
       snapshotSha256: manifest.snapshotSha256,
       actorAdminId: null,
       now: new Date(),
+      ...(argument(args, "slack-route") ? { slackRoute: argument(args, "slack-route") } : {}),
     });
     let report = renderImportReport(result, await reconcileExtras(db, context, snapshot));
     if (args.includes("--images") || args.includes("--upload-images")) {
