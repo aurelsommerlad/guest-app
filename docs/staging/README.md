@@ -126,3 +126,12 @@ unverändert, Hash = SHA-256 der Datei, `created_at` = `when` aus `meta/_journal
   lokal gibt es dafür `pnpm db:seed --with-offer-fixtures`.
 
 - Angewendet am 2026-11-08. Danach `applied_migrations` = 18, 8 Angebote für `test-run`.
+
+## Migrationen 0019–0022 (`W-migration-0019-0022.sql`)
+
+Am 09.11.2026 auf Staging (`unique-places-guest-staging`) angewendet, weil der Workflow
+`Database · Staging` mangels `STAGING_DATABASE_URL`/`STAGING_SUPABASE_PROJECT_REF` nie lief und
+das Admin-Deployment dieses Branches deshalb mit fehlenden Spalten scheiterte
+(`extras_texts`, `idempotency_key`, `delivery_mode`, `slack_decision_updates`). Vorher lokal
+gegen eine Datenbank auf Stand 0018 geprüft: Schema danach identisch mit einer vollständig
+migrierten Datenbank, zweiter Lauf bricht ab. Nur Struktur, keine Daten verändert.

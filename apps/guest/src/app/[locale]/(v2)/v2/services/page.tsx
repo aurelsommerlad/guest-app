@@ -10,6 +10,7 @@ import { routing } from "../../../../../i18n/routing";
 import { V2Header } from "../../../../../v2/components/V2Header";
 import { OfferImpressions } from "../../../../../v2/upsell/OfferTracking";
 import { V2BookedOverview } from "../../../../../v2/upsell/V2BookedOverview";
+import { V2ExtensionHighlight, V2HouseServiceRows } from "../../../../../v2/upsell/V2HouseServices";
 import { V2OfferList } from "../../../../../v2/upsell/V2Offers";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -34,7 +35,12 @@ export default async function V2ServicesPage({ params }: Props) {
   if (!upsellEnabled(context.property)) notFound();
   const catalog = await getOfferCatalog(context, locale);
   const t = await getTranslations("services");
-  const stay = catalog?.offers.filter((offer) => offer.chapter === "stay") ?? [];
+  // Own services as in Extras: every service of the reservation, booked and requested ones with
+  // their state, restricted ones with the reason (catalog.all keeps them; offers does not).
+  const stayAll = catalog?.all.filter((offer) => offer.chapter === "stay") ?? [];
+  // The extension night leads the chapter (as in Extras); the services follow as rows.
+  const extension = stayAll.find((offer) => offer.booking?.kind === "extension");
+  const stay = stayAll.filter((offer) => offer !== extension);
   const region = catalog?.offers.filter((offer) => offer.chapter === "region") ?? [];
   const chapters = [
     { id: "stay", offers: stay },
@@ -80,6 +86,13 @@ export default async function V2ServicesPage({ params }: Props) {
                   <p className="v2-notice v2-margin" style={{ marginTop: 18 }}>
                     {t("houseUnavailable")}
                   </p>
+                ) : chapter.id === "stay" && (extension || chapter.offers.length > 0) ? (
+                  <>
+                    {extension && <V2ExtensionHighlight offer={extension} />}
+                    <div className="v2-margin">
+                      <V2HouseServiceRows offers={chapter.offers} />
+                    </div>
+                  </>
                 ) : chapter.offers.length > 0 ? (
                   <V2OfferList offers={chapter.offers} priority={index === 0} />
                 ) : (

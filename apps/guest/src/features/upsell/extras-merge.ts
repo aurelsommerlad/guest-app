@@ -17,7 +17,8 @@ import {
 } from "../extras/bridge-client";
 import { type OfferPriceView } from "./offer-view";
 
-export type ExtrasState = "open" | "booked" | "requested" | "confirmed" | "declined";
+/** "restricted": not bookable for the booked apartment type – shown with the reason, as in Extras. */
+export type ExtrasState = "open" | "booked" | "requested" | "confirmed" | "declined" | "restricted";
 
 export type ExtrasBookingView =
   | {
@@ -46,6 +47,9 @@ export type ExtrasBookingView =
       accommodationCents: number | null;
       extras: { name: string; cents: number | null }[];
       cityTaxCents: number | null;
+      /** Undiscounted night and discount, as Extras shows them (null if the source has none). */
+      originalCents: number | null;
+      discountPercent: number | null;
       totalCents: number;
       currency: string;
       state: ExtrasState;
@@ -125,9 +129,12 @@ function synthetic(
   };
 }
 
-function priceOf(item: ExtrasItem): OfferPriceView {
+function priceOf(item: ExtrasItem, locale: "de" | "en"): OfferPriceView {
   if (!item.unitPrice) return { kind: "at-booking" };
+  // The unit as configured in the property settings (Extras' price unit label), else the rule.
+  const unitLabel = item.priceUnitLabel?.[locale].trim();
   return {
+    ...(unitLabel ? { unitLabel } : {}),
     kind: "amount",
     amountCents: item.unitPrice.amountCents,
     currency: item.unitPrice.currency,
@@ -182,6 +189,8 @@ function extensionBooking(extension: ExtrasExtension, state: ExtrasState, locale
       cents: extra.amountCents,
     })),
     cityTaxCents: extension.cityTaxCents,
+    originalCents: extension.originalPrice?.amountCents ?? null,
+    discountPercent: extension.discountPercent,
     totalCents: total.amountCents,
     currency: total.currency,
     state,
@@ -225,8 +234,6 @@ export function mergeExtras(input: {
   const offerIdByService = new Map<string, string>();
 
   catalog.items.forEach((item, index) => {
-    // Restricted for this apartment type: Extras would only show it disabled – STAY leaves it out.
-    if (item.restricted) return;
     const editorial = byService.get(item.serviceId);
     const offer =
       editorial ??
@@ -238,17 +245,19 @@ export function mergeExtras(input: {
         order: index,
       });
     const request = latestRequest.get(item.serviceId);
-    const state: ExtrasState =
-      item.actionType === "service" && item.bookedCount > 0
+    // Restricted for the booked apartment type: shown with the reason, never bookable (Extras).
+    const state: ExtrasState = item.restricted
+      ? "restricted"
+      : item.actionType === "service" && item.bookedCount > 0
         ? "booked"
         : request?.status === "pending"
           ? "requested"
           : request?.status === "approved"
             ? "confirmed"
             : "open";
-    if (state !== "open") taken.add(offer.id);
+    if (state !== "open" && state !== "restricted") taken.add(offer.id);
     offers.push(offer);
-    live.set(offer.id, { price: priceOf(item), booking: bookingOf(item, state) });
+    live.set(offer.id, { price: priceOf(item, locale), booking: bookingOf(item, state) });
     offerIdByService.set(item.serviceId, offer.id);
   });
 

@@ -281,9 +281,12 @@ describe("merge with STAY's editorial offers", () => {
       "extras-TEST-PKW",
       "extras-TEST-BABY",
       "extras-TEST-EXTRPERSON",
+      "extras-TEST-SECRET",
       EXTENSION_OFFER_ID,
     ]);
-    expect(ids).not.toContain("extras-TEST-SECRET"); // restricted for this apartment type
+    // Restricted for this apartment type: listed with the reason (as in Extras), never bookable
+    // and not counted as taken.
+    expect(merged.live.get("extras-TEST-SECRET")?.booking.state).toBe("restricted");
     expect(merged.taken).toEqual(new Set(["extras-TEST-ECI", "extras-TEST-BABY"]));
     const dog = merged.live.get("extras-TEST-HUND");
     expect(dog?.price).toEqual({
@@ -444,6 +447,7 @@ describe("offer catalog with the bridge", () => {
       OFFER_FIXTURE_IDS.dog,
       OFFER_FIXTURE_IDS.parking,
       OFFER_FIXTURE_IDS.extraPerson,
+      "extras-TEST-SECRET",
       EXTENSION_OFFER_ID,
     ]);
     const dog = stay.find((offer) => offer.id === OFFER_FIXTURE_IDS.dog);

@@ -77,6 +77,7 @@ function extension(offer: StayExtensionOffer | null): ExtrasExtension | null {
     newDeparture: offer.newDeparture,
     phase: offer.phase,
     discountPercent: offer.discountPercent,
+    originalPrice: toCents(offer.averageNightlyRate),
     extensionPrice: toCents(offer.extensionPrice),
     extras: offer.extras.map((extra) => ({
       serviceId: extra.serviceId,

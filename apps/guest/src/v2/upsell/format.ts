@@ -24,7 +24,9 @@ export function formatOfferPrice(price: OfferPriceView, t: ServicesT, locale: st
   if (price.kind !== "amount") return t(`price.${price.kind}`);
   if (price.amountCents === 0) return t("price.free");
   const money = formatMoney(price.amountCents, price.currency, locale);
-  const amount = t(`price.per.${price.per}`, { amount: money });
+  const amount = price.unitLabel
+    ? `${money} ${price.unitLabel}`
+    : t(`price.per.${price.per}`, { amount: money });
   return price.from ? t("price.from", { amount }) : amount;
 }
 

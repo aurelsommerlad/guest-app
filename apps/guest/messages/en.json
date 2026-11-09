@@ -645,7 +645,8 @@
         "booked": "Already booked. You will find it under “Booked & requested”.",
         "requested": "Requested. We will get back to you.",
         "confirmed": "Your request is confirmed.",
-        "declined": "Unfortunately not possible."
+        "declined": "Unfortunately not possible.",
+        "restricted": "Unfortunately not possible for your apartment type."
       },
       "errors": {
         "price_changed": "The price has just changed. Please check the new price and confirm again.",
@@ -668,6 +669,27 @@
       "instantNote": "Booked immediately and bindingly – no further confirmation.",
       "requestTotal": "Expected price"
     },
-    "houseUnavailable": "Our services cannot be loaded right now. Please try again later."
+    "houseUnavailable": "Our services cannot be loaded right now. Please try again later.",
+    "list": {
+      "book": "Book",
+      "request": "Request",
+      "booked": "Already booked",
+      "requested": "Requested",
+      "confirmed": "Confirmed",
+      "declined": "Unfortunately not possible",
+      "restricted": "Not possible in your apartment",
+      "requestHint": "On request",
+      "quantityHint": "Choose a quantity"
+    },
+    "extension": {
+      "eyebrow": "One more night",
+      "title": "Stay until {date}",
+      "lead": "Your apartment is free the following night – at a preferential rate.",
+      "original": "instead of {amount}",
+      "discount": "{percent}% off",
+      "night": "Night",
+      "total": "Total incl. services",
+      "cta": "Add the night"
+    }
   }
 }

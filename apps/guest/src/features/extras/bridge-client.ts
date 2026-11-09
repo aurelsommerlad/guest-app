@@ -54,6 +54,8 @@ export const extrasExtensionSchema = z.object({
   newDeparture: z.string(),
   phase: z.string().nullable(),
   discountPercent: z.number().nullable(),
+  /** Undiscounted night (average of the stay) – shown struck through; absent from older bridges. */
+  originalPrice: money.nullable().optional(),
   extensionPrice: money.nullable(),
   extras: z.array(
     z.object({ serviceId: z.string(), name: bilingual, amountCents: z.number().int().nullable() }),

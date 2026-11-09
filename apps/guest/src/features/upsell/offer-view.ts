@@ -24,6 +24,8 @@ export type OfferPriceView =
       currency: string;
       per: "stay" | "night" | "person" | "person-night";
       from: boolean;
+      /** Unit text configured for the property (e.g. "pro Stellplatz"); replaces the default. */
+      unitLabel?: string;
     }
   | { kind: "on-request" }
   | { kind: "at-booking" };
