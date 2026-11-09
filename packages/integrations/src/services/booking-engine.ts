@@ -246,7 +246,7 @@ export class ServiceBookingEngine {
 
   /** Services booked on the reservation in Apaleo, from any source (read-only). */
   bookedServices(reservationId: string): Promise<ApaleoBookedService[]> {
-    return this.#reader.getBookedServices(reservationId) as Promise<ApaleoBookedService[]>;
+    return this.#reader.getBookedServices(reservationId);
   }
 
   /** Apaleo's localized service name (read-only, never throws). */

@@ -41,7 +41,7 @@ export async function claimDueNotifications(
       ),
     );
   const due = sql`SELECT id FROM notification_outbox
-    WHERE status = 'pending' AND channel = 'slack' AND next_attempt_at <= ${input.now}
+    WHERE status = 'pending' AND channel = 'slack' AND next_attempt_at <= ${input.now.toISOString()}::timestamptz
     ORDER BY next_attempt_at LIMIT ${Math.min(Math.max(input.limit, 1), 100)}
     FOR UPDATE SKIP LOCKED`;
   return db

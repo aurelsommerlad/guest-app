@@ -7,7 +7,11 @@ import { runNotificationQueueAction, saveSlackRouteAction } from "../actions";
 import { loadNotifications } from "../notifications-service";
 import { notificationsDeps } from "../server";
 
-const dateTime = new Intl.DateTimeFormat("de-DE", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Berlin" });
+const dateTime = new Intl.DateTimeFormat("de-DE", {
+  dateStyle: "short",
+  timeStyle: "short",
+  timeZone: "Europe/Berlin",
+});
 
 const STATUS: Record<string, string> = {
   pending: "Wartet",
@@ -34,7 +38,10 @@ function Notice({ tone, text }: { tone: "notice" | "error"; text: string }) {
   return (
     <p
       role={tone === "error" ? "alert" : "status"}
-      className={cx("type-small rounded-card p-3", tone === "error" ? "bg-surface text-text" : "bg-surface-accent text-on-accent")}
+      className={cx(
+        "type-small rounded-card p-3",
+        tone === "error" ? "bg-surface text-text" : "bg-surface-accent text-on-accent",
+      )}
     >
       {text}
     </p>
@@ -50,7 +57,9 @@ export async function NotificationsView({ notice, error }: { notice?: string; er
       <PageHeader
         title="Benachrichtigungen"
         description={`Slack-Meldungen bei neuen Anfragen und – je Objekt wählbar – bei Entscheidungen. Versand: ${
-          loaded.mode === "simulated" ? "simuliert (es wird nichts an Slack gesendet)" : "ausgeschaltet"
+          loaded.mode === "simulated"
+            ? "simuliert (es wird nichts an Slack gesendet)"
+            : "ausgeschaltet"
         }. Webhook-Adressen liegen nur in der Serverkonfiguration, nie in der Datenbank.`}
       />
       {notice && <Notice tone="notice" text={notice} />}
@@ -60,7 +69,10 @@ export async function NotificationsView({ notice, error }: { notice?: string; er
         <ul className="flex flex-col divide-y divide-border rounded-card border border-border bg-surface-raised">
           {loaded.settings.map((s) => (
             <li key={s.property.id} className="p-4">
-              <form action={saveSlackRouteAction.bind(null, s.property.id)} className="flex flex-col gap-3 md:flex-row md:items-end">
+              <form
+                action={saveSlackRouteAction.bind(null, s.property.id)}
+                className="flex flex-col gap-3 md:flex-row md:items-end"
+              >
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <label htmlFor={`route-${s.property.id}`} className="type-eyebrow text-text">
                     {s.property.displayName}
@@ -75,7 +87,12 @@ export async function NotificationsView({ notice, error }: { notice?: string; er
                   />
                 </div>
                 <label className="type-body flex min-h-11 items-center gap-3">
-                  <input type="checkbox" name="decisionUpdates" defaultChecked={s.slackDecisionUpdates} disabled={!s.canEdit} />
+                  <input
+                    type="checkbox"
+                    name="decisionUpdates"
+                    defaultChecked={s.slackDecisionUpdates}
+                    disabled={!s.canEdit}
+                  />
                   Statusmeldung bei Entscheidung
                 </label>
                 {s.canEdit && (
@@ -89,7 +106,11 @@ export async function NotificationsView({ notice, error }: { notice?: string; er
         </ul>
       </section>
       <section className="flex flex-col gap-4">
-        <SectionHeader id="queue" title="Warteschlange und Fehlerprotokoll" description="Jede Meldung genau einmal je Ereignis; bei Fehlern bis zu fünf Wiederholungen mit wachsendem Abstand." />
+        <SectionHeader
+          id="queue"
+          title="Warteschlange und Fehlerprotokoll"
+          description="Jede Meldung genau einmal je Ereignis; bei Fehlern bis zu fünf Wiederholungen mit wachsendem Abstand."
+        />
         {loaded.canRun && (
           <form action={runNotificationQueueAction}>
             <button type="submit" className={buttonStyles("primary")}>
@@ -113,7 +134,9 @@ export async function NotificationsView({ notice, error }: { notice?: string; er
                 <span className="type-caption text-text-muted">
                   {job.propertyName} · {dateTime.format(job.createdAt)} · Versuche {job.attempts}
                   {job.lastErrorCode ? ` · ${ERRORS[job.lastErrorCode] ?? job.lastErrorCode}` : ""}
-                  {job.status === "pending" && job.attempts > 0 ? ` · nächster Versuch ${dateTime.format(job.nextAttemptAt)}` : ""}
+                  {job.status === "pending" && job.attempts > 0
+                    ? ` · nächster Versuch ${dateTime.format(job.nextAttemptAt)}`
+                    : ""}
                 </span>
                 {job.preview && <span className="type-small text-text">„{job.preview}“</span>}
               </li>

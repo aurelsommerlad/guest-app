@@ -1,4 +1,4 @@
-# Schattenbetrieb M3: Paritätsbericht Extras ↔ STAY
+# Paritätsbericht Extras ↔ STAY (M3, fortgeschrieben in M4)
 
 Stand: 08.11.2026 · Branch `claude/sharp-rubin-hwfdyt`. Extras bleibt bis zum gemeinsamen Go-live führend. Es gab keinen produktiven Zugriff: keine Apaleo-Schreibzugriffe, kein Slack, kein KV-Store, keine Änderung an guest-services.
 
@@ -118,3 +118,26 @@ Keine Abweichung wurde stillschweigend angeglichen. STAY zeigt in P-1 und P-2 da
   - Vorschlag M4: bereits beim Anlegen gegen `maxQuantity` prüfen.
 - **Bestätigung einer Anfrage:** Bucht ohne `amount`, also zum aktuellen Apaleo-Preis. Der angezeigte Preis (`quotedCents`) wird nicht verglichen. STAY übernimmt das 1:1.
   - Vorschlag M4: Abweichung beim Bestätigen anzeigen.
+
+## Stand M4 (09.11.2026)
+
+Neuer Lauf mit unveränderter Extras-Seite (guest-services 6c5e5af). 14 der 17 Szenarien sind identisch, einschließlich der Texte. Drei Abweichungen bleiben; alle sind ausdrücklich gewollt und hier dokumentiert:
+
+| Nr. | Szenario                               | Extras                                                       | STAY                                                                    | Bewertung                                                                                                                                                                                        |
+| --- | -------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P-1 | S15 `extensionNightEnabled: "false"`   | Verlängerung **an** (`Boolean("false")`)                     | aus                                                                     | in M4 so festgelegt: `"false"`, `"0"`, `"nein"`, `"off"` und leer gelten als deaktiviert. Extras bleibt unverändert.                                                                             |
+| P-2 | S16 Zusatzperson mit leerem Preis      | für 0 € angeboten                                            | gesperrt (`invalid_extra_person_price`)                                 | in M4 so festgelegt: leer oder fehlend bleibt gesperrt. Ein ausdrücklich konfigurierter Preis von 0 € ist erlaubt und getestet.                                                                  |
+| P-4 | S14 Anfrage mit zu wenig Verfügbarkeit | Anfrage wird angelegt und erst bei der Bestätigung abgelehnt | Anfrage wird schon beim Anlegen abgelehnt (`insufficient_availability`) | M4-Anforderung „Mengen- und Kapazitätsprüfung bereits beim Anlegen“. STAY lehnt beim Anlegen außerdem ab: doppelte offene Anfrage, bereits gebucht, mehr als ein Hund, Menge über der Kapazität. |
+
+Erledigt:
+
+- **P-3 (Texte):** Fehlt ein englischer STAY-Text, übernimmt STAY die Apaleo-Übersetzung (`languages=de,en`, ein Lesezugriff pro betroffenem Service) und fällt erst danach auf Deutsch zurück. Die Texte im Paritätslauf sind jetzt identisch.
+- **P-0 (`onlyDefaultDates`):** Ein Test stellt sicher, dass Service-Offers wie in Extras ohne Parameter abgefragt werden. Eine Abreise vor heute und Apaleo-422 gelten als vergangener Aufenthalt.
+
+Weitere bewusste Unterschiede aus M4, die Extras nicht kennt:
+
+- Bestätigung einer Anfrage nur zum angezeigten Preis oder nach ausdrücklicher Übernahme des aktuellen Preises (Extras bestätigt stillschweigend zum Apaleo-Preis).
+- Interne Begründung bei Ablehnungen.
+- Idempotenzschlüssel für Anfragen.
+- Slack-Meldung ohne Gastnamen.
+- Sofortbuchungen werden wie in Extras nicht an Slack gemeldet.

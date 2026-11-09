@@ -63,7 +63,7 @@ describe("Slack (simulated)", () => {
     await env.test.client.query(
       `UPDATE property_service_settings SET slack_route = NULL WHERE property_id = 'test-run'`,
     );
-    const { requestId } = await newRequest();
+    await newRequest();
     const firstRun = await worker();
     expect(firstRun).toMatchObject({ claimed: 1, failed: 1 });
     const audit = await env.test.client.query<{ details: Record<string, unknown> }>(
@@ -99,7 +99,6 @@ describe("Slack (simulated)", () => {
     expect(row.rows[0]).toEqual({ status: "sent", delivery_mode: "simulated" });
     // Nothing is posted twice: a second run finds no due job.
     expect(await worker()).toMatchObject({ claimed: 0 });
-    requestId;
   });
 
   it("retries with backoff on transport errors and gives up after the last attempt", async () => {

@@ -84,17 +84,38 @@ export function serviceWriteGateway(): ServiceWriteGateway {
 }
 
 /** The STAY booking engine (Extras logic) on a gateway; needs the read-only Apaleo access. */
-export function serviceBookingEngine(
+export async function serviceBookingEngine(
   gateway: ServiceWriteGateway,
-): ServiceBookingEngine | undefined {
+): Promise<ServiceBookingEngine | undefined> {
   const live = apaleoReader();
   if (!live) return undefined;
   const db = getDatabase();
+  // Local browser tests against the guest-services Apaleo simulator: apply simulated writes
+  // to the simulator state (APALEO_SIM_STATE) so guest and admin see the same result.
+  const simulator =
+    serverEnv.APP_ENV === "local" && process.env.APALEO_SIM_STATE
+      ? (await import("@up/shadow/simulator-state")).applyToSimulator
+      : undefined;
+  const effective = simulator
+    ? new ServiceWriteGateway({
+        mode: gateway.mode,
+        allowedApaleoPropertyIds: (serverEnv.APALEO_SERVICE_WRITE_PROPERTIES ?? "")
+          .split(",")
+          .filter(Boolean),
+        store: createServiceWriteStore(db),
+        lookupReservation: async (id) => {
+          const reservation = await live.getReservation(id);
+          return { property: reservation.property, status: reservation.status };
+        },
+        onSimulated: simulator,
+      })
+    : gateway;
   return new ServiceBookingEngine({
     reader: live,
-    gateway,
+    gateway: effective,
     records: createServiceRecordStore(db),
     locks: createServiceLockStore(db),
+    verifySimulatedWrites: simulator ? "check" : "skip",
   });
 }
 
@@ -130,7 +151,7 @@ async function localFixtureEngine(
 export async function decisionEngine(
   gateway: ServiceWriteGateway,
 ): Promise<ServiceBookingEngine | undefined> {
-  return serviceBookingEngine(gateway) ?? (await localFixtureEngine(gateway.mode));
+  return (await serviceBookingEngine(gateway)) ?? (await localFixtureEngine(gateway.mode));
 }
 
 /** Read-only engine for the shadow page (writes disabled). */
@@ -143,7 +164,7 @@ export async function shadowEngine(): Promise<
     store: createServiceWriteStore(getDatabase()),
     lookupReservation: () => Promise.reject(new Error("read-only")),
   });
-  const live = serviceBookingEngine(gateway);
+  const live = await serviceBookingEngine(gateway);
   if (live) return { engine: live, source: "apaleo" };
   const fixture = await localFixtureEngine("disabled");
   return fixture ? { engine: fixture, source: "fixture" } : undefined;

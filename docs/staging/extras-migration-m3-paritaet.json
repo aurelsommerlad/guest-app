@@ -1,6 +1,6 @@
 {
   "format": "stay-extras-parity/1",
-  "createdAt": "2026-11-08T23:16:04.671Z",
+  "createdAt": "2026-11-09T00:00:21.062Z",
   "extrasSource": "aurelsommerlad/guest-services (lokaler Checkout, nur gelesen)",
   "apaleo": "guest-services test/support/apaleo-simulator.mjs (Apaleo TEST, Stand 08.11.2026) – kein Apaleo-Zugriff",
   "gatewayMode": "simulated",
@@ -45,7 +45,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -80,7 +82,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -115,7 +119,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -150,7 +157,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -185,7 +195,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -259,13 +271,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -279,7 +296,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "4ad0db42-4d55-4e83-8f4b-4de3a820aab8",
+                  "offerId": "5207dd33-9cc2-484e-a0df-1bc38fd7c9ed",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -307,7 +324,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -316,7 +335,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "aad86035-9511-4c8e-a95c-881d07b25218",
+                  "offerId": "1651a3e9-516d-4ea4-bbf6-e289154e947d",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -344,7 +363,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -353,7 +374,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "134ef34f-4fb0-4129-a384-f5231d1b17ee",
+                  "offerId": "aa90bbfc-9ed2-4eeb-9a8b-e7d66d87ae46",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -381,7 +402,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -390,7 +414,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "c82c5fef-97b7-40f2-911d-30272f595f15",
+                  "offerId": "e1551f1e-6c3e-4b1e-b104-8b44cb9b88b6",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -418,7 +442,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -427,7 +454,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "e69867aa-2fa0-4b47-8cd5-b2050cc52983",
+                  "offerId": "dd7c8368-ed46-48eb-abfe-0f90df765c0e",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -455,7 +482,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -464,7 +493,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "5f9830c5-1e97-42d6-8d66-4b3720382e2d",
+                  "offerId": "ec3bdc90-e281-4094-8cb0-392574618f43",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -504,7 +533,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "24e9230a-181f-47fc-8d11-be3965d2a5e5",
+                  "offerId": "56d99bd7-9bc5-4642-8070-b985b2582939",
                   "reason": "no_offer"
                 }
               ]
@@ -538,13 +567,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -592,7 +626,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -627,7 +663,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -662,7 +700,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 0,
                   "maxOnePerReservation": true,
@@ -697,7 +738,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -732,7 +776,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -782,24 +828,34 @@
             "kind": "order",
             "value": {
               "booked": [],
-              "failed": ["TEST-HUND:dog_limit_exceeded"]
+              "failed": [
+                "TEST-HUND:dog_limit_exceeded"
+              ]
             }
           }
         ],
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             },
             {
               "id": "TEST-HUND",
-              "dates": ["2027-01-12×1@15", "2027-01-13×1@15"]
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15"
+              ]
             }
           ],
           "writes": []
@@ -813,7 +869,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "78dc9aa8-b755-4129-b996-be589b7e807f",
+                  "offerId": "5a80a499-adcf-42d2-94d2-2925637d642d",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -841,7 +897,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -850,7 +908,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "53d386ca-ea06-4494-9506-0926850fbcd3",
+                  "offerId": "204659c8-0cf0-4e5c-9f90-fdd314559d07",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -878,7 +936,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -887,7 +947,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "030d6cf8-1c08-4ca4-9723-26af44f7479c",
+                  "offerId": "fd218e68-cfaa-44f2-8ee9-a5daab8d4064",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -915,7 +975,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 0,
                   "maxOnePerReservation": true,
@@ -924,7 +987,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "e49afb33-80d3-42bf-bf82-56fc02bd0c42",
+                  "offerId": "6652f0a0-2805-4ad0-bf4b-a4b3fee3d865",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -952,7 +1015,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -961,7 +1027,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "577a16fc-4345-4c73-8b22-0a307dfc974d",
+                  "offerId": "fc60914b-83c5-4dfc-999d-9b4d17373eca",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -989,7 +1055,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -998,7 +1066,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "2bf12fe6-a3da-42c0-90d5-a75367e03381",
+                  "offerId": "cc7ae6d3-72de-4cad-b322-bd5895a73b0d",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -1038,7 +1106,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "458dc3be-fd1a-4412-a81b-5363874ce76b",
+                  "offerId": "5c8bb96b-3506-4ea0-a7ae-828a86752820",
                   "reason": "no_offer"
                 }
               ]
@@ -1048,24 +1116,34 @@
             "kind": "order",
             "value": {
               "booked": [],
-              "failed": ["TEST-HUND:dog_limit_exceeded"]
+              "failed": [
+                "TEST-HUND:dog_limit_exceeded"
+              ]
             }
           }
         ],
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             },
             {
               "id": "TEST-HUND",
-              "dates": ["2027-01-12×1@15", "2027-01-13×1@15"]
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15"
+              ]
             }
           ],
           "writes": []
@@ -1113,7 +1191,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1148,7 +1228,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1183,7 +1265,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -1218,7 +1303,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1253,7 +1341,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1268,20 +1358,27 @@
             "kind": "order",
             "value": {
               "booked": [],
-              "failed": ["TEST-EXTRPERSON:not_available"]
+              "failed": [
+                "TEST-EXTRPERSON:not_available"
+              ]
             }
           }
         ],
         "state": {
           "departure": "2027-01-14",
           "adults": 5,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -1295,7 +1392,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "da0c4636-79b0-4b5b-b86f-c54c07a30ede",
+                  "offerId": "2246578c-2e69-47fe-94fa-4b823d79bdf1",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -1323,7 +1420,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1332,7 +1431,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "ecabcd4d-0e91-40a3-bc9e-781b35b26e62",
+                  "offerId": "d8ba1dd8-8fef-4159-9834-41d4814f2257",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -1360,7 +1459,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1369,7 +1470,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "e20ac338-c493-4563-9026-4401eda7578d",
+                  "offerId": "37cbdaab-c47b-4e58-9237-3f4702872536",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -1397,7 +1498,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -1406,7 +1510,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "4e8a02e7-4631-4d52-9330-063073d22ae4",
+                  "offerId": "884a863a-82c0-4ca7-886d-5662226b1423",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -1434,7 +1538,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1443,7 +1550,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "61018e26-2ecd-4b5d-ac01-ac171bc02c88",
+                  "offerId": "330ab3d7-ef22-4e7d-8258-67ea9ba05f53",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -1471,7 +1578,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1483,12 +1592,12 @@
               "hidden": [
                 {
                   "serviceId": "TEST-EXTRPERSON",
-                  "offerId": "b0d1cff2-dbb8-4080-b173-26bc71e42dda",
+                  "offerId": "7c14ecbb-9cda-4066-94ba-3b4ae76f952b",
                   "reason": "no_capacity"
                 },
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "ef62a7f4-fb1e-4c32-bd8c-544001686ad5",
+                  "offerId": "54468a25-1676-4135-adc9-f0987d495538",
                   "reason": "no_offer"
                 }
               ]
@@ -1498,20 +1607,27 @@
             "kind": "order",
             "value": {
               "booked": [],
-              "failed": ["TEST-EXTRPERSON:not_available"]
+              "failed": [
+                "TEST-EXTRPERSON:not_available"
+              ]
             }
           }
         ],
         "state": {
           "departure": "2027-01-14",
           "adults": 5,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -1559,7 +1675,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1594,7 +1712,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1629,7 +1749,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -1664,7 +1787,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": true,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1699,7 +1825,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1749,20 +1877,27 @@
             "kind": "order",
             "value": {
               "booked": [],
-              "failed": ["TEST-PKW:unit_group_restricted"]
+              "failed": [
+                "TEST-PKW:unit_group_restricted"
+              ]
             }
           }
         ],
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -1776,7 +1911,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "9d4206cb-27e9-4945-8f9f-6c3156d2c308",
+                  "offerId": "34d8a5ff-db19-435f-bf68-2f2a977dde90",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -1804,7 +1939,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1813,7 +1950,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "611096b9-3744-43c1-944f-025309ae1eb1",
+                  "offerId": "594bd14b-94f3-4a77-b32f-7c5512479eb5",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -1841,7 +1978,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1850,7 +1989,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "c5cda0d2-8216-4092-adb2-9d0fea93d8dd",
+                  "offerId": "214eee51-a6da-405b-a435-3e83f096bec5",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -1878,7 +2017,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -1887,7 +2029,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "ee1a79a1-f04c-406a-9e1f-a0df3ac0132c",
+                  "offerId": "1bcd66ea-12c3-4a61-9dde-452fe3254a2a",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -1915,7 +2057,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": true,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1924,7 +2069,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "ba63e1a7-3d58-4bd1-b0ae-5f25833a5688",
+                  "offerId": "7b701bb2-3099-4d7b-a775-1fb778a7e5f9",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -1952,7 +2097,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -1961,7 +2108,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "54d25aa0-b07e-42bf-b7fc-00fe880450a9",
+                  "offerId": "2b6f2b3d-7119-4460-a178-c14035d883ec",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -2001,7 +2148,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "80a25088-ef78-4490-a6b4-1f5b8f60ef4b",
+                  "offerId": "fda7934f-6145-4a4a-937b-bcccdaea3831",
                   "reason": "no_offer"
                 }
               ]
@@ -2011,20 +2158,27 @@
             "kind": "order",
             "value": {
               "booked": [],
-              "failed": ["TEST-PKW:unit_group_restricted"]
+              "failed": [
+                "TEST-PKW:unit_group_restricted"
+              ]
             }
           }
         ],
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -2055,13 +2209,18 @@
         "state": {
           "departure": "2026-10-03",
           "adults": 2,
-          "timeSlices": ["2026-10-01:99", "2026-10-02:99"],
+          "timeSlices": [
+            "2026-10-01:99",
+            "2026-10-02:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2026-10-02×1@139"]
+              "dates": [
+                "2026-10-02×1@139"
+              ]
             }
           ],
           "writes": []
@@ -2085,13 +2244,18 @@
         "state": {
           "departure": "2026-10-03",
           "adults": 2,
-          "timeSlices": ["2026-10-01:99", "2026-10-02:99"],
+          "timeSlices": [
+            "2026-10-01:99",
+            "2026-10-02:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2026-10-02×1@139"]
+              "dates": [
+                "2026-10-02×1@139"
+              ]
             }
           ],
           "writes": []
@@ -2139,7 +2303,9 @@
                     "amount": 25,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -2174,7 +2340,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -2209,7 +2377,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -2244,7 +2415,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -2279,7 +2453,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -2328,7 +2504,9 @@
           {
             "kind": "order",
             "value": {
-              "booked": ["TEST-ECI×1"],
+              "booked": [
+                "TEST-ECI×1"
+              ],
               "failed": []
             }
           }
@@ -2336,20 +2514,32 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
-          "comment": ["[Gäste-Portal] Extras gebucht: 1x Früher Check-in"],
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Früher Check-in"
+          ],
           "services": [
             {
               "id": "TEST-ECI",
-              "dates": ["2027-01-12×1@25"]
+              "dates": [
+                "2027-01-12×1@25"
+              ]
             },
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
-          "writes": ["book-service", "patch"]
+          "writes": [
+            "book-service",
+            "patch"
+          ]
         }
       },
       "stay": {
@@ -2360,7 +2550,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "aa347ea4-82c5-4c6b-a5d2-eb777bf56e48",
+                  "offerId": "f94a9bad-fbaa-4970-a44a-31be1812cf91",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -2388,7 +2578,9 @@
                     "amount": 25,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -2397,7 +2589,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "f7a2894c-6660-426f-a53d-7bec42ab979f",
+                  "offerId": "8a904514-e363-48ed-b450-524d16d22505",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -2425,7 +2617,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -2434,7 +2628,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "8c8bd523-9e25-46c2-8e88-522cf95aa797",
+                  "offerId": "895964f1-e1f5-4673-8c16-ce96e3580add",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -2462,7 +2656,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -2471,7 +2668,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "eee4d651-5b15-4ded-a033-5fdcacc55def",
+                  "offerId": "bcdafdab-80c6-4c5c-bd7c-0ee45b46fd1d",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -2499,7 +2696,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -2508,7 +2708,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "ec0ac833-a94e-4b62-ba2b-7580da5e8484",
+                  "offerId": "d567bf91-8ce6-43e1-a6ed-33628dbf260a",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -2536,7 +2736,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -2545,7 +2747,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "de6ab6f0-c725-466a-b95e-7371368f70e4",
+                  "offerId": "d301ed2f-83c1-46a1-8b9b-1c8af30fedb5",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -2585,7 +2787,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "fa7ca757-1885-4d1e-92b6-c30765bb3c31",
+                  "offerId": "480cf4c0-f5e2-4c33-8c6c-2668a3fb9d37",
                   "reason": "no_offer"
                 }
               ]
@@ -2594,7 +2796,9 @@
           {
             "kind": "order",
             "value": {
-              "booked": ["TEST-ECI×1"],
+              "booked": [
+                "TEST-ECI×1"
+              ],
               "failed": []
             }
           }
@@ -2602,20 +2806,32 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
-          "comment": ["[Gäste-Portal] Extras gebucht: 1x Früher Check-in"],
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Früher Check-in"
+          ],
           "services": [
             {
               "id": "TEST-ECI",
-              "dates": ["2027-01-12×1@25"]
+              "dates": [
+                "2027-01-12×1@25"
+              ]
             },
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
-          "writes": ["book-service", "patch"]
+          "writes": [
+            "book-service",
+            "patch"
+          ]
         },
         "importWarnings": []
       }
@@ -2631,7 +2847,12 @@
           {
             "kind": "order",
             "value": {
-              "booked": ["TEST-HUND×1", "TEST-PKW×2", "TEST-ECI×1", "TEST-EXTRPERSON×2"],
+              "booked": [
+                "TEST-HUND×1",
+                "TEST-PKW×2",
+                "TEST-ECI×1",
+                "TEST-EXTRPERSON×2"
+              ],
               "failed": []
             }
           }
@@ -2639,7 +2860,10 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 4,
-          "timeSlices": ["2027-01-12:159", "2027-01-13:159"],
+          "timeSlices": [
+            "2027-01-12:159",
+            "2027-01-13:159"
+          ],
           "vehicle": "KN-AB 1",
           "comment": [
             "Parking vehicles:",
@@ -2650,19 +2874,29 @@
           "services": [
             {
               "id": "TEST-ECI",
-              "dates": ["2027-01-12×1@20"]
+              "dates": [
+                "2027-01-12×1@20"
+              ]
             },
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             },
             {
               "id": "TEST-HUND",
-              "dates": ["2027-01-12×1@15", "2027-01-13×1@15"]
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15"
+              ]
             },
             {
               "id": "TEST-PKW",
-              "dates": ["2027-01-12×2@0", "2027-01-13×2@0"]
+              "dates": [
+                "2027-01-12×2@0",
+                "2027-01-13×2@0"
+              ]
             }
           ],
           "writes": [
@@ -2681,7 +2915,12 @@
           {
             "kind": "order",
             "value": {
-              "booked": ["TEST-HUND×1", "TEST-PKW×2", "TEST-ECI×1", "TEST-EXTRPERSON×2"],
+              "booked": [
+                "TEST-HUND×1",
+                "TEST-PKW×2",
+                "TEST-ECI×1",
+                "TEST-EXTRPERSON×2"
+              ],
               "failed": []
             }
           }
@@ -2689,7 +2928,10 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 4,
-          "timeSlices": ["2027-01-12:159", "2027-01-13:159"],
+          "timeSlices": [
+            "2027-01-12:159",
+            "2027-01-13:159"
+          ],
           "vehicle": "KN-AB 1",
           "comment": [
             "Parking vehicles:",
@@ -2700,19 +2942,29 @@
           "services": [
             {
               "id": "TEST-ECI",
-              "dates": ["2027-01-12×1@20"]
+              "dates": [
+                "2027-01-12×1@20"
+              ]
             },
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             },
             {
               "id": "TEST-HUND",
-              "dates": ["2027-01-12×1@15", "2027-01-13×1@15"]
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15"
+              ]
             },
             {
               "id": "TEST-PKW",
-              "dates": ["2027-01-12×2@0", "2027-01-13×2@0"]
+              "dates": [
+                "2027-01-12×2@0",
+                "2027-01-13×2@0"
+              ]
             }
           ],
           "writes": [
@@ -2739,7 +2991,9 @@
           {
             "kind": "order",
             "value": {
-              "booked": ["TEST-ECI×1"],
+              "booked": [
+                "TEST-ECI×1"
+              ],
               "failed": [
                 "TEST-EXTRPERSON:capacity_exceeded",
                 "TEST-HUND:dog_limit_exceeded",
@@ -2752,20 +3006,32 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
-          "comment": ["[Gäste-Portal] Extras gebucht: 1x Früher Check-in"],
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Früher Check-in"
+          ],
           "services": [
             {
               "id": "TEST-ECI",
-              "dates": ["2027-01-12×1@20"]
+              "dates": [
+                "2027-01-12×1@20"
+              ]
             },
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
-          "writes": ["book-service", "patch"]
+          "writes": [
+            "book-service",
+            "patch"
+          ]
         }
       },
       "stay": {
@@ -2773,7 +3039,9 @@
           {
             "kind": "order",
             "value": {
-              "booked": ["TEST-ECI×1"],
+              "booked": [
+                "TEST-ECI×1"
+              ],
               "failed": [
                 "TEST-EXTRPERSON:capacity_exceeded",
                 "TEST-HUND:dog_limit_exceeded",
@@ -2786,20 +3054,32 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
-          "comment": ["[Gäste-Portal] Extras gebucht: 1x Früher Check-in"],
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Früher Check-in"
+          ],
           "services": [
             {
               "id": "TEST-ECI",
-              "dates": ["2027-01-12×1@20"]
+              "dates": [
+                "2027-01-12×1@20"
+              ]
             },
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
-          "writes": ["book-service", "patch"]
+          "writes": [
+            "book-service",
+            "patch"
+          ]
         },
         "importWarnings": []
       }
@@ -2815,7 +3095,10 @@
           {
             "kind": "order",
             "value": {
-              "booked": ["TEST-HUND×1", "TEST-LCO×1"],
+              "booked": [
+                "TEST-HUND×1",
+                "TEST-LCO×1"
+              ],
               "failed": []
             }
           },
@@ -2871,21 +3154,35 @@
         "state": {
           "departure": "2027-01-15",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99", "2027-01-14:89.1"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99",
+            "2027-01-14:89.1"
+          ],
           "vehicle": null,
-          "comment": ["[Gäste-Portal] Extras gebucht: 1x Hund, 1x Später Check-out"],
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Hund, 1x Später Check-out"
+          ],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-14×1@139"]
+              "dates": [
+                "2027-01-14×1@139"
+              ]
             },
             {
               "id": "TEST-HUND",
-              "dates": ["2027-01-12×1@15", "2027-01-13×1@15", "2027-01-14×1@15"]
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15",
+                "2027-01-14×1@15"
+              ]
             },
             {
               "id": "TEST-LCO",
-              "dates": ["2027-01-15×1@20"]
+              "dates": [
+                "2027-01-15×1@20"
+              ]
             }
           ],
           "writes": [
@@ -2903,7 +3200,10 @@
           {
             "kind": "order",
             "value": {
-              "booked": ["TEST-HUND×1", "TEST-LCO×1"],
+              "booked": [
+                "TEST-HUND×1",
+                "TEST-LCO×1"
+              ],
               "failed": []
             }
           },
@@ -2959,21 +3259,35 @@
         "state": {
           "departure": "2027-01-15",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99", "2027-01-14:89.1"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99",
+            "2027-01-14:89.1"
+          ],
           "vehicle": null,
-          "comment": ["[Gäste-Portal] Extras gebucht: 1x Hund, 1x Später Check-out"],
+          "comment": [
+            "[Gäste-Portal] Extras gebucht: 1x Hund, 1x Später Check-out"
+          ],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-14×1@139"]
+              "dates": [
+                "2027-01-14×1@139"
+              ]
             },
             {
               "id": "TEST-HUND",
-              "dates": ["2027-01-12×1@15", "2027-01-13×1@15", "2027-01-14×1@15"]
+              "dates": [
+                "2027-01-12×1@15",
+                "2027-01-13×1@15",
+                "2027-01-14×1@15"
+              ]
             },
             {
               "id": "TEST-LCO",
-              "dates": ["2027-01-15×1@20"]
+              "dates": [
+                "2027-01-15×1@20"
+              ]
             }
           ],
           "writes": [
@@ -3024,13 +3338,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3066,13 +3385,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3096,13 +3420,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3118,13 +3447,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3168,13 +3502,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3210,13 +3549,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3236,7 +3580,9 @@
             "kind": "request",
             "value": {
               "created": true,
-              "requestedDates": ["2027-01-12"],
+              "requestedDates": [
+                "2027-01-12"
+              ],
               "quoted": 15,
               "approval": "ok"
             }
@@ -3245,20 +3591,32 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
-          "comment": ["[Gäste-Portal] Anfrage bestätigt: 1x Babybett"],
+          "comment": [
+            "[Gäste-Portal] Anfrage bestätigt: 1x Babybett"
+          ],
           "services": [
             {
               "id": "TEST-BABY",
-              "dates": ["2027-01-12×1@15"]
+              "dates": [
+                "2027-01-12×1@15"
+              ]
             },
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
-          "writes": ["book-service", "patch"]
+          "writes": [
+            "book-service",
+            "patch"
+          ]
         }
       },
       "stay": {
@@ -3267,7 +3625,9 @@
             "kind": "request",
             "value": {
               "created": true,
-              "requestedDates": ["2027-01-12"],
+              "requestedDates": [
+                "2027-01-12"
+              ],
               "quoted": 15,
               "approval": "ok"
             }
@@ -3276,20 +3636,32 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
-          "comment": ["[Gäste-Portal] Anfrage bestätigt: 1x Babybett"],
+          "comment": [
+            "[Gäste-Portal] Anfrage bestätigt: 1x Babybett"
+          ],
           "services": [
             {
               "id": "TEST-BABY",
-              "dates": ["2027-01-12×1@15"]
+              "dates": [
+                "2027-01-12×1@15"
+              ]
             },
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
-          "writes": ["book-service", "patch"]
+          "writes": [
+            "book-service",
+            "patch"
+          ]
         },
         "importWarnings": []
       }
@@ -3297,8 +3669,39 @@
     {
       "id": "S14",
       "title": "Anfrage mit zu geringer Verfügbarkeit",
-      "identical": true,
-      "deviations": [],
+      "identical": false,
+      "deviations": [
+        {
+          "scenario": "S14",
+          "step": "1:request",
+          "field": "created",
+          "extras": true,
+          "stay": false
+        },
+        {
+          "scenario": "S14",
+          "step": "1:request",
+          "field": "requestedDates",
+          "extras": [
+            "2027-01-12"
+          ],
+          "stay": null
+        },
+        {
+          "scenario": "S14",
+          "step": "1:request",
+          "field": "quoted",
+          "extras": 15,
+          "stay": null
+        },
+        {
+          "scenario": "S14",
+          "step": "1:request",
+          "field": "approval",
+          "extras": "insufficient_availability",
+          "stay": null
+        }
+      ],
       "importWarnings": [],
       "extras": {
         "steps": [
@@ -3306,7 +3709,9 @@
             "kind": "request",
             "value": {
               "created": true,
-              "requestedDates": ["2027-01-12"],
+              "requestedDates": [
+                "2027-01-12"
+              ],
               "quoted": 15,
               "approval": "insufficient_availability"
             }
@@ -3315,13 +3720,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3332,23 +3742,25 @@
           {
             "kind": "request",
             "value": {
-              "created": true,
-              "requestedDates": ["2027-01-12"],
-              "quoted": 15,
-              "approval": "insufficient_availability"
+              "created": false
             }
           }
         ],
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3369,7 +3781,9 @@
           "stay": false
         }
       ],
-      "importWarnings": ["TEST:boolean_normalized:extensionNightEnabled"],
+      "importWarnings": [
+        "TEST:boolean_normalized:extensionNightEnabled"
+      ],
       "extras": {
         "steps": [
           {
@@ -3400,13 +3814,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3422,18 +3841,25 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
         },
-        "importWarnings": ["TEST:boolean_normalized:extensionNightEnabled"]
+        "importWarnings": [
+          "TEST:boolean_normalized:extensionNightEnabled"
+        ]
       }
     },
     {
@@ -3453,10 +3879,18 @@
             "TEST-BABY",
             "TEST-EXTRPERSON"
           ],
-          "stay": ["TEST-ECI", "TEST-LCO", "TEST-HUND", "TEST-PKW", "TEST-BABY"]
+          "stay": [
+            "TEST-ECI",
+            "TEST-LCO",
+            "TEST-HUND",
+            "TEST-PKW",
+            "TEST-BABY"
+          ]
         }
       ],
-      "importWarnings": ["TEST:TEST-EXTRPERSON:config_error:missing_extra_person_price"],
+      "importWarnings": [
+        "TEST:TEST-EXTRPERSON:config_error:missing_extra_person_price"
+      ],
       "extras": {
         "steps": [
           {
@@ -3491,7 +3925,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -3526,7 +3962,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -3561,7 +3999,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -3596,7 +4037,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -3631,7 +4075,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -3681,13 +4127,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -3701,7 +4152,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "6ae4746e-55e6-4b38-a00c-9500abed86d1",
+                  "offerId": "aeaa4b4f-e9d1-4998-ae29-7b5b3e57e13e",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -3729,7 +4180,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -3738,7 +4191,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "b8ea2406-46e8-4567-8221-85799070efc8",
+                  "offerId": "956add83-0893-45e0-9a7e-2010b0ee9a63",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -3766,7 +4219,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-14"],
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -3775,7 +4230,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "dac08843-798e-45e0-a5a8-ca32de78ca70",
+                  "offerId": "f37d18da-8b58-4413-9ab6-2be2a9306373",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -3803,7 +4258,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -3812,7 +4270,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "b5903eb5-eab3-465b-86e6-ec382f071b2b",
+                  "offerId": "afed1088-d87f-4d2c-b63e-6f7b03d1cd60",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -3840,7 +4298,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -3849,7 +4310,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "e700c760-aa43-4e64-bb87-6a39e2410c7e",
+                  "offerId": "96559a42-7b7f-4ce5-bab2-5d3afa724fe8",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -3877,7 +4338,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -3889,12 +4352,12 @@
               "hidden": [
                 {
                   "serviceId": "TEST-EXTRPERSON",
-                  "offerId": "cb06bbc3-e70e-4b72-8eeb-67adaf5529ae",
+                  "offerId": "87152375-6d9e-4faa-99b5-f8d15ce0f3e7",
                   "reason": "invalid_extra_person_price"
                 },
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "a0347ae6-02ee-485b-b946-e82967d95a34",
+                  "offerId": "8ab679cd-0e5d-4580-9430-fb7b9805464b",
                   "reason": "no_offer"
                 }
               ]
@@ -3904,18 +4367,25 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
         },
-        "importWarnings": ["TEST:TEST-EXTRPERSON:config_error:missing_extra_person_price"]
+        "importWarnings": [
+          "TEST:TEST-EXTRPERSON:config_error:missing_extra_person_price"
+        ]
       }
     },
     {
@@ -3958,7 +4428,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -3993,7 +4466,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -4028,7 +4504,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -4098,7 +4576,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -4113,13 +4593,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []
@@ -4133,7 +4618,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "f1e1c5f8-58fe-4967-9a59-ee96e66fc40c",
+                  "offerId": "f3305f9c-d101-431e-b857-6c5e4fa9a941",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -4161,7 +4646,10 @@
                     "amount": 30,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": 1,
                   "maxOnePerReservation": true,
@@ -4170,7 +4658,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "e9efe0e6-3226-418a-8bb5-ef7ac93b6260",
+                  "offerId": "84326d7c-6f40-4d90-83aa-cfad57e8007c",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -4198,7 +4686,10 @@
                     "amount": 0,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12", "2027-01-13"],
+                  "serviceDates": [
+                    "2027-01-12",
+                    "2027-01-13"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -4207,7 +4698,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "71610d4f-1f24-4771-b374-c95a1a4f9821",
+                  "offerId": "5c92b805-69f0-4a5a-bd21-43df1e23a43b",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -4235,7 +4726,9 @@
                     "amount": 15,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -4244,7 +4737,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "ac73656a-c32e-4875-8936-18bd6a47c17a",
+                  "offerId": "6231b698-6002-4ba1-be52-5f43916b7431",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -4281,7 +4774,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "e23f816b-bff1-4c3a-b08d-25643e34eba1",
+                  "offerId": "be989256-c875-4f07-813e-07912355dbe9",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -4309,7 +4802,9 @@
                     "amount": 20,
                     "currency": "EUR"
                   },
-                  "serviceDates": ["2027-01-12"],
+                  "serviceDates": [
+                    "2027-01-12"
+                  ],
                   "unitGroupRestricted": false,
                   "maxQuantity": null,
                   "maxOnePerReservation": false,
@@ -4321,12 +4816,12 @@
               "hidden": [
                 {
                   "serviceId": "TEST-LCO",
-                  "offerId": "d5b8ee92-e629-43fc-887c-aa8b535b55ba",
+                  "offerId": "82ca42fd-3203-4b83-b78a-ddea08fa69ac",
                   "reason": "inactive"
                 },
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "0551dc50-5406-4aaf-ac6b-b2f96c4d33b4",
+                  "offerId": "93c162f6-b009-48f0-915c-cfcdcaacbdf7",
                   "reason": "no_offer"
                 }
               ]
@@ -4336,13 +4831,18 @@
         "state": {
           "departure": "2027-01-14",
           "adults": 2,
-          "timeSlices": ["2027-01-12:99", "2027-01-13:99"],
+          "timeSlices": [
+            "2027-01-12:99",
+            "2027-01-13:99"
+          ],
           "vehicle": null,
           "comment": [],
           "services": [
             {
               "id": "TEST-FINALCLEAN",
-              "dates": ["2027-01-13×1@139"]
+              "dates": [
+                "2027-01-13×1@139"
+              ]
             }
           ],
           "writes": []

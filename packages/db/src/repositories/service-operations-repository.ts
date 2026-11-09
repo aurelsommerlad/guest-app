@@ -305,7 +305,8 @@ export async function reserveApaleoWrite(
       and(
         eq(apaleoWriteOperations.id, existing.id),
         eq(apaleoWriteOperations.status, "pending"),
-        sql`${apaleoWriteOperations.lockedUntil} <= ${input.now}`,
+        // ISO string + cast: postgres.js does not serialise Date objects in raw SQL (PGlite does).
+        sql`${apaleoWriteOperations.lockedUntil} <= ${input.now.toISOString()}::timestamptz`,
         sql`${apaleoWriteOperations.attempts} < 20`,
       ),
     )

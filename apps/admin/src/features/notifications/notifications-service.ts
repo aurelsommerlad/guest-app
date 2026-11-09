@@ -41,14 +41,23 @@ export async function loadNotifications(deps: NotificationsDeps, admin: AdminCon
   const restricted = admin.propertyScope !== "all";
   const [jobs, settings] = await Promise.all([
     listNotifications(deps.db, ctx(admin), restricted ? { propertyIds: ids } : {}),
-    Promise.all(properties.map(async (p) => ({ property: p, ...(await getSlackSettings(deps.db, ctx(admin), p.id)) }))),
+    Promise.all(
+      properties.map(async (p) => ({
+        property: p,
+        ...(await getSlackSettings(deps.db, ctx(admin), p.id)),
+      })),
+    ),
   ]);
-  const nameOf = (id: string | null) => properties.find((p) => p.id === id)?.displayName ?? id ?? "–";
+  const nameOf = (id: string | null) =>
+    properties.find((p) => p.id === id)?.displayName ?? id ?? "–";
   return {
     ok: true as const,
     mode: deps.mode,
     canRun: deps.mode !== "off" && isAllowed(admin, "settings.edit"),
-    settings: settings.map((s) => ({ ...s, canEdit: isAllowed(admin, "settings.edit", { propertyId: s.property.id }) })),
+    settings: settings.map((s) => ({
+      ...s,
+      canEdit: isAllowed(admin, "settings.edit", { propertyId: s.property.id }),
+    })),
     jobs: jobs.map((job: OutboxJob) => ({
       ...job,
       propertyName: nameOf(job.propertyId),
@@ -67,7 +76,8 @@ export async function saveSlackRoute(
   propertyId: string,
   form: { route: string; decisionUpdates: boolean },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!isAllowed(admin, "settings.edit", { propertyId })) return { ok: false, error: FORBIDDEN_MESSAGE };
+  if (!isAllowed(admin, "settings.edit", { propertyId }))
+    return { ok: false, error: FORBIDDEN_MESSAGE };
   const route = form.route.trim().toLowerCase();
   const result = await saveSlackSettings(deps.db, ctx(admin), {
     propertyId,
@@ -78,7 +88,11 @@ export async function saveSlackRoute(
   });
   return result.ok
     ? { ok: true }
-    : { ok: false, error: "Ziel bitte als Kurzname aus Kleinbuchstaben, Ziffern und Bindestrichen (z. B. front-office-test)." };
+    : {
+        ok: false,
+        error:
+          "Ziel bitte als Kurzname aus Kleinbuchstaben, Ziffern und Bindestrichen (z. B. front-office-test).",
+      };
 }
 
 /** One worker run with the simulated transport (owners/admins with all properties). */
@@ -87,7 +101,8 @@ export async function runNotificationQueue(
   admin: AdminContext,
 ): Promise<{ ok: true; run: WorkerRun } | { ok: false; error: string }> {
   if (!isAllowed(admin, "settings.edit")) return { ok: false, error: FORBIDDEN_MESSAGE };
-  if (deps.mode === "off") return { ok: false, error: "Slack-Benachrichtigungen sind in dieser Umgebung ausgeschaltet." };
+  if (deps.mode === "off")
+    return { ok: false, error: "Slack-Benachrichtigungen sind in dieser Umgebung ausgeschaltet." };
   const run = await runNotificationWorker({
     mode: deps.mode,
     transport: createSimulatedSlackTransport(),

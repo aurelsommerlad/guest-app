@@ -90,10 +90,14 @@ export async function loadOfferCatalog(
   const lang = locale === "en" ? "en" : "de";
   try {
     const all = await listPropertyOffers(deps.db, context, context.propertyId);
-    const requests = await listOfferRequestsForReservation(deps.db, context, {
-      reservationProvider: context.reservationProvider,
-      externalReservationId: context.externalReservationId,
-    });
+    // Own-service requests (with an Apaleo service) are reported by the service backend's
+    // overview; this list only carries the partner/editorial requests of Phase 1.
+    const requests = (
+      await listOfferRequestsForReservation(deps.db, context, {
+        reservationProvider: context.reservationProvider,
+        externalReservationId: context.externalReservationId,
+      })
+    ).filter((request) => !request.apaleoServiceId);
     const stay = stayFacts(context, journey);
     const taken = new Set(
       requests

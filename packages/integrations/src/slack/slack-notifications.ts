@@ -39,14 +39,20 @@ export function renderSlackMessage(
         {
           type: "actions",
           elements: [
-            { type: "button", text: { type: "plain_text", text: "Anfrage bearbeiten" }, url: requestUrl },
+            {
+              type: "button",
+              text: { type: "plain_text", text: "Anfrage bearbeiten" },
+              url: requestUrl,
+            },
           ],
         },
       ]
     : [];
   const section = (text: string) => ({ type: "section", text: { type: "mrkdwn", text } });
   if (template === "service.request") {
-    const dates = Array.isArray(payload.dates) ? payload.dates.map((d) => day(str(d))).join(", ") : "";
+    const dates = Array.isArray(payload.dates)
+      ? payload.dates.map((d) => day(str(d))).join(", ")
+      : "";
     const total = num(payload.quotedCents);
     const lines = [
       `*Neue Anfrage:* ${quantity}× ${title}`,
@@ -55,12 +61,21 @@ export function renderSlackMessage(
       ...(dates ? [`*Datum:* ${dates}`] : []),
       `*Angezeigter Preis:* ${eur(total === null ? null : total * quantity, str(payload.currency) || "EUR")}`,
     ];
-    return { text: `Neue Anfrage: ${quantity}× ${title} – ${context.propertyName}`, blocks: [section(lines.join("\n")), ...button] };
+    return {
+      text: `Neue Anfrage: ${quantity}× ${title} – ${context.propertyName}`,
+      blocks: [section(lines.join("\n")), ...button],
+    };
   }
   if (template === "service.request_confirmed" || template === "service.request_declined") {
     const verb = template === "service.request_confirmed" ? "bestätigt" : "abgelehnt";
     const text = `Anfrage ${verb}: ${quantity}× ${title} – ${context.propertyName}`;
-    return { text, blocks: [section(`*Anfrage ${verb}:* ${quantity}× ${title}\n*Objekt:* ${context.propertyName}`), ...button] };
+    return {
+      text,
+      blocks: [
+        section(`*Anfrage ${verb}:* ${quantity}× ${title}\n*Objekt:* ${context.propertyName}`),
+        ...button,
+      ],
+    };
   }
   return null;
 }
@@ -110,7 +125,13 @@ export type NotificationWorkerDeps = {
   now?: () => Date;
 };
 
-export type WorkerRun = { claimed: number; sent: number; suppressed: number; retried: number; failed: number };
+export type WorkerRun = {
+  claimed: number;
+  sent: number;
+  suppressed: number;
+  retried: number;
+  failed: number;
+};
 
 /**
  * One worker run: claims due jobs, renders, posts (simulated) and records the result. A job is
@@ -129,7 +150,8 @@ export async function runNotificationWorker(
   for (const job of jobs) {
     const fail = async (code: string, retryable: boolean) => {
       const delay = deps.backoffMinutes[job.attempts - 1];
-      const retryAt = retryable && delay !== undefined ? new Date(now().getTime() + delay * 60_000) : null;
+      const retryAt =
+        retryable && delay !== undefined ? new Date(now().getTime() + delay * 60_000) : null;
       await deps.complete({ id: job.id, outcome: "failed", errorCode: code, retryAt, now: now() });
       if (retryAt) run.retried += 1;
       else run.failed += 1;
@@ -140,10 +162,16 @@ export async function runNotificationWorker(
         continue;
       }
       const settings = await deps.settingsOf(job.tenantId, job.propertyId);
-      const isDecision = job.template === "service.request_confirmed" || job.template === "service.request_declined";
+      const isDecision =
+        job.template === "service.request_confirmed" || job.template === "service.request_declined";
       if (job.template === "service.order" || (isDecision && !settings.slackDecisionUpdates)) {
         // Extras posts no message for instant bookings; decision updates are opt-in per property.
-        await deps.complete({ id: job.id, outcome: "suppressed", reason: isDecision ? "decision_updates_off" : "not_a_slack_message", now: now() });
+        await deps.complete({
+          id: job.id,
+          outcome: "suppressed",
+          reason: isDecision ? "decision_updates_off" : "not_a_slack_message",
+          now: now(),
+        });
         run.suppressed += 1;
         continue;
       }
@@ -152,7 +180,12 @@ export async function runNotificationWorker(
         adminBaseUrl: deps.adminBaseUrl,
       });
       if (!message) {
-        await deps.complete({ id: job.id, outcome: "suppressed", reason: "unknown_template", now: now() });
+        await deps.complete({
+          id: job.id,
+          outcome: "suppressed",
+          reason: "unknown_template",
+          now: now(),
+        });
         run.suppressed += 1;
         continue;
       }
@@ -160,7 +193,11 @@ export async function runNotificationWorker(
         await fail("no_slack_route", false);
         continue;
       }
-      const result = await deps.transport({ route: settings.slackRoute, message, idempotencyKey: job.dedupKey });
+      const result = await deps.transport({
+        route: settings.slackRoute,
+        message,
+        idempotencyKey: job.dedupKey,
+      });
       if (result.ok) {
         await deps.complete({ id: job.id, outcome: "sent", deliveryMode: "simulated", now: now() });
         run.sent += 1;

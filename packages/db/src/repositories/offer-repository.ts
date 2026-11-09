@@ -379,6 +379,8 @@ export type OfferRequestRecord = {
   quotedCents?: number;
   currency?: string;
   createdAt: Date;
+  /** Set for own-service requests (Extras/STAY engine) – shown via the service overview. */
+  apaleoServiceId?: string;
 };
 
 /** Requests of one reservation (for the guest's overview) – newest first. */
@@ -408,5 +410,6 @@ export async function listOfferRequestsForReservation(
     ...(row.people ? { people: row.people } : {}),
     ...(row.quotedCents !== null ? { quotedCents: row.quotedCents } : {}),
     ...(row.currency ? { currency: row.currency } : {}),
+    ...(row.apaleoServiceId ? { apaleoServiceId: row.apaleoServiceId } : {}),
   }));
 }
