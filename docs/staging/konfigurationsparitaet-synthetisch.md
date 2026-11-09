@@ -1,15 +1,15 @@
 # Konfigurationsparität Extras → STAY (maschinell erzeugt)
 
 Grundlage: **synthetische Testdaten – KEIN Nachweis der produktiven Konfiguration**
-Snapshot: 1f73727e19b562afab10820f30e32dff9f98e999560f01e2304b559f852318b1 · erzeugt 2026-11-09T06:47:37.388Z
+Snapshot: d894f309d6e2af1f80d9322f3ad6b628f081b2e08eae051e5ca5064f540c9ef9 · erzeugt 2026-11-09T07:46:03.118Z
 
 | Kategorie          | Anzahl |
 | ------------------ | ------ |
-| Identisch          | 100    |
+| Identisch          | 101    |
 | Bewusst abweichend | 9      |
 | Fehlt              | 1      |
 | Fehlerhaft         | 3      |
-| Nicht verifiziert  | 2      |
+| Nicht verifiziert  | 1      |
 
 ## Standort LEGACY
 
@@ -34,14 +34,13 @@ Reihenfolge: Identisch – Extras: TEST-ECI, TEST-PKW, TEST-BABY, TEST-EXTRPERSO
 | TEST-ECI             | category                               |                                                  | ohne Wirkung für Gäste (nur im Extras-Admin) | STAY-Kategorie aus Regeln abgeleitet | Gruppierung in der STAY-Oberfläche   | Bewusst abweichend | free_text_category_not_used_by_guests |
 | TEST-EXTRPERSON      | extraPersonPricePerNight               | null                                             | 0.00 € pro Person/Nacht                      | null                                 | nicht buchbar (Konfigurationsfehler) | Bewusst abweichend | p2_price                              |
 | TEST-HUND            | allowedUnitGroupIds                    | ["TEST-DOG","kein gültiger Typ"]                 | nur TEST-DOG, kein gültiger Typ              | ["TEST-DOG"]                         | nur TEST-DOG                         | Bewusst abweichend | –                                     |
-| TEST-PKW             | sortOrder                              | 1.5                                              | 1.5                                          | 2                                    | 2                                    | Nicht verifiziert  | sort_order_rounded                    |
 | TEST-PKW             | imageUrl                               | https://cdn.example/parken.jpg                   | Bild                                         | nicht übernommen (externe Adresse)   | kein Bild                            | Fehlt              | external_image_url                    |
 | (Verlängerungsnacht) | extensionNightEnabled                  | true                                             | kein Angebot (Mindestbelegung ungültig)      | false                                | aus                                  | Bewusst abweichend | invalid_min_in_extras_imported_off    |
 | (Verlängerungsnacht) | extensionDiscountPreArrivalOneNightGap | 12.5                                             | 12.5 %                                       | 13                                   | 13 %                                 | Fehlerhaft         | discount_rounded_or_clamped           |
 | (Verlängerungsnacht) | extensionDiscountInHouseStandard       | 100                                              | 100 %                                        | 90                                   | 90 %                                 | Fehlerhaft         | discount_rounded_or_clamped           |
 | (Verlängerungsnacht) | minSellableStayNights                  | null                                             | ungültig – kein Angebot                      | 2                                    | Angebot bei Lücke 1 oder > 2         | Bewusst abweichend | –                                     |
 
-Identische Felder an diesem Standort: 79 (vollständige Liste im JSON).
+Identische Felder an diesem Standort: 80 (vollständige Liste im JSON).
 
 ## Betroffene Konfigurationen
 
@@ -60,8 +59,12 @@ Geplant: 1 · mit Hinweisen: 1 · externe Adressen: 1
 
 ## Betrieb
 
-Benutzer je Rolle: {"admin":1,"manager":1,"viewer":1} · Bestellungen: 0 · Anfragen: {"pending":1,"approved":1} · Verlängerungen: 0
+Benutzer je Rolle: {"admin":1,"manager":1,"viewer":1} · Bestellungen: 0 · Anfragen: {"pending":1,"approved":2,"rejected":1} · Verlängerungen: 0
 
+Anfragen mit nicht vollständig rekonstruierbaren Angaben: 2
+
+- r3 (rejected): service_removed_archived_offer, decision_time_missing
+- r4 (approved): service_name_missing, departure_missing
 - **Slack** (Fehlt): Extras sendet alle neuen Anfragen an EINEN Webhook (Umgebungsvariable, nicht im Export). In STAY braucht jeder Standort mit Anfrage-Services ein Slack-Ziel: TEST. Wird beim Go-live gesetzt (Import-Option --slack-route).
 - **Benutzer und Rollen** (Bewusst abweichend): Extras: globale Rollen admin/manager/viewer ohne Standortrechte, Passwort-Hashes. STAY: Einladungen mit Rolle und Standortrechten; Passwörter werden nie übernommen.
 - **Veröffentlichung** (Bewusst abweichend): Neue Angebote entstehen als Entwurf; erst die Veröffentlichung beim Go-live macht sie für Gäste sichtbar (Prüfliste).

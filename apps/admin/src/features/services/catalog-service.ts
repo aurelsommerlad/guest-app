@@ -19,6 +19,7 @@ import {
   type ServiceConfigIssue,
   serviceConfigIssues,
   SORT_ORDER_LAST,
+  SORT_ORDER_MAX,
 } from "@up/core";
 import {
   type CatalogOffer,
@@ -412,10 +413,18 @@ export function parsePropertyConfigForm(
     }
     extraPersonPriceCents = parsed;
   }
-  // Empty = "without order": after every numbered service, as in Extras.
-  const sortOrder = form.sortOrder.trim() === "" ? SORT_ORDER_LAST : Number(form.sortOrder);
-  if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 9999) {
-    return { ok: false, error: "Die Reihenfolge ist eine ganze Zahl von 0 bis 9999." };
+  // Empty = "without order": after every numbered service, as in Extras. Decimals are allowed
+  // (Extras accepts them, e.g. 1,5 between 1 and 2) and kept exactly.
+  const sortText = form.sortOrder.trim().replace(",", ".");
+  const sortOrder = sortText === "" ? SORT_ORDER_LAST : Number(sortText);
+  if (
+    sortText !== "" &&
+    (!/^-?\d{1,6}(\.\d{1,6})?$/.test(sortText) || Math.abs(sortOrder) > SORT_ORDER_MAX)
+  ) {
+    return {
+      ok: false,
+      error: "Die Reihenfolge ist eine Zahl zwischen -999999 und 999999 (z. B. 10 oder 1,5).",
+    };
   }
   const groups = [...new Set(form.allowedUnitGroupIds.map((id) => id.trim()).filter(Boolean))];
   if (groups.length > 50 || groups.some((id) => !UNIT_GROUP_ID.test(id))) {

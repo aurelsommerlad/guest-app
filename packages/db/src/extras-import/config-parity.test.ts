@@ -13,6 +13,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { type Database } from "../client";
+import { createAdminUser } from "../repositories/admin-repository";
 import { seedTenant } from "../seed/seed-tenant";
 import { uniquePlacesSeed } from "../seed/unique-places";
 import { createTestDatabase, type TestDatabase } from "../testing/test-database";
@@ -274,7 +275,7 @@ describe("rules that Extras could store but STAY cannot represent 1:1", () => {
     expect(many.warnings).toContain("unit_group_ids_truncated");
   });
 
-  it("sort order: numbers kept, fractions rounded, text and empty sorted last as in Extras", () => {
+  it("sort order: numbers and decimals kept exactly, text and empty sorted last as in Extras", () => {
     const order = (value: unknown) => configWithWarnings(base("X-S", { sortOrder: value }));
     expect(order(3).config.sortOrder).toBe(3);
     expect(order(0).config.sortOrder).toBe(0);
@@ -283,9 +284,34 @@ describe("rules that Extras could store but STAY cannot represent 1:1", () => {
     expect(order("").config.sortOrder).toBe(SORT_ORDER_LAST);
     expect(order("3").config.sortOrder).toBe(SORT_ORDER_LAST);
     expect(order("3").warnings).toContain("sort_order_not_a_number");
-    expect(order(2.5).config.sortOrder).toBe(3);
-    expect(order(2.5).warnings).toContain("sort_order_rounded");
-    expect(order(20_000).warnings).toContain("sort_order_outside_admin_range");
+    expect(order(2.5).config.sortOrder).toBe(2.5);
+    expect(order(1.25).config.sortOrder).toBe(1.25);
+    expect(order(-3.5).config.sortOrder).toBe(-3.5);
+    expect(order(2.5).warnings.some((w) => w.startsWith("sort_order"))).toBe(false);
+    // Extras sorts 20000 before an empty order – so does STAY (empty = 1e9).
+    expect(order(20_000).config.sortOrder).toBeLessThan(SORT_ORDER_LAST);
+    expect(order(2_000_000).warnings).toContain("sort_order_outside_admin_range");
+    expect(order(5e9).config.sortOrder).toBe(SORT_ORDER_LAST - 1);
+    expect(order(5e9).warnings).toContain("sort_order_clamped");
+  });
+
+  it("decimal orders keep the exact Extras order (1, 1.5, 2, 10000, empty)", () => {
+    const report = compareExtrasConfiguration(
+      snap({
+        "catalog:P:items": {
+          "X-A": base("X-A", { sortOrder: 2 }),
+          "X-B": base("X-B", { sortOrder: 1.5 }),
+          "X-C": base("X-C", { sortOrder: null }),
+          "X-D": base("X-D", { sortOrder: 10_000 }),
+          "X-E": base("X-E", { sortOrder: 1 }),
+        },
+      }),
+      { basis: "synthetic" },
+    );
+    const order = report.properties[0]?.order;
+    expect(order?.extras).toEqual(["X-E", "X-B", "X-A", "X-D", "X-C"]);
+    expect(order?.stay).toEqual(order?.extras);
+    expect(order?.category).toBe("identical");
   });
 
   it("visible order is compared per property", () => {
@@ -514,7 +540,6 @@ describe("round trip: the stored STAY rows equal the planned values", () => {
       "p1_boolean_differs:active",
       "unknown_fulfillment_hidden_in_extras",
       "p2_extra_person_price_differs",
-      "sort_order_rounded",
       "invalid_unit_group_ids_dropped",
       "extension_off_invalid_min_in_extras",
       "discount_rounded:extensionDiscountPreArrivalOneNightGap",
@@ -613,6 +638,184 @@ describe("round trip: the stored STAY rows equal the planned values", () => {
       new Date(t0.getTime() + 8_200_000),
     );
     expect(third.items.find((i) => i.sourceKey === "request:req-sync")?.action).toBe("unchanged");
+  });
+
+  it("history: requests to removed or inactive services are kept with their service data", async () => {
+    const req = (id: string, extra: Record<string, unknown>) => ({
+      requestId: id,
+      reservationId: "HISTRES-1",
+      propertyId: "ALTUS",
+      requestedQuantity: 1,
+      requestedServiceDates: ["2026-09-01"],
+      departureDate: "2026-09-03",
+      displayedPrice: 18,
+      createdAt: "2026-08-20T09:00:00Z",
+      ...extra,
+    });
+    const history = {
+      "requests:items": {
+        // Service removed from the Extras catalog, decided with a time.
+        "h-removed": req("h-removed", {
+          serviceId: "ALTUS-SAUNA",
+          serviceName: "Sauna-Paket",
+          status: "approved",
+          approvedAt: "2026-08-21T07:30:00Z",
+          bookedServiceDates: ["2026-09-01"],
+        }),
+        // Same removed service again – reuses the archived offer.
+        "h-removed-2": req("h-removed-2", {
+          serviceId: "ALTUS-SAUNA",
+          serviceName: "Sauna-Paket",
+          status: "rejected",
+          rejectedAt: "2026-08-22T08:00:00Z",
+        }),
+        // Inactive service (still configured), decided without a time, no name, no quantity.
+        "h-inactive": req("h-inactive", {
+          serviceId: "ALTUS-ODD",
+          status: "rejected",
+          requestedQuantity: undefined,
+        }),
+      },
+    };
+    const t = (minutes: number) => new Date(t0.getTime() + 20_000_000 + minutes * 60_000);
+    const first = await importRun(roundTripSnapshot(history), t(0));
+    const item = (key: string) => first.items.find((i) => i.sourceKey === `request:${key}`);
+    expect(item("h-removed")).toMatchObject({ action: "create" });
+    expect(item("h-removed")?.warnings).toContain("history:service_removed_archived_offer");
+    expect(item("h-removed-2")?.action).toBe("create");
+    expect(item("h-inactive")?.warnings).toEqual(
+      expect.arrayContaining([
+        "history:service_inactive",
+        "history:service_name_missing",
+        "history:decision_time_missing",
+        "history:quantity_missing",
+      ]),
+    );
+
+    const rows = await client.query<{
+      legacy_id: string;
+      status: string;
+      offer_id: string;
+      service_name_snapshot: string | null;
+      apaleo_service_id: string | null;
+      handled_at: Date | null;
+      handled_by: string | null;
+      handled_by_external: string | null;
+      quoted_cents: number | null;
+    }>(
+      `SELECT legacy_id, status, offer_id, service_name_snapshot, apaleo_service_id, handled_at,
+              handled_by, handled_by_external, quoted_cents
+         FROM offer_requests WHERE legacy_id LIKE 'h-%' ORDER BY legacy_id`,
+    );
+    const byId = Object.fromEntries(rows.rows.map((r) => [r.legacy_id, r]));
+    expect(byId["h-removed"]).toMatchObject({
+      status: "confirmed",
+      service_name_snapshot: "Sauna-Paket",
+      apaleo_service_id: "ALTUS-SAUNA",
+      handled_by: null,
+      handled_by_external: "Extras (migriert)",
+      quoted_cents: 1800,
+    });
+    expect(new Date(byId["h-removed"]?.handled_at ?? 0).toISOString()).toBe(
+      "2026-08-21T07:30:00.000Z",
+    );
+    expect(byId["h-removed-2"]).toMatchObject({
+      status: "declined",
+      handled_by_external: "Extras (migriert)",
+    });
+    expect(new Date(byId["h-removed-2"]?.handled_at ?? 0).toISOString()).toBe(
+      "2026-08-22T08:00:00.000Z",
+    );
+    // Decided in Extras without a stored time: no invented time, no label.
+    expect(byId["h-inactive"]).toMatchObject({
+      status: "declined",
+      handled_at: null,
+      handled_by_external: null,
+    });
+    // One archived offer per removed service, carrying the original name, never published.
+    expect(byId["h-removed"]?.offer_id).toBe(byId["h-removed-2"]?.offer_id);
+    const offer = await client.query<{ status: string; title: { de: string }; legacy_key: string }>(
+      `SELECT status, title, legacy_key FROM offers WHERE id = $1`,
+      [byId["h-removed"]?.offer_id],
+    );
+    expect(offer.rows[0]).toMatchObject({
+      status: "archived",
+      title: { de: "Sauna-Paket" },
+      legacy_key: "extras:history_ALTUS-SAUNA",
+    });
+    const config = await client.query(`SELECT 1 FROM offer_properties WHERE offer_id = $1`, [
+      byId["h-removed"]?.offer_id,
+    ]);
+    expect(config.rows).toHaveLength(0);
+
+    // Repeated import: nothing new, no second archived offer.
+    const offersBefore = await client.query(`SELECT count(*)::int AS n FROM offers`);
+    const again = await importRun(roundTripSnapshot(history), t(5));
+    expect(
+      again.items.filter((i) => i.sourceKey.startsWith("request:h-")).map((i) => i.action),
+    ).toEqual(["unchanged", "unchanged", "unchanged"]);
+    const offersAfter = await client.query(`SELECT count(*)::int AS n FROM offers`);
+    expect(offersAfter.rows).toEqual(offersBefore.rows);
+  });
+
+  it("decision time: a decision added in Extras later is mirrored with time and label", async () => {
+    const pending = {
+      "requests:items": {
+        "d-late": {
+          requestId: "d-late",
+          reservationId: "DECRES-1",
+          propertyId: "ALTUS",
+          serviceId: "ALTUS-PKW",
+          serviceName: "Parkplatz",
+          requestedQuantity: 1,
+          requestedServiceDates: ["2026-12-05"],
+          departureDate: "2026-12-07",
+          status: "pending",
+          createdAt: "2026-11-05T09:00:00Z",
+        },
+      },
+    };
+    const t = (minutes: number) => new Date(t0.getTime() + 30_000_000 + minutes * 60_000);
+    await importRun(roundTripSnapshot(pending), t(0));
+    const decided = structuredClone(pending);
+    Object.assign(decided["requests:items"]["d-late"], {
+      status: "rejected",
+      rejectedAt: "2026-11-06T12:00:00Z",
+    });
+    const result = await importRun(roundTripSnapshot(decided), t(5));
+    expect(result.items.find((i) => i.sourceKey === "request:d-late")).toMatchObject({
+      action: "update",
+      reason: "synced_from_extras",
+    });
+    const row = await client.query<{
+      status: string;
+      handled_at: Date;
+      handled_by_external: string;
+    }>(
+      `SELECT status, handled_at, handled_by_external FROM offer_requests WHERE legacy_id = 'd-late'`,
+    );
+    expect(row.rows[0]?.status).toBe("declined");
+    expect(row.rows[0]?.handled_by_external).toBe("Extras (migriert)");
+    expect(new Date(row.rows[0]?.handled_at ?? 0).toISOString()).toBe("2026-11-06T12:00:00.000Z");
+    const third = await importRun(roundTripSnapshot(decided), t(10));
+    expect(third.items.find((i) => i.sourceKey === "request:d-late")?.action).toBe("unchanged");
+  });
+
+  it("the database refuses an external label together with a STAY admin", async () => {
+    const admin = await createAdminUser(db, up, {
+      email: "decider@example.test",
+      passwordHash: "scrypt$x",
+      role: "manager",
+    });
+    await expect(
+      client.query(
+        `UPDATE offer_requests SET handled_by = '${admin.id}'
+           WHERE legacy_id = 'd-late'`,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      client.query(`UPDATE offer_requests SET handled_at = NULL WHERE legacy_id = 'd-late'`),
+    ).rejects.toThrow();
   });
 
   it("an existing STAY Slack route is never replaced", async () => {

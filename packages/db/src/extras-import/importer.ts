@@ -28,6 +28,7 @@ import {
   extrasUnitGroupRestriction,
   type ExtrasTexts,
   SORT_ORDER_LAST,
+  SORT_ORDER_MAX,
   normalizeBoolean,
   parsePriceToCents,
   resolveStayExtensionSettingsDetailed,
@@ -162,10 +163,14 @@ export const UNMATCHABLE_UNIT_GROUP = "__extras_no_match__";
 function sortOrderOf(value: unknown, warnings: string[]): number {
   if (value === null || value === undefined || value === "") return SORT_ORDER_LAST;
   if (typeof value === "number" && Number.isFinite(value)) {
-    if (value >= SORT_ORDER_LAST || value < 0) warnings.push("sort_order_outside_admin_range");
-    if (!Number.isInteger(value)) warnings.push("sort_order_rounded");
-    // Integer column; values beyond ±1e9 are clamped (never seen, but must not fail the import).
-    return Math.max(-1_000_000_000, Math.min(1_000_000_000, Math.round(value)));
+    // Kept exactly – decimals included (real-number column), so the order never changes.
+    if (Math.abs(value) >= SORT_ORDER_LAST) {
+      // Never seen; keeps the item before "without order" and inside the column range.
+      warnings.push("sort_order_clamped");
+      return Math.sign(value) * (SORT_ORDER_LAST - 1);
+    }
+    if (Math.abs(value) > SORT_ORDER_MAX) warnings.push("sort_order_outside_admin_range");
+    return value;
   }
   // Text such as "3": Extras ignores it (sorts last), STAY would read 3 – keep Extras' order.
   warnings.push("sort_order_not_a_number");
@@ -562,7 +567,8 @@ async function importCatalog(
           fulfillment: allRequest ? "request" : "instant",
           cancellation: { type: "on-request" },
           availability: DEFAULT_AVAILABILITY,
-          sortOrder: configOf(lead).sortOrder,
+          // Central catalog order (whole numbers); the guest order is the property value.
+          sortOrder: Math.round(Math.max(-9999, Math.min(configOf(lead).sortOrder, 9999))),
           legacyKey,
           createdAt: now,
           updatedAt: now,
@@ -994,6 +1000,71 @@ async function offerFor(
   return row?.offerId ?? null;
 }
 
+/** Label of decisions taken in Extras (no STAY admin; Extras does not record who decided). */
+export const EXTRAS_DECIDER = "Extras (migriert)";
+
+async function configInactive(
+  tx: Tx,
+  context: TenantContext,
+  propertyId: string,
+  serviceId: string,
+): Promise<boolean> {
+  const [row] = await tx
+    .select({ active: offerProperties.active })
+    .from(offerProperties)
+    .where(
+      and(
+        eq(offerProperties.tenantId, context.tenantId),
+        eq(offerProperties.propertyId, propertyId),
+        eq(offerProperties.extrasServiceId, serviceId),
+      ),
+    );
+  return row ? !row.active : false;
+}
+
+/**
+ * Archived offer holding the history of a service that is no longer in the Extras catalog –
+ * one per Apaleo service, created once, never published and without property configuration
+ * (so a later catalog entry for the same service is not blocked).
+ */
+async function historyOfferFor(
+  tx: Tx,
+  context: TenantContext,
+  serviceId: string,
+  serviceName: string | null,
+  now: Date,
+): Promise<string> {
+  const key = SERVICE_ID.test(serviceId) ? serviceId : "unknown";
+  const legacyKey = `extras:history_${key.length > 110 ? shortHash(key) : key}`;
+  const [existing] = await tx
+    .select({ id: offers.id })
+    .from(offers)
+    .where(and(eq(offers.tenantId, context.tenantId), eq(offers.legacyKey, legacyKey)));
+  if (existing) return existing.id;
+  const title = serviceName ?? (key === "unknown" ? "Unbekannter Service" : key);
+  const [created] = await tx
+    .insert(offers)
+    .values({
+      tenantId: context.tenantId,
+      kind: "house-service",
+      category: "comfort",
+      status: "archived",
+      slug: { de: slugify(`extras-historie-${key}`) },
+      title: { de: title },
+      teaser: { de: "Historischer Service aus Extras – nicht mehr im Katalog." },
+      fulfillment: "request",
+      cancellation: { type: "on-request" },
+      availability: DEFAULT_AVAILABILITY,
+      sortOrder: 9999,
+      legacyKey,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning({ id: offers.id });
+  if (!created) throw new Error("history offer not created");
+  return created.id;
+}
+
 async function importHistory(
   tx: Tx,
   context: TenantContext,
@@ -1129,18 +1200,22 @@ async function importHistory(
       });
       continue;
     }
-    const offerId = SERVICE_ID.test(serviceId)
+    // Information that cannot be reconstructed is reported per request – never silently lost.
+    const notes: string[] = [];
+    const serviceName = str(request.serviceName).replace(/[<>]/g, "").slice(0, 200) || null;
+    if (!serviceName) notes.push("history:service_name_missing");
+    if (!SERVICE_ID.test(serviceId)) notes.push("history:service_id_missing");
+    let offerId = SERVICE_ID.test(serviceId)
       ? await offerFor(tx, context, propertyId, serviceId)
       : null;
-    if (!offerId) {
-      add({
-        entityType: "request",
-        sourceKey,
-        sourceHash: hash,
-        action: "skip",
-        reason: "offer_not_found",
-      });
-      continue;
+    if (offerId) {
+      if (await configInactive(tx, context, propertyId, serviceId))
+        notes.push("history:service_inactive");
+    } else {
+      // Service removed from the Extras catalog: the request is kept as history on an archived
+      // offer that carries the original service data (never shown to guests).
+      offerId = await historyOfferFor(tx, context, serviceId, serviceName, now);
+      notes.push("history:service_removed_archived_offer");
     }
     const dates = (value: unknown) =>
       Array.isArray(value)
@@ -1150,7 +1225,33 @@ async function importHistory(
             .slice(0, 400)
         : null;
     const departure = day(request.departureDate);
+    if (!departure) notes.push("history:departure_missing_retention_from_created");
+    if (!dates(request.requestedServiceDates)?.length && !day(request.requestedServiceDate))
+      notes.push("history:requested_dates_missing");
+    const rawQuantity = num(request.requestedQuantity);
+    if (rawQuantity === null) notes.push("history:quantity_missing");
+    else if (rawQuantity < 1 || rawQuantity > 50 || !Number.isInteger(rawQuantity))
+      notes.push("history:quantity_adjusted");
+    if (num(request.displayedPrice) === null) notes.push("history:price_missing");
+    // Decision time from Extras (approvedAt / rejectedAt), marked as an external decision –
+    // Extras does not record who decided, and no artificial STAY admin is created.
+    const decidedRaw =
+      status === "confirmed"
+        ? str(request.approvedAt)
+        : status === "declined"
+          ? str(request.rejectedAt)
+          : "";
+    const decidedAt =
+      decidedRaw && !Number.isNaN(Date.parse(decidedRaw)) ? new Date(decidedRaw) : null;
+    if (status !== "pending" && !decidedAt) notes.push("history:decision_time_missing");
+    const decision = {
+      handledAt: decidedAt,
+      handledByExternal: decidedAt ? EXTRAS_DECIDER : null,
+    };
     const createdAt = new Date(str(request.createdAt) || now.toISOString());
+    const report = (item: ImportItem) => {
+      add(notes.length ? { ...item, warnings: notes } : item);
+    };
     const [row] = await tx
       .insert(offerRequests)
       .values({
@@ -1170,10 +1271,12 @@ async function importHistory(
           departure ? new Date(`${departure}T00:00:00Z`) : createdAt,
           retention.operational,
         ),
-        apaleoServiceId: serviceId,
-        quantity: Math.min(50, Math.max(1, Math.round(num(request.requestedQuantity) ?? 1))),
+        apaleoServiceId: SERVICE_ID.test(serviceId) ? serviceId : null,
+        serviceNameSnapshot: serviceName,
+        quantity: Math.min(50, Math.max(1, Math.round(rawQuantity ?? 1))),
         requestedDates: dates(request.requestedServiceDates),
         bookedServiceDates: dates(request.bookedServiceDates),
+        ...decision,
         source: "extras",
         legacyId,
         createdAt,
@@ -1182,7 +1285,7 @@ async function importHistory(
       .onConflictDoNothing({ target: [offerRequests.tenantId, offerRequests.legacyId] })
       .returning({ id: offerRequests.id });
     if (row) {
-      add({
+      report({
         entityType: "request",
         sourceKey,
         sourceHash: hash,
@@ -1191,8 +1294,7 @@ async function importHistory(
       });
       continue;
     }
-    // Already imported. (The Extras decision time is not kept: handled_at belongs to a STAY
-    // admin.) Extras stays leading for its own requests until the go-live (they are
+    // Already imported. Extras stays leading for its own requests until the go-live (they are
     // read-only in STAY), so a decision taken in Extras meanwhile is mirrored – otherwise STAY
     // would still show it as open and it could be decided a second time.
     const [existing] = await tx
@@ -1202,6 +1304,9 @@ async function importHistory(
         status: offerRequests.status,
         bookedServiceDates: offerRequests.bookedServiceDates,
         slackNotifiedAt: offerRequests.slackNotifiedAt,
+        handledAt: offerRequests.handledAt,
+        handledByExternal: offerRequests.handledByExternal,
+        serviceNameSnapshot: offerRequests.serviceNameSnapshot,
       })
       .from(offerRequests)
       .where(
@@ -1211,13 +1316,18 @@ async function importHistory(
       status,
       bookedServiceDates: dates(request.bookedServiceDates),
       slackNotifiedAt: str(request.slackNotifiedAt) ? new Date(str(request.slackNotifiedAt)) : null,
+      ...decision,
+      serviceNameSnapshot: serviceName,
     };
     const differs =
       existing !== undefined &&
       (existing.status !== next.status ||
         JSON.stringify(existing.bookedServiceDates ?? null) !==
           JSON.stringify(next.bookedServiceDates) ||
-        existing.slackNotifiedAt?.getTime() !== next.slackNotifiedAt?.getTime());
+        existing.slackNotifiedAt?.getTime() !== next.slackNotifiedAt?.getTime() ||
+        existing.handledAt?.getTime() !== next.handledAt?.getTime() ||
+        existing.handledByExternal !== next.handledByExternal ||
+        existing.serviceNameSnapshot !== next.serviceNameSnapshot);
     if (existing?.source === "extras" && differs) {
       await tx
         .update(offerRequests)
@@ -1225,7 +1335,7 @@ async function importHistory(
         .where(
           and(eq(offerRequests.tenantId, context.tenantId), eq(offerRequests.id, existing.id)),
         );
-      add({
+      report({
         entityType: "request",
         sourceKey,
         sourceHash: hash,
@@ -1235,7 +1345,7 @@ async function importHistory(
       });
       continue;
     }
-    add({
+    report({
       entityType: "request",
       sourceKey,
       sourceHash: hash,

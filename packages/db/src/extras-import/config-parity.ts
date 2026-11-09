@@ -100,6 +100,8 @@ export type ConfigParityReport = {
     users: Record<string, number>;
     orders: number;
     requests: Record<string, number>;
+    /** Per request with something not reconstructable: id, status, issue codes (no guest data). */
+    requestIssues: { requestId: string; status: string; issues: string[] }[];
     extensionRecords: number;
     findings: { area: string; category: ParityCategory; note: string }[];
   };
@@ -333,11 +335,8 @@ function serviceParity(
     stayValue: config.sortOrder,
     stayEffect:
       config.sortOrder === SORT_ORDER_LAST ? "ohne Reihenfolge (am Ende)" : config.sortOrder,
-    category: sortWarn
-      ? sortWarn === "sort_order_not_a_number"
-        ? "identical"
-        : "unverified"
-      : "identical",
+    // Kept exactly (decimals included); only an order beyond ±1e9 has to be clamped.
+    category: sortWarn === "sort_order_clamped" ? "faulty" : "identical",
     ...(sortWarn ? { reason: sortWarn } : {}),
   });
 
@@ -511,6 +510,36 @@ function extensionParity(
   return { fields, importWarnings: notes };
 }
 
+/**
+ * What the import cannot take over 1:1 for one Extras request (same rules as the import):
+ * the request is always kept – as history on an archived offer if its service is gone.
+ */
+export function requestHistoryIssues(
+  r: Record<string, unknown>,
+  catalogByProperty: Map<string, Map<string, Record<string, unknown>>>,
+): string[] {
+  const issues: string[] = [];
+  const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const status = text(r.status);
+  if (!text(r.requestId) || !["pending", "approved", "rejected"].includes(status))
+    return ["invalid_record_skipped"];
+  if (!text(r.reservationId)) return ["missing_reservation_skipped"];
+  const catalog = catalogByProperty.get(text(r.propertyId));
+  if (!catalog) issues.push("property_without_catalog_check_mapping");
+  const item = catalog?.get(text(r.serviceId));
+  if (!item) issues.push("service_removed_archived_offer");
+  else if (!extrasTruthy(item.active)) issues.push("service_inactive");
+  if (!text(r.serviceName)) issues.push("service_name_missing");
+  if (status !== "pending") {
+    const at = text(status === "approved" ? r.approvedAt : r.rejectedAt);
+    if (!at || Number.isNaN(Date.parse(at))) issues.push("decision_time_missing");
+  }
+  if (!text(r.departureDate)) issues.push("departure_missing");
+  const qty = Number(r.requestedQuantity);
+  if (!Number.isInteger(qty) || qty < 1 || qty > 50) issues.push("quantity_adjusted");
+  return issues;
+}
+
 export function compareExtrasConfiguration(
   snapshot: ExtrasSnapshotLike,
   options: { basis: "m0-export" | "synthetic"; snapshotSha256?: string | null; now?: Date },
@@ -623,6 +652,14 @@ export function compareExtrasConfiguration(
   let orders = 0;
   let extensionRecords = 0;
   const requests: Record<string, number> = {};
+  const requestIssues: ConfigParityReport["operations"]["requestIssues"] = [];
+  const catalogByProperty = new Map<string, Map<string, Record<string, unknown>>>();
+  for (const { apaleoPropertyId, item } of catalogMembers(snapshot)) {
+    const map =
+      catalogByProperty.get(apaleoPropertyId) ?? new Map<string, Record<string, unknown>>();
+    map.set(String(item.serviceId), item);
+    catalogByProperty.set(apaleoPropertyId, map);
+  }
   for (const entry of snapshot.entries) {
     const family = entry.key
       .replace(/:[^:]*$/, ":*")
@@ -634,9 +671,17 @@ export function compareExtrasConfiguration(
       extensionRecords = Object.keys(obj(entry.value)).length;
     if (entry.key === "requests:items")
       for (const record of Object.values(obj(entry.value))) {
-        const raw = obj(record).status;
+        const r = obj(record);
+        const raw = r.status;
         const status = typeof raw === "string" && raw ? raw : "unbekannt";
         requests[status] = (requests[status] ?? 0) + 1;
+        const issues = requestHistoryIssues(r, catalogByProperty);
+        if (issues.length)
+          requestIssues.push({
+            requestId: typeof r.requestId === "string" ? r.requestId.slice(0, 100) : "(ohne ID)",
+            status,
+            issues,
+          });
       }
   }
   const roles: Record<string, number> = {};
@@ -684,7 +729,15 @@ export function compareExtrasConfiguration(
         .map((p) => ({ imageId: p.imageId, issues: p.issues, references: p.references })),
       external,
     },
-    operations: { keys, users: roles, orders, requests, extensionRecords, findings },
+    operations: {
+      keys,
+      users: roles,
+      orders,
+      requests,
+      requestIssues: requestIssues.sort((a, b) => a.requestId.localeCompare(b.requestId)),
+      extensionRecords,
+      findings,
+    },
   };
 }
 
@@ -776,6 +829,12 @@ export function renderConfigParityMarkdown(report: ConfigParityReport): string {
   lines.push(
     `Benutzer je Rolle: ${JSON.stringify(report.operations.users)} · Bestellungen: ${String(report.operations.orders)} · Anfragen: ${JSON.stringify(report.operations.requests)} · Verlängerungen: ${String(report.operations.extensionRecords)}`,
   );
+  lines.push(
+    "",
+    `Anfragen mit nicht vollständig rekonstruierbaren Angaben: ${String(report.operations.requestIssues.length)}`,
+  );
+  for (const r of report.operations.requestIssues)
+    lines.push(`- ${r.requestId} (${r.status}): ${r.issues.join(", ")}`);
   for (const f of report.operations.findings)
     lines.push(`- **${f.area}** (${L[f.category]}): ${f.note}`);
   return `${lines.join("\n")}\n`;

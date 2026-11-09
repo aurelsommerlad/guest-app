@@ -1,13 +1,13 @@
 {
   "basis": "synthetic",
-  "snapshotSha256": "1f73727e19b562afab10820f30e32dff9f98e999560f01e2304b559f852318b1",
-  "generatedAt": "2026-11-09T06:47:37.388Z",
+  "snapshotSha256": "d894f309d6e2af1f80d9322f3ad6b628f081b2e08eae051e5ca5064f540c9ef9",
+  "generatedAt": "2026-11-09T07:46:03.118Z",
   "summary": {
-    "identical": 100,
+    "identical": 101,
     "intended": 9,
     "missing": 1,
     "faulty": 3,
-    "unverified": 2
+    "unverified": 1
   },
   "properties": [
     {
@@ -304,7 +304,7 @@
               "field": "sortOrder",
               "stored": "3",
               "extrasEffect": "ohne Reihenfolge (am Ende)",
-              "stayValue": 9999,
+              "stayValue": 1000000000,
               "stayEffect": "ohne Reihenfolge (am Ende)",
               "category": "identical",
               "reason": "sort_order_not_a_number"
@@ -833,7 +833,7 @@
               "field": "sortOrder",
               "stored": null,
               "extrasEffect": "ohne Reihenfolge (am Ende)",
-              "stayValue": 9999,
+              "stayValue": 1000000000,
               "stayEffect": "ohne Reihenfolge (am Ende)",
               "category": "identical"
             },
@@ -941,10 +941,9 @@
               "field": "sortOrder",
               "stored": 1.5,
               "extrasEffect": 1.5,
-              "stayValue": 2,
-              "stayEffect": 2,
-              "category": "unverified",
-              "reason": "sort_order_rounded"
+              "stayValue": 1.5,
+              "stayEffect": 1.5,
+              "category": "identical"
             },
             {
               "field": "displayName",
@@ -972,9 +971,7 @@
               "reason": "external_image_url"
             }
           ],
-          "importWarnings": [
-            "sort_order_rounded"
-          ]
+          "importWarnings": []
         }
       ],
       "extension": {
@@ -1142,8 +1139,27 @@
     "orders": 0,
     "requests": {
       "pending": 1,
-      "approved": 1
+      "approved": 2,
+      "rejected": 1
     },
+    "requestIssues": [
+      {
+        "requestId": "r3",
+        "status": "rejected",
+        "issues": [
+          "service_removed_archived_offer",
+          "decision_time_missing"
+        ]
+      },
+      {
+        "requestId": "r4",
+        "status": "approved",
+        "issues": [
+          "service_name_missing",
+          "departure_missing"
+        ]
+      }
+    ],
     "extensionRecords": 0,
     "findings": [
       {

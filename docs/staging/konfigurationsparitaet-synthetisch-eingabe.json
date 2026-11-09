@@ -1,18 +1,179 @@
 {
-  "users": [{"id":"u1","username":"synthetisch-1","passwordHash":"x","role":"admin"},{"id":"u2","username":"synthetisch-2","passwordHash":"x","role":"manager"},{"id":"u3","username":"synthetisch-3","passwordHash":"x","role":"viewer"}],
+  "users": [
+    {
+      "id": "u1",
+      "username": "synthetisch-1",
+      "passwordHash": "x",
+      "role": "admin"
+    },
+    {
+      "id": "u2",
+      "username": "synthetisch-2",
+      "passwordHash": "x",
+      "role": "manager"
+    },
+    {
+      "id": "u3",
+      "username": "synthetisch-3",
+      "passwordHash": "x",
+      "role": "viewer"
+    }
+  ],
   "catalog:TEST:items": {
-    "TEST-ECI": {"serviceId":"TEST-ECI","code":"ECI","name":"Early check-in","displayName":"Early check-in","description":"","category":"","imageUrl":"","active":true,"bookingRule":"arrival_day","priceUnitLabel":"","fulfillmentMode":"instant","actionType":"service","extraPersonPricePerNight":null,"displayNameDe":"","displayNameEn":"","descriptionDe":"","descriptionEn":"","priceUnitLabelDe":"","priceUnitLabelEn":"","allowedUnitGroupIds":[],"sortOrder":1,"requiresRemainingCapacity":false,"requiresVehicleRegistration":false,"maxOnePerReservation":false,"updatedAt":"2026-10-01T10:00:00.000Z"},
-    "TEST-HUND": {"serviceId":"TEST-HUND","code":"HUND","displayName":"Dog","active":"true","bookingRule":"per_night","fulfillmentMode":"instant","allowedUnitGroupIds":["TEST-DOG","kein gültiger Typ"],"sortOrder":null,"maxOnePerReservation":"true"},
-    "TEST-PKW": {"serviceId":"TEST-PKW","code":"PKW","displayName":"Car park","priceUnitLabel":"pro Stellplatz","active":true,"bookingRule":"per_night","fulfillmentMode":"instant","requiresVehicleRegistration":true,"sortOrder":1.5,"imageUrl":"https://cdn.example/parken.jpg"},
-    "TEST-BABY": {"serviceId":"TEST-BABY","code":"BABY","displayNameDe":"Babybett","active":true,"bookingRule":"per_stay","fulfillmentMode":"request","sortOrder":5,"imageUrl":"/api/images/33333333-3333-4333-8333-333333333333"},
-    "TEST-EXTRPERSON": {"serviceId":"TEST-EXTRPERSON","code":"EXTRPERSON","displayName":"Zusatzperson","active":true,"actionType":"increase_occupancy","extraPersonPricePerNight":null,"requiresRemainingCapacity":true,"fulfillmentMode":"instant","sortOrder":6},
-    "TEST-ALT": {"serviceId":"TEST-ALT","code":"ALT","displayName":"Alt","active":"false","fulfillmentMode":"Request","bookingRule":"weekly","sortOrder":"3","price":12}
+    "TEST-ECI": {
+      "serviceId": "TEST-ECI",
+      "code": "ECI",
+      "name": "Early check-in",
+      "displayName": "Early check-in",
+      "description": "",
+      "category": "",
+      "imageUrl": "",
+      "active": true,
+      "bookingRule": "arrival_day",
+      "priceUnitLabel": "",
+      "fulfillmentMode": "instant",
+      "actionType": "service",
+      "extraPersonPricePerNight": null,
+      "displayNameDe": "",
+      "displayNameEn": "",
+      "descriptionDe": "",
+      "descriptionEn": "",
+      "priceUnitLabelDe": "",
+      "priceUnitLabelEn": "",
+      "allowedUnitGroupIds": [],
+      "sortOrder": 1,
+      "requiresRemainingCapacity": false,
+      "requiresVehicleRegistration": false,
+      "maxOnePerReservation": false,
+      "updatedAt": "2026-10-01T10:00:00.000Z"
+    },
+    "TEST-HUND": {
+      "serviceId": "TEST-HUND",
+      "code": "HUND",
+      "displayName": "Dog",
+      "active": "true",
+      "bookingRule": "per_night",
+      "fulfillmentMode": "instant",
+      "allowedUnitGroupIds": [
+        "TEST-DOG",
+        "kein gültiger Typ"
+      ],
+      "sortOrder": null,
+      "maxOnePerReservation": "true"
+    },
+    "TEST-PKW": {
+      "serviceId": "TEST-PKW",
+      "code": "PKW",
+      "displayName": "Car park",
+      "priceUnitLabel": "pro Stellplatz",
+      "active": true,
+      "bookingRule": "per_night",
+      "fulfillmentMode": "instant",
+      "requiresVehicleRegistration": true,
+      "sortOrder": 1.5,
+      "imageUrl": "https://cdn.example/parken.jpg"
+    },
+    "TEST-BABY": {
+      "serviceId": "TEST-BABY",
+      "code": "BABY",
+      "displayNameDe": "Babybett",
+      "active": true,
+      "bookingRule": "per_stay",
+      "fulfillmentMode": "request",
+      "sortOrder": 5,
+      "imageUrl": "/api/images/33333333-3333-4333-8333-333333333333"
+    },
+    "TEST-EXTRPERSON": {
+      "serviceId": "TEST-EXTRPERSON",
+      "code": "EXTRPERSON",
+      "displayName": "Zusatzperson",
+      "active": true,
+      "actionType": "increase_occupancy",
+      "extraPersonPricePerNight": null,
+      "requiresRemainingCapacity": true,
+      "fulfillmentMode": "instant",
+      "sortOrder": 6
+    },
+    "TEST-ALT": {
+      "serviceId": "TEST-ALT",
+      "code": "ALT",
+      "displayName": "Alt",
+      "active": "false",
+      "fulfillmentMode": "Request",
+      "bookingRule": "weekly",
+      "sortOrder": "3",
+      "price": 12
+    }
   },
-  "catalog:LEGACY": [{"serviceId":"LEGACY-LCO","code":"LCO","displayName":"Late check-out","active":true,"bookingRule":"departure_day","sortOrder":1}],
-  "extension-night:config:TEST": {"extensionNightEnabled":true,"minSellableStayNights":null,"extensionDiscountPreArrivalOneNightGap":12.5,"extensionDiscountPreArrivalStandard":10,"extensionDiscountInHouseOneNightGap":20,"extensionDiscountInHouseStandard":100},
-  "extension-night:config:LEGACY": {"extensionNightEnabled":"false","extensionDiscountOneNightGap":20,"extensionDiscountStandard":15},
-  "image:33333333-3333-4333-8333-333333333333": {"contentType":"image/png","base64":"AAAA"},
+  "catalog:LEGACY": [
+    {
+      "serviceId": "LEGACY-LCO",
+      "code": "LCO",
+      "displayName": "Late check-out",
+      "active": true,
+      "bookingRule": "departure_day",
+      "sortOrder": 1
+    }
+  ],
+  "extension-night:config:TEST": {
+    "extensionNightEnabled": true,
+    "minSellableStayNights": null,
+    "extensionDiscountPreArrivalOneNightGap": 12.5,
+    "extensionDiscountPreArrivalStandard": 10,
+    "extensionDiscountInHouseOneNightGap": 20,
+    "extensionDiscountInHouseStandard": 100
+  },
+  "extension-night:config:LEGACY": {
+    "extensionNightEnabled": "false",
+    "extensionDiscountOneNightGap": 20,
+    "extensionDiscountStandard": 15
+  },
+  "image:33333333-3333-4333-8333-333333333333": {
+    "contentType": "image/png",
+    "base64": "AAAA"
+  },
   "orders": [],
-  "requests:items": {"r1":{"requestId":"r1","status":"pending"},"r2":{"requestId":"r2","status":"approved"}},
+  "requests:items": {
+    "r1": {
+      "requestId": "r1",
+      "reservationId": "SYN-1",
+      "propertyId": "TEST",
+      "serviceId": "TEST-BABY",
+      "serviceName": "Babybett",
+      "requestedQuantity": 1,
+      "departureDate": "2026-12-03",
+      "status": "pending"
+    },
+    "r2": {
+      "requestId": "r2",
+      "reservationId": "SYN-2",
+      "propertyId": "TEST",
+      "serviceId": "TEST-BABY",
+      "serviceName": "Babybett",
+      "requestedQuantity": 1,
+      "departureDate": "2026-10-03",
+      "status": "approved",
+      "approvedAt": "2026-09-20T10:00:00Z"
+    },
+    "r3": {
+      "requestId": "r3",
+      "reservationId": "SYN-3",
+      "propertyId": "TEST",
+      "serviceId": "TEST-SAUNA",
+      "serviceName": "Sauna-Paket",
+      "requestedQuantity": 2,
+      "departureDate": "2026-08-03",
+      "status": "rejected"
+    },
+    "r4": {
+      "requestId": "r4",
+      "reservationId": "SYN-4",
+      "propertyId": "TEST",
+      "serviceId": "TEST-ALT",
+      "requestedQuantity": 1,
+      "status": "approved",
+      "approvedAt": "2026-07-01T08:00:00Z"
+    }
+  },
   "stay-extensions:records": {}
 }

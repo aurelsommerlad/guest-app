@@ -85,7 +85,7 @@ function configForm(formData: FormData): PropertyConfigForm {
   return {
     extrasServiceId: field(formData, "extrasServiceId", 130),
     active: flag("active"),
-    sortOrder: field(formData, "sortOrder", 6),
+    sortOrder: field(formData, "sortOrder", 16),
     actionType: field(formData, "actionType", 30),
     bookingRule: field(formData, "bookingRule", 30),
     fulfillment: field(formData, "fulfillment", 20),

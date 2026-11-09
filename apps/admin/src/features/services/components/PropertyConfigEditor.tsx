@@ -325,15 +325,16 @@ export function PropertyConfigEditor({
           <Field
             label="Reihenfolge"
             htmlFor="config-sort"
-            hint="Kleinere Zahlen zuerst. Leer = ohne Reihenfolge (am Ende, wie in Extras)."
+            hint="Kleinere Zahlen zuerst, Dezimalzahlen erlaubt (z. B. 1,5). Leer = ohne Reihenfolge (am Ende, wie in Extras)."
           >
             <Input
               id="config-sort"
               name="sortOrder"
-              type="number"
-              min={0}
-              max={9999}
-              defaultValue={values.sortOrder >= 9999 ? "" : values.sortOrder}
+              type="text"
+              inputMode="decimal"
+              defaultValue={
+                values.sortOrder >= 1_000_000_000 ? "" : String(values.sortOrder).replace(".", ",")
+              }
               className="max-w-40"
             />
           </Field>

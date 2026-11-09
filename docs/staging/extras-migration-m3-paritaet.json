@@ -1,6 +1,6 @@
 {
   "format": "stay-extras-parity/1",
-  "createdAt": "2026-11-09T06:39:09.077Z",
+  "createdAt": "2026-11-09T07:45:50.164Z",
   "extrasSource": "aurelsommerlad/guest-services (lokaler Checkout, nur gelesen)",
   "apaleo": "guest-services test/support/apaleo-simulator.mjs (Apaleo TEST, Stand 08.11.2026) – kein Apaleo-Zugriff",
   "gatewayMode": "simulated",
@@ -296,7 +296,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "184c6bfd-caa8-4327-af72-1e81ee3aa8cd",
+                  "offerId": "7f7166b5-df34-4060-9816-a346772243be",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -335,7 +335,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "5777cca6-47e8-4413-9a10-9552fe0869c1",
+                  "offerId": "3c61348f-c90f-48c6-ad54-3da13986eb7a",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -374,7 +374,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "3faf1b3c-7606-471e-aadc-d19342894807",
+                  "offerId": "19a537b8-624f-4d32-a4d0-4c29e6a38392",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -414,7 +414,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "cedd3623-17e2-4de4-bf84-2c469a2df556",
+                  "offerId": "6567367b-6b90-4cea-9632-a8cd06884fe7",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -454,7 +454,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "dc867499-b1fe-4407-88f6-aa79716df7a6",
+                  "offerId": "c0cf48f8-b3b2-44f9-b569-e8488f8707be",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -493,7 +493,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "967c66e1-40c1-4484-8f91-d85c8a69c998",
+                  "offerId": "d978ebae-4b36-4f35-98d3-0543b07e24fa",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -533,7 +533,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "7984263c-13cd-4964-b21a-65de0d18e5e3",
+                  "offerId": "000af92f-62d6-4182-bf55-9518bb17fea8",
                   "reason": "no_offer"
                 }
               ]
@@ -869,7 +869,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "111f9ae0-8025-429f-afc4-362bfbbffcc3",
+                  "offerId": "f45c1055-6881-47a0-88db-0842b9fe84fd",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -908,7 +908,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "49a4f7c9-75c8-4e7e-b9ca-f56368d2e970",
+                  "offerId": "433d92dc-fd6c-4fde-8f03-ef74aa23ad52",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -947,7 +947,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "d4c7b36d-bc32-44cf-9cc5-5836cb92a05e",
+                  "offerId": "32e47ff4-7f68-4e5b-b1bf-02fecf4b8d22",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -987,7 +987,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "29cfe54e-118b-4a7e-899c-257609c09f77",
+                  "offerId": "8f7419ad-18b5-4dae-91a1-d69910f76010",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -1027,7 +1027,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "fb74f906-ebbe-4f77-ba00-23b305b44cda",
+                  "offerId": "c5730ea3-cd4e-4a34-a9f7-28f39a385d6a",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -1066,7 +1066,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "b6829274-639e-43fe-8e2b-bfab6618f32c",
+                  "offerId": "d0d4f13f-f228-4317-8a0c-83e68b4b05b7",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -1106,7 +1106,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "990d7714-8418-49d6-b3c5-6b2f9c9cf56b",
+                  "offerId": "99953d0e-8bad-47ec-a98b-60c707c7c047",
                   "reason": "no_offer"
                 }
               ]
@@ -1392,7 +1392,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "120b013a-be89-45fd-a72d-862ec360df7a",
+                  "offerId": "7464135e-9598-49bd-a6e4-a92884048602",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -1431,7 +1431,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "69d037d9-d287-419b-ad72-fc963c213a7b",
+                  "offerId": "0262877e-e4d8-47bb-9daa-2a7b9725fe05",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -1470,7 +1470,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "ddb3f558-dde1-4ac7-b389-a4110e1060de",
+                  "offerId": "ebfa6f37-f1df-483e-904c-fb3ff5cfed06",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -1510,7 +1510,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "ec3ce81b-628a-4e20-b0e0-bf80fe99aedd",
+                  "offerId": "4101bdf0-17ef-4e61-a8d6-69f32541dd4b",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -1550,7 +1550,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "633034ee-faf0-4b1f-9b47-3d4eb13a2bc7",
+                  "offerId": "2081d04f-9729-469c-b500-36ae56452b5e",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -1592,12 +1592,12 @@
               "hidden": [
                 {
                   "serviceId": "TEST-EXTRPERSON",
-                  "offerId": "214ceec4-573f-457c-b714-ace38652a2c2",
+                  "offerId": "3bf1f8fa-9259-4e01-9fac-5eec9dad6caa",
                   "reason": "no_capacity"
                 },
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "2990d4dd-55c5-4feb-a79f-ef897e8e3a5d",
+                  "offerId": "f2275475-02f9-4cd9-90cd-58684e4c6389",
                   "reason": "no_offer"
                 }
               ]
@@ -1911,7 +1911,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "626d6452-1d12-4db5-98ae-85cb79be374b",
+                  "offerId": "822a770c-4407-4ec2-9bbc-796ef4dc23d3",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -1950,7 +1950,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "a5d709c3-0c23-4849-8acd-6c5846a13550",
+                  "offerId": "03e3261a-778b-489a-96a1-2168554bf3a6",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -1989,7 +1989,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "0fc867e1-c4d1-4b82-92e4-303df7571d01",
+                  "offerId": "11085966-8db2-49d4-85c5-c8335846977a",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -2029,7 +2029,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "166a6cdf-c1bb-487b-84c7-124af9938370",
+                  "offerId": "31832d14-4ab6-47fe-b13e-0e1827bd467a",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -2069,7 +2069,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "6d0c32d8-67d8-4fcd-b4a8-331972ddbc79",
+                  "offerId": "efe2db7a-df4e-42da-9ed7-8132146b2c56",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -2108,7 +2108,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "6e8cf7eb-6c0d-44d0-953c-d6bcc79759dd",
+                  "offerId": "2b0ab664-0ad9-476f-a285-d9f1eba901b1",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -2148,7 +2148,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "964f6984-b789-433a-b41f-5b51251784f5",
+                  "offerId": "c90e60c8-ed31-4373-a514-ffe053869fb6",
                   "reason": "no_offer"
                 }
               ]
@@ -2550,7 +2550,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "41c0c537-edb8-4ea4-b94e-22103a7d7411",
+                  "offerId": "f0d208d0-572d-4b05-9ccc-fb3f89aab40d",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -2589,7 +2589,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "fb67c654-1d74-4295-94dc-0ac8d473ea80",
+                  "offerId": "837537a7-2c92-4323-a785-a60f7b69af8f",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -2628,7 +2628,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "795c6ec3-5773-4132-b8d2-ecbfd4fa17f0",
+                  "offerId": "a5be3cc7-bc39-438a-8cda-818cb7bb86a6",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -2668,7 +2668,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "8e67ba4a-66c2-4b26-abfd-367b57678ea0",
+                  "offerId": "87c2e77f-cb83-4efb-a4d3-119fb4c4bcae",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -2708,7 +2708,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "6e1eb9cc-2b64-4a2f-a5bf-4a29aef419b1",
+                  "offerId": "354e0569-4411-4842-9db5-2a019f4b7698",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -2747,7 +2747,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "224e4d9b-c2aa-4661-82fc-f906256f5a96",
+                  "offerId": "649f5aeb-b4d0-4c1e-8f50-bf0eb16bbe21",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -2787,7 +2787,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "32af0900-8505-4ec1-a370-558b9ade9bb4",
+                  "offerId": "f2188c18-8d0e-43d9-9c33-6bfd416a4d60",
                   "reason": "no_offer"
                 }
               ]
@@ -4155,7 +4155,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "a5de5532-f571-4045-9cc8-37bf7b5d4d1a",
+                  "offerId": "e4b11d1b-4f99-4a0e-a0a2-b24eefa0a08c",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -4194,7 +4194,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "0b67272a-c554-473b-914b-22389eba98de",
+                  "offerId": "ce14bb77-98a1-42f9-a159-68ca533e651e",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -4233,7 +4233,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "add34981-bb7f-45c6-a2c6-9fe2190d8d3b",
+                  "offerId": "26ebd2a4-d8b3-4196-bdb5-d509bfcdeff9",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -4273,7 +4273,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "86c57906-9b8d-4909-93a1-7ce57a70b1d0",
+                  "offerId": "94ce84c2-15a7-435e-baa1-cdfe126f7190",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -4313,7 +4313,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "7f52fcfb-1eb3-4bee-867b-08860ba219dd",
+                  "offerId": "c779fc6b-cdb7-46e8-b70c-a1c79039ff1c",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -4355,12 +4355,12 @@
               "hidden": [
                 {
                   "serviceId": "TEST-EXTRPERSON",
-                  "offerId": "fff9c23e-1bc0-4895-9612-291c59ee9057",
+                  "offerId": "49499ecd-dc05-4509-a84a-77a90cdd2281",
                   "reason": "invalid_extra_person_price"
                 },
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "813110c9-1dc1-4878-a4da-bfca0b9e13a5",
+                  "offerId": "10415fd3-ba93-470c-b992-cbccd44e0b3c",
                   "reason": "no_offer"
                 }
               ]
@@ -4622,7 +4622,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "9f352f12-fbac-4227-ab1d-a60c8ba368df",
+                  "offerId": "442527c9-3a77-4dff-8e13-c83f62fd3f2b",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -4662,7 +4662,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "8810b8e0-0d5a-465d-999e-2f361bc713b0",
+                  "offerId": "16d2a8f3-4cc6-4a07-baa0-43fab06c1d94",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -4702,7 +4702,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "fd019683-4a1f-40ef-b522-e309b4dc35fb",
+                  "offerId": "5d7237c2-355b-422a-bd61-043abb8136ab",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -4741,7 +4741,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "cd5af587-9a43-4e53-8340-bec771c894cd",
+                  "offerId": "2dcd4dac-fcf8-4313-a6ad-b8b0185f3956",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -4778,7 +4778,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "39b98e3e-dc50-45c1-9443-86176acdb54c",
+                  "offerId": "0242e1eb-c280-4454-a843-2db44e04a5b5",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -4820,12 +4820,12 @@
               "hidden": [
                 {
                   "serviceId": "TEST-LCO",
-                  "offerId": "c05b13f9-311e-4252-8b6d-8356851b80d4",
+                  "offerId": "7a06a8fb-33a5-4ac1-b3d2-220ae041af76",
                   "reason": "inactive"
                 },
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "85d94972-1a24-477a-89f8-286b1c291a9a",
+                  "offerId": "6a82b0cc-484c-4dab-af48-4d32e87d3902",
                   "reason": "no_offer"
                 }
               ]
@@ -5121,7 +5121,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "58aad540-e93a-4d68-887a-a5d76712cb33",
+                  "offerId": "62bb1f7e-771f-4ac7-a265-2ecc5b2db5b8",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -5160,7 +5160,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "11706a42-c33b-4850-af7b-7fdbb968c926",
+                  "offerId": "c73f199d-4301-4292-b10c-c0eec47bb05c",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -5199,7 +5199,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "d41a50fc-b6a7-4684-8195-20cd7f7c2210",
+                  "offerId": "21f15217-c590-4c31-a655-194c44fddf18",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -5239,7 +5239,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "81ff674a-ca59-489a-b253-fc3d4482e93c",
+                  "offerId": "82afeb56-63fe-4660-885a-a2062b9323c2",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -5279,7 +5279,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "9eb8b02f-390b-4fd9-ac29-5137dc432d60",
+                  "offerId": "fa4e3ffd-e629-4984-9601-67bc73f50bf6",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -5318,7 +5318,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "6497a98c-07f3-459e-b652-47bb20229123",
+                  "offerId": "3319de14-058f-49f2-a5a0-045495980009",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -5358,7 +5358,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "b18bc773-7fe9-42f9-82fc-254c743ff1e7",
+                  "offerId": "9cb040c7-520d-4ffb-b3e2-4cd4b3c4468a",
                   "reason": "no_offer"
                 }
               ]
@@ -5734,7 +5734,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "d00cb20c-e60c-4df2-a0f4-12ba37af56b9",
+                  "offerId": "8705b807-1b81-415c-942c-b632467e2dbc",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -5773,7 +5773,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "6b324435-eb6a-4629-8878-bb49418919e2",
+                  "offerId": "05eb0bba-9e2a-4f2b-b494-04e30ce2ddee",
                   "serviceId": "TEST-LCO",
                   "displayName": {
                     "de": "Später Check-out",
@@ -5812,7 +5812,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "20452a9d-65b2-425c-aeeb-2948098db887",
+                  "offerId": "65928ced-ca0f-4582-8dcc-6c9f2247671c",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -5852,7 +5852,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "343ffc07-a978-425a-a15d-187e12ef3e28",
+                  "offerId": "e4fdb696-8eb7-428b-84d2-abfe7ff94d0f",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -5892,7 +5892,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "9d4e0532-c1cb-4541-97de-4a4575ba9f8e",
+                  "offerId": "2ad69c7f-c3e9-42da-8a23-2cc8f99fe599",
                   "serviceId": "TEST-BABY",
                   "displayName": {
                     "de": "Babybett",
@@ -5931,7 +5931,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "d8c83bc4-c780-4242-b23d-4b836d85b107",
+                  "offerId": "15265b8f-decf-4b09-a91f-991373770610",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -5971,7 +5971,7 @@
               "hidden": [
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "74954749-9a74-47c6-bb3e-9daf84f68d03",
+                  "offerId": "a34b04fa-6e77-4459-8cde-662b1f356eee",
                   "reason": "no_offer"
                 }
               ]
@@ -6031,8 +6031,8 @@
           ],
           "stay": [
             "TEST-ECI",
-            "TEST-LCO",
             "TEST-PKW",
+            "TEST-LCO",
             "TEST-EXTRPERSON",
             "TEST-HUND"
           ]
@@ -6040,8 +6040,7 @@
       ],
       "importWarnings": [
         "TEST:TEST-BABY:unknown_fulfillment_hidden_in_extras",
-        "TEST:TEST-HUND:sort_order_not_a_number",
-        "TEST:TEST-PKW:sort_order_rounded"
+        "TEST:TEST-HUND:sort_order_not_a_number"
       ],
       "extras": {
         "steps": [
@@ -6304,7 +6303,7 @@
               "pastStay": false,
               "items": [
                 {
-                  "offerId": "9716fb6d-c948-49e2-9b78-e87f130d3535",
+                  "offerId": "8815c944-64b8-41ec-8bc2-ac4e257c449e",
                   "serviceId": "TEST-ECI",
                   "displayName": {
                     "de": "Früher Check-in",
@@ -6343,46 +6342,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "0beb44f2-c604-4622-b52f-fa46f5dadac3",
-                  "serviceId": "TEST-LCO",
-                  "displayName": {
-                    "de": "Später Check-out",
-                    "en": "Late check-out"
-                  },
-                  "description": {
-                    "de": "Später Check-out",
-                    "en": "Late Check-out"
-                  },
-                  "category": "arrival-departure",
-                  "imageUrl": null,
-                  "bookingRule": "departure_day",
-                  "actionType": "service",
-                  "fulfillmentMode": "instant",
-                  "priceUnitLabel": {
-                    "de": "einmalig",
-                    "en": "one-time"
-                  },
-                  "unitPrice": {
-                    "amount": 20,
-                    "currency": "EUR"
-                  },
-                  "nights": 1,
-                  "price": {
-                    "amount": 20,
-                    "currency": "EUR"
-                  },
-                  "serviceDates": [
-                    "2027-01-14"
-                  ],
-                  "unitGroupRestricted": false,
-                  "maxQuantity": null,
-                  "maxOnePerReservation": false,
-                  "alreadyBooked": false,
-                  "requiresVehicleRegistration": false,
-                  "existingVehicleRegistration": null
-                },
-                {
-                  "offerId": "b958f17f-74e3-4726-ab67-51be4455ee45",
+                  "offerId": "380e7cdc-4ebc-4d9c-addb-97949def4cc0",
                   "serviceId": "TEST-PKW",
                   "displayName": {
                     "de": "Parkplatz",
@@ -6422,7 +6382,46 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "fef4a812-4877-41ff-9ce9-64eccf2c2b00",
+                  "offerId": "9041a265-fe66-4fcc-a41e-ddb1b0bdfe2e",
+                  "serviceId": "TEST-LCO",
+                  "displayName": {
+                    "de": "Später Check-out",
+                    "en": "Late check-out"
+                  },
+                  "description": {
+                    "de": "Später Check-out",
+                    "en": "Late Check-out"
+                  },
+                  "category": "arrival-departure",
+                  "imageUrl": null,
+                  "bookingRule": "departure_day",
+                  "actionType": "service",
+                  "fulfillmentMode": "instant",
+                  "priceUnitLabel": {
+                    "de": "einmalig",
+                    "en": "one-time"
+                  },
+                  "unitPrice": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "nights": 1,
+                  "price": {
+                    "amount": 20,
+                    "currency": "EUR"
+                  },
+                  "serviceDates": [
+                    "2027-01-14"
+                  ],
+                  "unitGroupRestricted": false,
+                  "maxQuantity": null,
+                  "maxOnePerReservation": false,
+                  "alreadyBooked": false,
+                  "requiresVehicleRegistration": false,
+                  "existingVehicleRegistration": null
+                },
+                {
+                  "offerId": "b99f260e-55f2-4e5d-aa00-25091e806feb",
                   "serviceId": "TEST-EXTRPERSON",
                   "displayName": {
                     "de": "Zusatzperson",
@@ -6459,7 +6458,7 @@
                   "existingVehicleRegistration": null
                 },
                 {
-                  "offerId": "7a6d8c77-c57b-4ce3-be85-1c97f936397e",
+                  "offerId": "7eb32df1-a44e-4151-8d7f-743960cf5a49",
                   "serviceId": "TEST-HUND",
                   "displayName": {
                     "de": "Hund",
@@ -6502,12 +6501,12 @@
               "hidden": [
                 {
                   "serviceId": "TEST-BABY",
-                  "offerId": "e771f29b-ce09-4d25-bc80-24bc70cedbfa",
+                  "offerId": "886949e5-5683-4ef1-8ce2-9b0801886e6f",
                   "reason": "inactive"
                 },
                 {
                   "serviceId": "TEST-FINALCLEAN",
-                  "offerId": "2027fb8f-1604-4887-9f3e-d1ca425bd430",
+                  "offerId": "c2e57c59-7c88-4931-bc0a-ee35b57c754b",
                   "reason": "no_offer"
                 }
               ]
@@ -6535,8 +6534,7 @@
         },
         "importWarnings": [
           "TEST:TEST-BABY:unknown_fulfillment_hidden_in_extras",
-          "TEST:TEST-HUND:sort_order_not_a_number",
-          "TEST:TEST-PKW:sort_order_rounded"
+          "TEST:TEST-HUND:sort_order_not_a_number"
         ]
       }
     }

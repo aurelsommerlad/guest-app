@@ -74,6 +74,7 @@ import {
   boolean,
   check,
   date,
+  doublePrecision,
   integer,
   foreignKey,
   index,
@@ -679,7 +680,11 @@ export const offerProperties = pgTable(
      * Extras app owned the configuration; since M1 the property configuration lives here.
      */
     extrasServiceId: text("extras_service_id"),
-    sortOrder: integer("sort_order").notNull().default(0),
+    /**
+     * Guest order at this property. A real number: the Extras admin accepts decimals (e.g. 1.5
+     * between 1 and 2), so imported values are kept exactly. 1e9 = "without order".
+     */
+    sortOrder: doublePrecision("sort_order").notNull().default(0),
     /* ── Property configuration (M1; Extras catalog fields, see docs/concepts/extras-migration.md) */
     /** Shown to guests of this property ("Im Gäste-Portal anzeigen"). */
     active: boolean("active").notNull().default(true),
@@ -790,6 +795,10 @@ export const offerProperties = pgTable(
       sql`${t.importedHash} IS NULL OR ${isSha256Hex(t.importedHash)}`,
     ),
     check(
+      "offer_properties_sort_order_valid",
+      sql`${t.sortOrder} BETWEEN -1000000000 AND 1000000000`,
+    ),
+    check(
       "offer_properties_extras_texts_valid",
       sql`${t.extrasTexts} IS NULL OR (jsonb_typeof(${t.extrasTexts}) = 'object'
         AND pg_column_size(${t.extrasTexts}) <= 16384)`,
@@ -866,6 +875,13 @@ export const offerRequests = pgTable(
     currency: text("currency"),
     handledBy: uuid("handled_by"),
     handledAt: timestamp("handled_at", { withTimezone: true }),
+    /**
+     * Decision taken outside STAY (migrated Extras requests): a label such as "Extras" instead
+     * of a STAY admin – never an artificial admin account. Exclusive with handled_by.
+     */
+    handledByExternal: text("handled_by_external"),
+    /** Service name as Extras stored it with the request (history, also for removed services). */
+    serviceNameSnapshot: text("service_name_snapshot"),
     slackNotifiedAt: timestamp("slack_notified_at", { withTimezone: true }),
     purgeAfter: timestamp("purge_after", { withTimezone: true }),
     /* ── Own services (M1, Extras "Auf Anfrage") */
@@ -924,7 +940,10 @@ export const offerRequests = pgTable(
         AND (${t.note} IS NULL OR (char_length(${t.note}) <= 500 AND ${t.note} !~ '[<>]'))
         AND (${t.quotedCents} IS NULL OR ${t.quotedCents} >= 0)
         AND (${t.currency} IS NULL OR ${t.currency} ~ '^[A-Z]{3}$')
-        AND ((${t.handledBy} IS NULL) = (${t.handledAt} IS NULL))`,
+        AND ((${t.handledAt} IS NULL) = (${t.handledBy} IS NULL AND ${t.handledByExternal} IS NULL))
+        AND (${t.handledBy} IS NULL OR ${t.handledByExternal} IS NULL)
+        AND (${t.handledByExternal} IS NULL OR ${t.handledByExternal} ~ '^[A-Za-z0-9 ._:()-]{1,80}$')
+        AND (${t.serviceNameSnapshot} IS NULL OR (char_length(${t.serviceNameSnapshot}) BETWEEN 1 AND 200 AND ${t.serviceNameSnapshot} !~ '[<>]'))`,
     ),
   ],
 ).enableRLS();

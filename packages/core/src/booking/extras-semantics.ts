@@ -105,9 +105,13 @@ export function extrasExtraPersonPrice(value: unknown): number | null {
 
 /**
  * STAY's "without order": after every numbered service, as Extras sorts an empty order.
- * 9999 is also the highest order the STAY admin accepts.
+ * Larger than any order an admin can enter, so imported values (also 10000 or 1.5) keep their
+ * exact place relative to it.
  */
-export const SORT_ORDER_LAST = 9999;
+export const SORT_ORDER_LAST = 1_000_000_000;
+
+/** Highest absolute order the STAY admin accepts (decimals allowed). */
+export const SORT_ORDER_MAX = 999_999;
 
 /** lib/catalogSort.js – only real finite numbers count; everything else sorts last. */
 export function extrasSortKey(value: unknown): number {

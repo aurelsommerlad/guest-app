@@ -131,7 +131,13 @@ export async function CatalogListView({ viewProperty }: { viewProperty: string |
                             ? "Zusatzperson"
                             : BOOKING_RULE_LABELS[config.bookingRule ?? "per_stay"]}{" "}
                           · {config.fulfillment === "request" ? "auf Anfrage" : "sofort"}
-                          {viewProperty ? ` · Reihenfolge ${config.sortOrder}` : ""}
+                          {viewProperty
+                            ? ` · Reihenfolge ${
+                                config.sortOrder >= 1_000_000_000
+                                  ? "ohne"
+                                  : String(config.sortOrder).replace(".", ",")
+                              }`
+                            : ""}
                         </span>
                       </div>
                       <IssueNote issues={offer.issues[config.propertyId] ?? []} />

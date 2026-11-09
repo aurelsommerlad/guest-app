@@ -300,6 +300,9 @@ export async function RequestDetailView({
           { label: "Objekt", value: property?.displayName ?? request.propertyId },
           { label: "Reservierung", value: request.externalReservationId },
           { label: "Apaleo-Service", value: request.apaleoServiceId ?? "–" },
+          ...(request.serviceNameSnapshot
+            ? [{ label: "Service laut Extras", value: request.serviceNameSnapshot }]
+            : []),
           { label: "Menge", value: request.quantity ?? 1 },
           {
             label: "Gewünschte Daten",
@@ -316,6 +319,9 @@ export async function RequestDetailView({
           { label: "Herkunft", value: SOURCE[request.source] },
           { label: "Eingegangen", value: fmtDateTime(request.createdAt) },
           { label: "Entschieden", value: fmtDateTime(request.handledAt) },
+          ...(request.handledByExternal
+            ? [{ label: "Entschieden in", value: request.handledByExternal }]
+            : []),
         ]}
       />
       {request.source === "extras" && request.status === "pending" && (

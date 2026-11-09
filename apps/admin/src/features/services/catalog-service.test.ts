@@ -1,4 +1,4 @@
-import { createLogger } from "@up/core";
+import { createLogger, SORT_ORDER_LAST } from "@up/core";
 import {
   type Database,
   getCatalogOffer,
@@ -19,6 +19,7 @@ import {
   loadCatalog,
   loadOffer,
   type OfferForm,
+  parsePropertyConfigForm,
   type PropertyConfigForm,
   removeConfig,
   saveConfig,
@@ -307,5 +308,28 @@ describe("property configuration", () => {
         "catalog.property_config_updated",
       ]),
     );
+  });
+});
+
+describe("sort order (configuration parity)", () => {
+  const parse = (sortOrder: string) => parsePropertyConfigForm(configForm({ sortOrder }));
+  it("accepts decimals exactly, with comma or point", () => {
+    for (const [text, value] of [
+      ["1,5", 1.5],
+      ["1.5", 1.5],
+      ["10", 10],
+      ["-2,25", -2.25],
+      ["0", 0],
+    ] as const) {
+      const result = parse(text);
+      expect(result.ok && result.config.sortOrder, text).toBe(value);
+    }
+  });
+  it("empty means without order (after every numbered service, as in Extras)", () => {
+    const result = parse("");
+    expect(result.ok && result.config.sortOrder).toBe(SORT_ORDER_LAST);
+  });
+  it("refuses text and out-of-range values", () => {
+    for (const text of ["abc", "1,2,3", "1e3", "1000000"]) expect(parse(text).ok, text).toBe(false);
   });
 });
