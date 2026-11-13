@@ -26,5 +26,6 @@ Kurze, unveränderliche Aufzeichnungen wichtiger Architekturentscheidungen. Neue
 | 0020 | [Design V2 „Editorial“ als getrennte Designversion](0020-design-v2-editorial.md)                                        | Entwurf                                 |
 | 0021 | [Check-in-Validierung, Kontaktbestätigung und Firmen-Rechnungsadresse](0021-check-in-validation-and-billing-address.md) | Akzeptiert (C1 umgesetzt)               |
 | 0022 | [Direkte Feratel-Anbindung: Gästemeldung und Gästekarten](0022-feratel-official-registration.md)                        | Akzeptiert (F0/F1 umgesetzt, simuliert) |
+| 0023 | [Unified Inbox mit Kanal-Adaptern und providerunabhängiger KI](0023-unified-inbox.md)                                   | Vorschlag                               |
 
 Vorlage: Kontext → Entscheidung → Konsequenzen.
