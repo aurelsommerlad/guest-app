@@ -47,6 +47,17 @@ export type AdminModule = {
 
 export const adminModules: readonly AdminModule[] = [
   {
+    id: "inbox",
+    label: "Posteingang",
+    group: "communication",
+    segment: "inbox",
+    icon: "message-square",
+    // Unified Inbox (ADR 0023): "Alle Objekte" shows every conversation the admin may see.
+    scope: { kind: "property", allProperties: "aggregate" },
+    reservedSegments: ["c", "devices"],
+    permission: "inbox.read",
+  },
+  {
     id: "guide",
     label: "Guide",
     group: "content",

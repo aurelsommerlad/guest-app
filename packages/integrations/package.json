@@ -13,10 +13,12 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@types/web-push": "^3.6.4",
     "@up/config": "workspace:*"
   },
   "dependencies": {
     "@up/core": "workspace:*",
+    "web-push": "3.6.7",
     "zod": "^4.6.5"
   }
 }

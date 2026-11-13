@@ -47,8 +47,32 @@ describe("schema constraints", () => {
       `SELECT relname, relrowsecurity FROM pg_class
        WHERE relnamespace = 'public'::regnamespace AND relkind = 'r' AND relname <> '__drizzle_migrations'`,
     );
-    expect(result.rows).toHaveLength(46);
+    expect(result.rows).toHaveLength(59);
     expect(result.rows.every((row) => row.relrowsecurity)).toBe(true);
+  });
+
+  it("protects every inbox table with policies for the role stay_inbox (ADR 0023)", async () => {
+    const result = await client.query<{ tablename: string }>(
+      `SELECT DISTINCT tablename FROM pg_policies WHERE schemaname = 'public' AND 'stay_inbox' = ANY (roles)`,
+    );
+    expect(result.rows.map((row) => row.tablename).sort()).toEqual([
+      "channel_account_properties",
+      "channel_accounts",
+      "conversation_events",
+      "conversation_messages",
+      "conversation_participants",
+      "conversation_reads",
+      "conversation_reservation_links",
+      "conversations",
+      "message_attachments",
+      "message_delivery_jobs",
+      "push_deliveries",
+      "push_subscriptions",
+    ]);
+    const role = await client.query<{ rolbypassrls: boolean; rolcanlogin: boolean }>(
+      `SELECT rolbypassrls, rolcanlogin FROM pg_roles WHERE rolname = 'stay_inbox'`,
+    );
+    expect(role.rows[0]).toEqual({ rolbypassrls: false, rolcanlogin: false });
   });
 
   it("rejects malformed ids and slugs", async () => {

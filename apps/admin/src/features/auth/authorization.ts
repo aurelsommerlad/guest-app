@@ -8,7 +8,12 @@ import { type AdminPermission, type AdminPrincipal, can, canAccessProperty } fro
 import { type AdminContext } from "./admin-auth-service";
 
 export function principalOf(admin: AdminContext): AdminPrincipal {
-  return { role: admin.role, propertyScope: admin.propertyScope, propertyIds: admin.propertyIds };
+  return {
+    role: admin.role,
+    propertyScope: admin.propertyScope,
+    propertyIds: admin.propertyIds,
+    grants: admin.grants ?? [],
+  };
 }
 
 export function isAllowed(

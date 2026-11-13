@@ -36,6 +36,16 @@ export const ADMIN_PERMISSIONS = [
   "migration.run",
   /** The production writer switch (Extras ↔ STAY) – owner only, see go-live plan. */
   "writer.switch",
+  /** Unified Inbox (ADR 0023): read guest conversations of a property. */
+  "inbox.read",
+  /** Reply to guests. */
+  "inbox.reply",
+  /** Internal notes (read and write) – never visible to guests or to viewers. */
+  "inbox.notes",
+  /** Assign conversations and change their status. */
+  "inbox.assign",
+  /** Channels and tenant-wide inbox/push settings. */
+  "inbox.manage",
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
@@ -54,6 +64,11 @@ const MATRIX: Record<AdminRole, ReadonlySet<AdminPermission>> = {
     "users.read",
     "users.manage",
     "migration.run",
+    "inbox.read",
+    "inbox.reply",
+    "inbox.notes",
+    "inbox.assign",
+    "inbox.manage",
   ]),
   manager: new Set<AdminPermission>([
     "content.read",
@@ -64,6 +79,10 @@ const MATRIX: Record<AdminRole, ReadonlySet<AdminPermission>> = {
     "requests.decide",
     "bookings.read",
     "settings.read",
+    "inbox.read",
+    "inbox.reply",
+    "inbox.notes",
+    "inbox.assign",
   ]),
   viewer: new Set<AdminPermission>([
     "content.read",
@@ -80,13 +99,27 @@ const TENANT_WIDE: ReadonlySet<AdminPermission> = new Set<AdminPermission>([
   "users.manage",
   "migration.run",
   "writer.switch",
+  "inbox.manage",
 ]);
+
+/**
+ * Permissions that can be granted explicitly in addition to the role (admin_user_grants).
+ * Viewers read guest messages only with this grant – never internal notes.
+ */
+export const GRANTABLE_PERMISSIONS = ["inbox.read"] as const;
+export type GrantablePermission = (typeof GRANTABLE_PERMISSIONS)[number];
+
+export function isGrantablePermission(value: unknown): value is GrantablePermission {
+  return typeof value === "string" && (GRANTABLE_PERMISSIONS as readonly string[]).includes(value);
+}
 
 export type AdminPrincipal = {
   role: AdminRole;
   propertyScope: PropertyScope;
   /** Only meaningful with propertyScope "selected". */
   propertyIds: readonly string[];
+  /** Explicit extra permissions (only GRANTABLE_PERMISSIONS take effect). */
+  grants?: readonly string[];
 };
 
 export function isAdminRole(value: unknown): value is AdminRole {
@@ -95,6 +128,12 @@ export function isAdminRole(value: unknown): value is AdminRole {
 
 export function roleHas(role: AdminRole, permission: AdminPermission): boolean {
   return MATRIX[role].has(permission);
+}
+
+/** Role permission or an explicit grant of a grantable permission. */
+export function principalHas(principal: AdminPrincipal, permission: AdminPermission): boolean {
+  if (roleHas(principal.role, permission)) return true;
+  return isGrantablePermission(permission) && (principal.grants ?? []).includes(permission);
 }
 
 /** True if the principal may act on every property (no property restriction). */
@@ -120,7 +159,7 @@ export function can(
   permission: AdminPermission,
   target: { propertyId?: string } = {},
 ): boolean {
-  if (!roleHas(principal.role, permission)) return false;
+  if (!principalHas(principal, permission)) return false;
   if (TENANT_WIDE.has(permission)) return hasAllProperties(principal);
   if (target.propertyId !== undefined) return canAccessProperty(principal, target.propertyId);
   const isRead = permission.endsWith(".read");

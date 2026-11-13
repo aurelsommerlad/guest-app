@@ -162,6 +162,13 @@
       "when": 1794209926134,
       "tag": "0022_history_decisions_sort",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794581914286,
+      "tag": "0023_unified_inbox",
+      "breakpoints": true
     }
   ]
 }

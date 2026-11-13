@@ -105,7 +105,8 @@ describe("admin routes with property context", () => {
     const markup = renderToStaticMarkup(await PropertiesPage());
     const own = await listPropertiesForTenant(test.db, { tenantId: "unique-places" });
     expect(own.length).toBeGreaterThan(0);
-    expect(hrefs(markup)).toEqual(own.map((property) => `/guide/${property.id}`));
+    // The first module (Posteingang, ADR 0023) is the entry point of a property.
+    expect(hrefs(markup)).toEqual(own.map((property) => `/inbox/${property.id}`));
     expect(markup).not.toContain("Fremd");
   });
 
@@ -160,8 +161,8 @@ describe("admin routes with property context", () => {
   });
 
   it("opens the start module in the remembered property context", async () => {
-    expect(await thrownDigest(() => AdminHome())).toMatch(/;\/guide;/);
+    expect(await thrownDigest(() => AdminHome())).toMatch(/;\/inbox;/);
     state.remembered = "laeke";
-    expect(await thrownDigest(() => AdminHome())).toMatch(/;\/guide\/laeke;/);
+    expect(await thrownDigest(() => AdminHome())).toMatch(/;\/inbox\/laeke;/);
   });
 });

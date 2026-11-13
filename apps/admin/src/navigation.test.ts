@@ -22,8 +22,14 @@ const explore = adminModules.find((module) => module.id === "explore") as AdminM
 describe("admin navigation registry", () => {
   it("lists only existing modules, in the long-term group order, without empty groups", () => {
     const groups = visibleNavigation();
-    expect(groups.map((group) => group.label)).toEqual(["Inhalte", "Services", "Verwaltung"]);
+    expect(groups.map((group) => group.label)).toEqual([
+      "Kommunikation",
+      "Inhalte",
+      "Services",
+      "Verwaltung",
+    ]);
     expect(groups.flatMap((group) => group.modules.map((module) => module.label))).toEqual([
+      "Posteingang",
       "Guide",
       "Explore",
       "Servicekatalog",

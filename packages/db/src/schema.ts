@@ -66,6 +66,21 @@ import {
   BOOKING_RULES,
   PROPERTY_SCOPES,
   SERVICE_ACTION_TYPES,
+  CHANNEL_ACCOUNT_ENVIRONMENTS,
+  CHANNEL_PROVIDERS,
+  CONVERSATION_CHANNELS,
+  CONVERSATION_EVENT_TYPES,
+  CONVERSATION_KINDS,
+  CONVERSATION_STATUSES,
+  DELIVERY_STATUSES,
+  GRANTABLE_PERMISSIONS,
+  MESSAGE_DIRECTIONS,
+  MESSAGE_ORIGINS,
+  PARTICIPANT_KINDS,
+  PUSH_DELIVERY_KINDS,
+  PUSH_DELIVERY_STATUSES,
+  PUSH_REVOKE_REASONS,
+  RESERVATION_LINK_METHODS,
 } from "@up/core";
 import { sql, type SQL } from "drizzle-orm";
 import {
@@ -2808,6 +2823,514 @@ export const migrationItems = pgTable(
   ],
 ).enableRLS();
 
+/* ------------------------------------------------------------------------------------------
+ * Unified Inbox (ADR 0023, migration 0023). Every inbox table is additionally protected by
+ * RLS policies for the role `stay_inbox` (see the migration); the inbox repository runs its
+ * queries with `SET LOCAL ROLE stay_inbox` and the tenant/property settings of the admin.
+ * ---------------------------------------------------------------------------------------- */
+
+/** Explicit extra permissions (only GRANTABLE_PERMISSIONS, today "inbox.read" for viewers). */
+export const adminUserGrants = pgTable(
+  "admin_user_grants",
+  {
+    tenantId: text("tenant_id").notNull(),
+    adminUserId: uuid("admin_user_id").notNull(),
+    permission: text("permission").notNull(),
+    grantedByAdminUserId: uuid("granted_by_admin_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: "admin_user_grants_pkey", columns: [t.adminUserId, t.permission] }),
+    foreignKey({
+      name: "admin_user_grants_user_fkey",
+      columns: [t.tenantId, t.adminUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("cascade"),
+    check("admin_user_grants_permission_valid", oneOf(t.permission, GRANTABLE_PERMISSIONS)),
+  ],
+).enableRLS();
+
+/** One connection of a tenant to a channel provider (credentials only by reference). */
+export const channelAccounts = pgTable(
+  "channel_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    provider: text("provider", { enum: CHANNEL_PROVIDERS }).notNull(),
+    label: text("label").notNull(),
+    environment: text("environment", { enum: CHANNEL_ACCOUNT_ENVIRONMENTS }).notNull(),
+    status: text("status").notNull().default("active"),
+    /** Non-secret configuration only (base URL, group id). */
+    config: jsonb("config").$type<Record<string, unknown>>().notNull().default({}),
+    /** Name of the env variable holding the secret – never the secret itself. */
+    secretRef: text("secret_ref"),
+    ...timestamps,
+  },
+  (t) => [
+    unique("channel_accounts_tenant_id_id_key").on(t.tenantId, t.id),
+    unique("channel_accounts_label_key").on(t.tenantId, t.provider, t.label),
+    check("channel_accounts_provider_valid", oneOf(t.provider, CHANNEL_PROVIDERS)),
+    check("channel_accounts_environment_valid", oneOf(t.environment, CHANNEL_ACCOUNT_ENVIRONMENTS)),
+    check(
+      "channel_accounts_values_valid",
+      sql`${notBlank(t.label, 120)}
+        AND ${t.status} IN ('active', 'paused', 'error')
+        AND jsonb_typeof(${t.config}) = 'object' AND pg_column_size(${t.config}) <= 4096
+        AND (${t.secretRef} IS NULL OR ${t.secretRef} ~ '^[A-Z][A-Z0-9_]{2,63}$')`,
+    ),
+  ],
+).enableRLS();
+
+/** Which STAY property a channel account serves (Channex property id etc.). */
+export const channelAccountProperties = pgTable(
+  "channel_account_properties",
+  {
+    tenantId: text("tenant_id").notNull(),
+    channelAccountId: uuid("channel_account_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    externalPropertyId: text("external_property_id"),
+    messagingEnabled: boolean("messaging_enabled").notNull().default(false),
+    ...timestamps,
+  },
+  (t) => [
+    primaryKey({
+      name: "channel_account_properties_pkey",
+      columns: [t.channelAccountId, t.propertyId],
+    }),
+    foreignKey({
+      name: "channel_account_properties_account_fkey",
+      columns: [t.tenantId, t.channelAccountId],
+      foreignColumns: [channelAccounts.tenantId, channelAccounts.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "channel_account_properties_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    unique("channel_account_properties_external_key").on(t.channelAccountId, t.externalPropertyId),
+    check(
+      "channel_account_properties_external_valid",
+      sql`${t.externalPropertyId} IS NULL OR ${t.externalPropertyId} ~ '^[A-Za-z0-9_-]{1,100}$'`,
+    ),
+  ],
+).enableRLS();
+
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    /** NULL only for inbound threads of an unmapped channel property (all-property staff only). */
+    propertyId: text("property_id"),
+    channelAccountId: uuid("channel_account_id").notNull(),
+    channel: text("channel", { enum: CONVERSATION_CHANNELS }).notNull(),
+    kind: text("kind", { enum: CONVERSATION_KINDS }).notNull().default("reservation"),
+    externalThreadId: text("external_thread_id"),
+    /** Short display title, e.g. first name of the guest – no contact data. */
+    title: text("title").notNull(),
+    status: text("status", { enum: CONVERSATION_STATUSES }).notNull().default("open"),
+    priority: text("priority").notNull().default("normal"),
+    assignedAdminUserId: uuid("assigned_admin_user_id"),
+    snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
+    externalClosed: boolean("external_closed").notNull().default(false),
+    guestLanguage: text("guest_language"),
+    /** Preview of the last guest/staff message (never of an internal note). */
+    lastMessagePreview: text("last_message_preview"),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
+    lastInboundAt: timestamp("last_inbound_at", { withTimezone: true }),
+    lastOutboundAt: timestamp("last_outbound_at", { withTimezone: true }),
+    /** Optimistic locking for status/assignment changes. */
+    version: integer("version").notNull().default(1),
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("conversations_tenant_id_id_key").on(t.tenantId, t.id),
+    unique("conversations_thread_key").on(t.tenantId, t.channelAccountId, t.externalThreadId),
+    index("conversations_recent_idx").on(t.tenantId, t.lastMessageAt),
+    index("conversations_property_idx").on(t.tenantId, t.propertyId, t.status),
+    foreignKey({
+      name: "conversations_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "conversations_channel_account_fkey",
+      columns: [t.tenantId, t.channelAccountId],
+      foreignColumns: [channelAccounts.tenantId, channelAccounts.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "conversations_assignee_fkey",
+      columns: [t.tenantId, t.assignedAdminUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("restrict"),
+    check("conversations_channel_valid", oneOf(t.channel, CONVERSATION_CHANNELS)),
+    check("conversations_kind_valid", oneOf(t.kind, CONVERSATION_KINDS)),
+    check("conversations_status_valid", oneOf(t.status, CONVERSATION_STATUSES)),
+    check(
+      "conversations_values_valid",
+      sql`${notBlank(t.title, 200)}
+        AND ${t.priority} IN ('normal', 'high')
+        AND (${t.propertyId} IS NULL OR ${isKey(t.propertyId)})
+        AND (${t.externalThreadId} IS NULL OR ${t.externalThreadId} ~ '^[A-Za-z0-9_:.-]{1,200}$')
+        AND (${t.guestLanguage} IS NULL OR ${t.guestLanguage} ~ '^[a-z]{2}$')
+        AND (${t.lastMessagePreview} IS NULL OR char_length(${t.lastMessagePreview}) <= 200)
+        AND ${t.version} >= 1`,
+    ),
+  ],
+).enableRLS();
+
+/** n:m – a reservation can have several conversations; inquiries have none. */
+export const conversationReservationLinks = pgTable(
+  "conversation_reservation_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    conversationId: uuid("conversation_id").notNull(),
+    propertyId: text("property_id").notNull(),
+    reservationProvider: text("reservation_provider", { enum: RESERVATION_PROVIDERS }).notNull(),
+    externalReservationId: text("external_reservation_id").notNull(),
+    externalBookingRef: text("external_booking_ref"),
+    linkMethod: text("link_method", { enum: RESERVATION_LINK_METHODS }).notNull(),
+    confidence: text("confidence").notNull().default("exact"),
+    linkedByAdminUserId: uuid("linked_by_admin_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("conversation_reservation_links_key").on(
+      t.conversationId,
+      t.reservationProvider,
+      t.externalReservationId,
+    ),
+    index("conversation_reservation_links_reservation_idx").on(
+      t.tenantId,
+      t.reservationProvider,
+      t.externalReservationId,
+    ),
+    foreignKey({
+      name: "conversation_reservation_links_conversation_fkey",
+      columns: [t.tenantId, t.conversationId],
+      foreignColumns: [conversations.tenantId, conversations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "conversation_reservation_links_property_fkey",
+      columns: [t.tenantId, t.propertyId],
+      foreignColumns: [properties.tenantId, properties.id],
+    }).onDelete("restrict"),
+    check(
+      "conversation_reservation_links_values_valid",
+      sql`${oneOf(t.reservationProvider, RESERVATION_PROVIDERS)}
+        AND ${oneOf(t.linkMethod, RESERVATION_LINK_METHODS)}
+        AND ${t.confidence} IN ('exact', 'suggested')
+        AND ${t.externalReservationId} ~ '^[A-Za-z0-9_-]{1,100}$'
+        AND (${t.externalBookingRef} IS NULL OR ${t.externalBookingRef} ~ '^[A-Za-z0-9_:.-]{1,120}$')`,
+    ),
+  ],
+).enableRLS();
+
+export const conversationParticipants = pgTable(
+  "conversation_participants",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    conversationId: uuid("conversation_id").notNull(),
+    kind: text("kind", { enum: PARTICIPANT_KINDS }).notNull(),
+    displayName: text("display_name").notNull(),
+    adminUserId: uuid("admin_user_id"),
+    guestAccessId: uuid("guest_access_id"),
+    externalParticipantId: text("external_participant_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("conversation_participants_tenant_id_id_key").on(t.tenantId, t.id),
+    foreignKey({
+      name: "conversation_participants_conversation_fkey",
+      columns: [t.tenantId, t.conversationId],
+      foreignColumns: [conversations.tenantId, conversations.id],
+    }).onDelete("cascade"),
+    check("conversation_participants_kind_valid", oneOf(t.kind, PARTICIPANT_KINDS)),
+    check(
+      "conversation_participants_values_valid",
+      sql`${notBlank(t.displayName, 120)}
+        AND (${t.externalParticipantId} IS NULL OR ${t.externalParticipantId} ~ '^[A-Za-z0-9_:.+-]{1,200}$')
+        AND (${t.kind} <> 'staff' OR ${t.adminUserId} IS NOT NULL)`,
+    ),
+  ],
+).enableRLS();
+
+export const conversationMessages = pgTable(
+  "conversation_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    conversationId: uuid("conversation_id").notNull(),
+    direction: text("direction", { enum: MESSAGE_DIRECTIONS }).notNull(),
+    origin: text("origin", { enum: MESSAGE_ORIGINS }).notNull(),
+    senderParticipantId: uuid("sender_participant_id"),
+    authorAdminUserId: uuid("author_admin_user_id"),
+    body: text("body").notNull(),
+    language: text("language"),
+    /** Idempotency of our own sends (double click, retries). */
+    clientMessageId: uuid("client_message_id"),
+    /** The channel's message id – deduplicates inbound messages. */
+    externalMessageId: text("external_message_id"),
+    /** NULL for internal notes (never sent). */
+    deliveryStatus: text("delivery_status", { enum: DELIVERY_STATUSES }),
+    deliveryErrorCode: text("delivery_error_code"),
+    providerCreatedAt: timestamp("provider_created_at", { withTimezone: true }),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("conversation_messages_tenant_id_id_key").on(t.tenantId, t.id),
+    unique("conversation_messages_external_key").on(
+      t.tenantId,
+      t.conversationId,
+      t.externalMessageId,
+    ),
+    unique("conversation_messages_client_key").on(t.tenantId, t.clientMessageId),
+    index("conversation_messages_conversation_idx").on(t.conversationId, t.createdAt),
+    foreignKey({
+      name: "conversation_messages_conversation_fkey",
+      columns: [t.tenantId, t.conversationId],
+      foreignColumns: [conversations.tenantId, conversations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "conversation_messages_sender_fkey",
+      columns: [t.tenantId, t.senderParticipantId],
+      foreignColumns: [conversationParticipants.tenantId, conversationParticipants.id],
+    }).onDelete("restrict"),
+    check("conversation_messages_direction_valid", oneOf(t.direction, MESSAGE_DIRECTIONS)),
+    check("conversation_messages_origin_valid", oneOf(t.origin, MESSAGE_ORIGINS)),
+    check(
+      "conversation_messages_values_valid",
+      sql`char_length(btrim(${t.body})) BETWEEN 1 AND 8000
+        AND (${t.language} IS NULL OR ${t.language} ~ '^[a-z]{2}$')
+        AND (${t.externalMessageId} IS NULL OR ${t.externalMessageId} ~ '^[A-Za-z0-9_:.-]{1,200}$')
+        AND (${t.deliveryErrorCode} IS NULL OR ${t.deliveryErrorCode} ~ '^[a-z0-9_]{1,60}$')
+        AND (${t.deliveryStatus} IS NULL OR ${oneOf(t.deliveryStatus, DELIVERY_STATUSES)})`,
+    ),
+    check(
+      "conversation_messages_direction_shape",
+      sql`(${t.direction} = 'internal' AND ${t.deliveryStatus} IS NULL AND ${t.authorAdminUserId} IS NOT NULL
+             AND char_length(${t.body}) <= 4000)
+        OR (${t.direction} = 'inbound' AND ${t.deliveryStatus} = 'received')
+        OR (${t.direction} = 'outbound' AND ${t.deliveryStatus} IS NOT NULL AND ${t.deliveryStatus} <> 'received')`,
+    ),
+  ],
+).enableRLS();
+
+/** Per staff member: up to which point a conversation is read (unread = newer inbound). */
+export const conversationReads = pgTable(
+  "conversation_reads",
+  {
+    tenantId: text("tenant_id").notNull(),
+    conversationId: uuid("conversation_id").notNull(),
+    adminUserId: uuid("admin_user_id").notNull(),
+    lastReadAt: timestamp("last_read_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ name: "conversation_reads_pkey", columns: [t.conversationId, t.adminUserId] }),
+    foreignKey({
+      name: "conversation_reads_conversation_fkey",
+      columns: [t.tenantId, t.conversationId],
+      foreignColumns: [conversations.tenantId, conversations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "conversation_reads_user_fkey",
+      columns: [t.tenantId, t.adminUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("cascade"),
+  ],
+).enableRLS();
+
+/** Timeline and audit of a conversation – append-only, ids and codes only, no content. */
+export const conversationEvents = pgTable(
+  "conversation_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    conversationId: uuid("conversation_id").notNull(),
+    type: text("type", { enum: CONVERSATION_EVENT_TYPES }).notNull(),
+    actorKind: text("actor_kind").notNull(),
+    actorAdminUserId: uuid("actor_admin_user_id"),
+    details: jsonb("details")
+      .$type<Record<string, string | number | boolean | null>>()
+      .notNull()
+      .default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("conversation_events_conversation_idx").on(t.conversationId, t.createdAt),
+    foreignKey({
+      name: "conversation_events_conversation_fkey",
+      columns: [t.tenantId, t.conversationId],
+      foreignColumns: [conversations.tenantId, conversations.id],
+    }).onDelete("cascade"),
+    check("conversation_events_type_valid", oneOf(t.type, CONVERSATION_EVENT_TYPES)),
+    check(
+      "conversation_events_values_valid",
+      sql`${t.actorKind} IN ('staff', 'system', 'guest')
+        AND (${t.actorKind} <> 'staff' OR ${t.actorAdminUserId} IS NOT NULL)
+        AND jsonb_typeof(${t.details}) = 'object' AND pg_column_size(${t.details}) <= 2048`,
+    ),
+  ],
+).enableRLS();
+
+export const messageAttachments = pgTable(
+  "message_attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    messageId: uuid("message_id").notNull(),
+    fileName: text("file_name").notNull(),
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes"),
+    sha256: text("sha256"),
+    /** Private bucket path `<tenant>/<property>/inbox/<uuid>` – served via signed URLs only. */
+    storagePath: text("storage_path"),
+    externalAttachmentId: text("external_attachment_id"),
+    status: text("status").notNull().default("pending_download"),
+    purgeAfter: timestamp("purge_after", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: "message_attachments_message_fkey",
+      columns: [t.tenantId, t.messageId],
+      foreignColumns: [conversationMessages.tenantId, conversationMessages.id],
+    }).onDelete("cascade"),
+    check(
+      "message_attachments_values_valid",
+      sql`${notBlank(t.fileName, 200)}
+        AND ${t.mimeType} ~ '^[a-z]+/[a-z0-9.+-]{1,100}$'
+        AND (${t.sizeBytes} IS NULL OR ${t.sizeBytes} BETWEEN 0 AND 26214400)
+        AND (${t.sha256} IS NULL OR ${isSha256Hex(t.sha256)})
+        AND ${t.status} IN ('pending_download', 'stored', 'rejected', 'failed')`,
+    ),
+  ],
+).enableRLS();
+
+/** Outbox for outgoing messages (one job per message, claim pattern like notification_outbox). */
+export const messageDeliveryJobs = pgTable(
+  "message_delivery_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    messageId: uuid("message_id").notNull(),
+    channelAccountId: uuid("channel_account_id").notNull(),
+    status: text("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+    lastErrorCode: text("last_error_code"),
+    ...timestamps,
+  },
+  (t) => [
+    unique("message_delivery_jobs_message_key").on(t.messageId),
+    index("message_delivery_jobs_due_idx").on(t.status, t.nextAttemptAt),
+    foreignKey({
+      name: "message_delivery_jobs_message_fkey",
+      columns: [t.tenantId, t.messageId],
+      foreignColumns: [conversationMessages.tenantId, conversationMessages.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "message_delivery_jobs_account_fkey",
+      columns: [t.tenantId, t.channelAccountId],
+      foreignColumns: [channelAccounts.tenantId, channelAccounts.id],
+    }).onDelete("restrict"),
+    check(
+      "message_delivery_jobs_values_valid",
+      sql`${t.status} IN ('pending', 'sending', 'sent', 'failed', 'uncertain')
+        AND ${t.attempts} BETWEEN 0 AND 50
+        AND (${t.lastErrorCode} IS NULL OR ${t.lastErrorCode} ~ '^[a-z0-9_]{1,60}$')`,
+    ),
+  ],
+).enableRLS();
+
+/** Web Push devices of staff members (several per person). */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    adminUserId: uuid("admin_user_id").notNull(),
+    /** Capability URL of the push service – confidential, never logged. */
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    deviceLabel: text("device_label"),
+    userAgentFamily: text("user_agent_family"),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    lastFailureAt: timestamp("last_failure_at", { withTimezone: true }),
+    failureCount: integer("failure_count").notNull().default(0),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedReason: text("revoked_reason", { enum: PUSH_REVOKE_REASONS }),
+    ...timestamps,
+  },
+  (t) => [
+    unique("push_subscriptions_endpoint_key").on(t.endpoint),
+    unique("push_subscriptions_tenant_id_id_key").on(t.tenantId, t.id),
+    index("push_subscriptions_user_idx").on(t.tenantId, t.adminUserId),
+    foreignKey({
+      name: "push_subscriptions_user_fkey",
+      columns: [t.tenantId, t.adminUserId],
+      foreignColumns: [adminUsers.tenantId, adminUsers.id],
+    }).onDelete("cascade"),
+    check(
+      "push_subscriptions_values_valid",
+      sql`${t.endpoint} ~ '^https://[^[:space:]]+$' AND char_length(${t.endpoint}) BETWEEN 16 AND 1000
+        AND ${t.p256dh} ~ '^[A-Za-z0-9_=-]{20,200}$'
+        AND ${t.auth} ~ '^[A-Za-z0-9_=-]{8,100}$'
+        AND (${t.deviceLabel} IS NULL OR ${notBlank(t.deviceLabel, 60)})
+        AND (${t.userAgentFamily} IS NULL OR char_length(${t.userAgentFamily}) <= 60)
+        AND ${t.failureCount} BETWEEN 0 AND 1000
+        AND ((${t.revokedAt} IS NULL) = (${t.revokedReason} IS NULL))
+        AND (${t.revokedReason} IS NULL OR ${oneOf(t.revokedReason, PUSH_REVOKE_REASONS)})`,
+    ),
+  ],
+).enableRLS();
+
+/** Delivery log of push notifications – no content; one per device and dedup key. */
+export const pushDeliveries = pgTable(
+  "push_deliveries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: text("tenant_id").notNull(),
+    subscriptionId: uuid("subscription_id").notNull(),
+    adminUserId: uuid("admin_user_id").notNull(),
+    kind: text("kind", { enum: PUSH_DELIVERY_KINDS }).notNull(),
+    dedupKey: text("dedup_key").notNull(),
+    conversationId: uuid("conversation_id"),
+    status: text("status", { enum: PUSH_DELIVERY_STATUSES }).notNull(),
+    httpStatus: integer("http_status"),
+    errorCode: text("error_code"),
+    purgeAfter: timestamp("purge_after", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("push_deliveries_dedup_key").on(t.subscriptionId, t.dedupKey),
+    foreignKey({
+      name: "push_deliveries_subscription_fkey",
+      columns: [t.tenantId, t.subscriptionId],
+      foreignColumns: [pushSubscriptions.tenantId, pushSubscriptions.id],
+    }).onDelete("cascade"),
+    check("push_deliveries_kind_valid", oneOf(t.kind, PUSH_DELIVERY_KINDS)),
+    check("push_deliveries_status_valid", oneOf(t.status, PUSH_DELIVERY_STATUSES)),
+    check(
+      "push_deliveries_values_valid",
+      sql`${t.dedupKey} ~ '^[A-Za-z0-9_:.-]{1,200}$'
+        AND (${t.httpStatus} IS NULL OR ${t.httpStatus} BETWEEN 100 AND 599)
+        AND (${t.errorCode} IS NULL OR ${t.errorCode} ~ '^[a-z0-9_]{1,60}$')`,
+    ),
+  ],
+).enableRLS();
+
 export const schema = {
   tenants,
   properties,
@@ -2854,4 +3377,17 @@ export const schema = {
   notificationOutbox,
   migrationRuns,
   migrationItems,
+  adminUserGrants,
+  channelAccounts,
+  channelAccountProperties,
+  conversations,
+  conversationReservationLinks,
+  conversationParticipants,
+  conversationMessages,
+  conversationReads,
+  conversationEvents,
+  messageAttachments,
+  messageDeliveryJobs,
+  pushSubscriptions,
+  pushDeliveries,
 };

@@ -57,6 +57,30 @@ export const serverEnvSchema = z
     APALEO_SERVICE_WRITES: z.enum(["disabled", "simulated"]).default("disabled"),
     /** M4: Slack notifications – "off" (default) or "simulated"; there is no live delivery yet. */
     SLACK_DELIVERY: z.enum(["off", "simulated"]).default("off"),
+    /**
+     * Unified Inbox (ADR 0023): simulated guest messages and simulated delivery for local and
+     * staging tests. Never in production.
+     */
+    INBOX_SIMULATION: z.enum(["on", "off"]).default("off"),
+    /**
+     * Web Push: "off" (default) or "test" – only test notifications to the caller's own,
+     * explicitly registered device. Automatic notifications ("live") come with phase I5 and
+     * need an approval; they do not exist in this code yet.
+     */
+    PUSH_DELIVERY: z.enum(["off", "test"]).default("off"),
+    /** VAPID key pair (base64url) and contact for the push services. */
+    VAPID_PUBLIC_KEY: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{80,100}$/)
+      .optional(),
+    VAPID_PRIVATE_KEY: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{40,50}$/)
+      .optional(),
+    VAPID_SUBJECT: z
+      .string()
+      .regex(/^(mailto:[^\s@]+@[^\s@]+|https:\/\/\S+)$/)
+      .optional(),
     /** Apaleo property ids the (simulated) gateway may target, comma-separated, e.g. TEST. */
     APALEO_SERVICE_WRITE_PROPERTIES: z
       .string()
@@ -94,6 +118,20 @@ export const serverEnvSchema = z
     }
     if (env.APALEO_SERVICE_FIXTURES === "on" && !local) {
       ctx.addIssue({ code: "custom", path: ["APALEO_SERVICE_FIXTURES"], message: "local only" });
+    }
+    if (env.INBOX_SIMULATION === "on" && env.APP_ENV === "production") {
+      ctx.addIssue({ code: "custom", path: ["INBOX_SIMULATION"], message: "not in production" });
+    }
+    const vapid = [env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY, env.VAPID_SUBJECT];
+    if (vapid.some(Boolean) && !vapid.every(Boolean)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["VAPID_PRIVATE_KEY"],
+        message: "VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT must be set together",
+      });
+    }
+    if (env.PUSH_DELIVERY !== "off" && !env.VAPID_PRIVATE_KEY) {
+      ctx.addIssue({ code: "custom", path: ["PUSH_DELIVERY"], message: "needs the VAPID keys" });
     }
     if (env.SUPABASE_URL && !env.SUPABASE_URL.startsWith("https://")) {
       ctx.addIssue({ code: "custom", path: ["SUPABASE_URL"], message: "must use https" });

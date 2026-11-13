@@ -1,47 +1,56 @@
 # Unified Inbox und Gäste-Chat – Architektur und Umsetzungsplan
 
-Stand: 13.11.2026 · Status: **Vorschlag, noch nicht umgesetzt** · Entscheidung: [ADR 0023](../adr/0023-unified-inbox.md)
+Stand: 13.11.2026, überarbeitet nach der Produktentscheidung vom 13.11.2026 · Status: **I0–I2 umgesetzt (lokal/Staging-fähig, simuliert), I3 vorbereitet** · Entscheidung: [ADR 0023](../adr/0023-unified-inbox.md)
 
-Ziel: eine zentrale Kommunikationsplattform für UNIQUE PLACES im STAY-Admin.
+Ziel: die STAY Unified Inbox ist **die zentrale Oberfläche für die gesamte Gästekommunikation** von UNIQUE PLACES.
 
-**Kanäle:**
+**Produktentscheidung (13.11.2026):**
+
+- Zentrale Inbox im STAY-Admin, ausdrücklich **für das iPhone** gebaut (installierbare PWA).
+- **Direkte Push-Benachrichtigungen** bei neuen Gästenachrichten. Ein Tippen öffnet die Unterhaltung, geantwortet wird direkt in STAY.
+- **Keine Chat-Kommunikation über Slack, keine Slack-Antwortfunktion.** Slack ist höchstens später ein optionaler, zusätzlicher Benachrichtigungskanal.
+- Push ist nie „garantiert zugestellt“. Die Inbox funktioniert vollständig ohne Push (Liste, Ungelesen-Status, Polling).
+
+**Kanäle (kanalunabhängige Architektur):**
 
 - STAY-interner Gäste-Chat
-- Booking.com und Airbnb über die Channex Messaging API
+- Booking.com, Airbnb und weitere von Channex unterstützte Nachrichtenkanäle (heute zusätzlich Expedia)
 - später WhatsApp Business und weitere Kanäle
 
-Dazu kommt eine providerunabhängige KI-Schicht. Sie liefert zunächst nur Vorschläge und Übersetzungen.
+Apaleo bleibt die führende Quelle für Reservierungsdaten. Eine Reservierung kann mehrere Unterhaltungen haben; Unterhaltungen ohne Reservierung (z. B. Airbnb-Anfragen) sind vorgesehen.
+
+Dazu kommt eine providerunabhängige KI-Schicht. Sie liefert zunächst nur Vorschläge und Übersetzungen, sendet nichts und ändert keine Buchungen.
 
 **Unverändert bleiben:**
 
 - die Extras-App
-- die Extras-Migration
-- der Online-Check-in
-- produktive Apaleo- und Channex-Prozesse
+- die Extras-Migration (pausiert)
+- der Online-Check-in (pausiert)
+- produktive Apaleo- und Channex-Prozesse und Webhooks
 
-Es werden keine produktiven Nachrichten gesendet.
+Es werden keine produktiven Nachrichten gelesen oder gesendet und keine Benachrichtigungen an reale Mitarbeiter verschickt, bevor das ausdrücklich freigegeben ist.
 
 ---
 
 ## 1. Bestandsaufnahme (Code-Stand `4c12c61`)
 
-| Bereich             | Heute vorhanden                                                                                                                                                                                                    | Bedeutung für die Inbox                                                                                                                                   |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architektur         | Monorepo; Ports in `@up/core`, Adapter in `@up/integrations` (ADR 0003); Repositories mit `TenantContext` (ADR 0002/0010); Admin-Feature-Schnitt `actions.ts` → `*-service.ts` → `server.ts`                       | Kanäle werden **Adapter hinter einem `ChannelAdapter`-Port**; die Inbox-Logik ist ein framework-freier Service                                            |
-| Mandanten/Standorte | `tenant_id NOT NULL`, zusammengesetzte FKs, Standort-IDs als Text (`hov`); externe IDs nur in `external_mappings` (heute nur `apaleo`)                                                                             | Channex-Property-IDs kommen als `provider = 'channex'` in `external_mappings`                                                                             |
-| Reservierungen      | **Keine Reservierungstabelle.** Eine Reservierung ist überall `(tenant_id, property_id, reservation_provider, external_reservation_id)`; Daten werden live aus Apaleo gelesen                                      | Unterhaltungen verweisen über dieses Quadrupel auf Reservierungen (n:m), ohne eine Reservierungskopie anzulegen                                           |
-| Gastidentität       | Gastsitzung (`guest_sessions`) → `GuestContext` mit Reservierung; Nachname wird nie gespeichert; Kontaktdaten erst nach Check-in (`guest_registration_contacts`)                                                   | Der STAY-Chat hängt am `GuestContext` (`requireGuestContext`, wie in ADR 0012 für „Chat“ vorgesehen)                                                      |
-| Admin-Rollen        | `owner/admin/manager/viewer`, Standort-Scope `all/selected`, eine Regel `can(principal, permission, {propertyId})`; `requirePermission`                                                                            | Neue Rechte `inbox.*` und `ai.use` im selben Modell; die Navigation hat schon die leere Gruppe „Kommunikation“ und den Scope `allProperties: "aggregate"` |
-| Benachrichtigungen  | `notification_outbox` (Dedup-Schlüssel, Backoff 1/5/15/60/240 min, `FOR UPDATE SKIP LOCKED`), Slack nur simuliert; Worker **nur per Knopf**                                                                        | Das Muster wird für den Nachrichtenversand übernommen, aber in einer eigenen Tabelle (anderes Fehlerverhalten); es braucht **erstmals einen Cron**        |
-| Hintergrundjobs     | Nur `api/registration-sync` mit `CRON_SECRET`; in `vercel.json` sind keine `crons` definiert                                                                                                                       | Der Versand-Worker und der Abgleich laufen per Vercel Cron, dasselbe Schutzmuster; Sofortversand zusätzlich über Next `after()`                           |
-| Eingehende Webhooks | **Keine** (keine Route, keine Signaturprüfung)                                                                                                                                                                     | Neu: Webhook-Route mit HMAC-Prüfung, Rohereignis-Tabelle und asynchroner Verarbeitung                                                                     |
-| Supabase            | RLS aktiv **ohne Policies**, `anon`/`authenticated` haben keine Rechte, die App verbindet sich als Owner; **kein Realtime, keine supabase-js**; Storage nur vom Admin (öffentlicher GUIDE-Bucket)                  | Realtime nicht über Tabellen-Abos (würde Policies erfordern); Anhänge in einem **neuen privaten Bucket** mit signierten URLs                              |
-| Audit               | `admin_audit_events` nur anhängend (Trigger, Migration 0018), Details nur als IDs                                                                                                                                  | Nachrichteninhalte gehören **nicht** ins Audit; eigener Ereignisverlauf je Unterhaltung, ebenfalls nur anhängend                                          |
-| GUIDE-/STAY-Inhalte | `guide_sections` mit `status draft/published/archived`, `visibility`, `translation_state`; Lesen über `listPublishedGuideEntries`                                                                                  | Wissensquelle der KI: nur `published` und für Gäste sichtbar, mit Abschnitts-ID als Quelle                                                                |
-| Apaleo              | Client mit globalen Zugangsdaten; die Preview hat derzeit nur `reservations.read` (siehe [Preview-Prüfung](../staging/preview-pruefung.md))                                                                        | Reservierungskontext in der Inbox braucht dieselben Leseberechtigungen; Apaleo wird von der Inbox nicht beschrieben                                       |
-| Channex             | **Im Code nicht vorhanden.** Channex ist als Channel-Manager im Apaleo Store gelistet; ob und wie UNIQUE PLACES Channex heute betreibt (Konto, Standorte, vorhandene Webhooks), ist aus dem Code nicht ersichtlich | Vor jeder produktiven Aktivierung nur lesend klären (Abschnitt 3.7)                                                                                       |
-| KI                  | Kein LLM-Provider im Code                                                                                                                                                                                          | Neuer Port `AiProvider` und Adapter                                                                                                                       |
-| Admin-UI            | `packages/ui` (Text, Heading, Stack, Surface, Button, TextField, FilterBar, StatusList, DetailList, Callout …), `AdminShell`/`AdminNav`; Muster Liste → Detail (Anfragen); **keine Echtzeit, kein Polling**        | Die Inbox nutzt diese Bausteine; Echtzeit kommt neu hinzu                                                                                                 |
+| Bereich             | Heute vorhanden                                                                                                                                                                                                    | Bedeutung für die Inbox                                                                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architektur         | Monorepo; Ports in `@up/core`, Adapter in `@up/integrations` (ADR 0003); Repositories mit `TenantContext` (ADR 0002/0010); Admin-Feature-Schnitt `actions.ts` → `*-service.ts` → `server.ts`                       | Kanäle werden **Adapter hinter einem `ChannelAdapter`-Port**; die Inbox-Logik ist ein framework-freier Service                                                                               |
+| Mandanten/Standorte | `tenant_id NOT NULL`, zusammengesetzte FKs, Standort-IDs als Text (`hov`); externe IDs nur in `external_mappings` (heute nur `apaleo`)                                                                             | Channex-Property-IDs kommen als `provider = 'channex'` in `external_mappings`                                                                                                                |
+| Reservierungen      | **Keine Reservierungstabelle.** Eine Reservierung ist überall `(tenant_id, property_id, reservation_provider, external_reservation_id)`; Daten werden live aus Apaleo gelesen                                      | Unterhaltungen verweisen über dieses Quadrupel auf Reservierungen (n:m), ohne eine Reservierungskopie anzulegen                                                                              |
+| Gastidentität       | Gastsitzung (`guest_sessions`) → `GuestContext` mit Reservierung; Nachname wird nie gespeichert; Kontaktdaten erst nach Check-in (`guest_registration_contacts`)                                                   | Der STAY-Chat hängt am `GuestContext` (`requireGuestContext`, wie in ADR 0012 für „Chat“ vorgesehen)                                                                                         |
+| Admin-Rollen        | `owner/admin/manager/viewer`, Standort-Scope `all/selected`, eine Regel `can(principal, permission, {propertyId})`; `requirePermission`                                                                            | Neue Rechte `inbox.*` und `ai.use` im selben Modell; die Navigation hat schon die leere Gruppe „Kommunikation“ und den Scope `allProperties: "aggregate"`                                    |
+| Benachrichtigungen  | `notification_outbox` (Dedup-Schlüssel, Backoff 1/5/15/60/240 min, `FOR UPDATE SKIP LOCKED`), Slack nur simuliert; Worker **nur per Knopf**                                                                        | Das Claim-Muster wird für Nachrichtenversand und Push übernommen, aber in eigenen Tabellen (anderes Fehlerverhalten); es braucht **erstmals einen Cron**. Slack ist für die Inbox kein Kanal |
+| Hintergrundjobs     | Nur `api/registration-sync` mit `CRON_SECRET`; in `vercel.json` sind keine `crons` definiert                                                                                                                       | Der Versand-Worker und der Abgleich laufen per Vercel Cron, dasselbe Schutzmuster; Sofortversand zusätzlich über Next `after()`                                                              |
+| Eingehende Webhooks | **Keine** (keine Route, keine Signaturprüfung)                                                                                                                                                                     | Neu: Webhook-Route mit HMAC-Prüfung, Rohereignis-Tabelle und asynchroner Verarbeitung                                                                                                        |
+| Supabase            | RLS aktiv **ohne Policies**, `anon`/`authenticated` haben keine Rechte, die App verbindet sich als Owner; **kein Realtime, keine supabase-js**; Storage nur vom Admin (öffentlicher GUIDE-Bucket)                  | Realtime nicht über Tabellen-Abos (würde Policies erfordern); Anhänge in einem **neuen privaten Bucket** mit signierten URLs                                                                 |
+| Audit               | `admin_audit_events` nur anhängend (Trigger, Migration 0018), Details nur als IDs                                                                                                                                  | Nachrichteninhalte gehören **nicht** ins Audit; eigener Ereignisverlauf je Unterhaltung, ebenfalls nur anhängend                                                                             |
+| GUIDE-/STAY-Inhalte | `guide_sections` mit `status draft/published/archived`, `visibility`, `translation_state`; Lesen über `listPublishedGuideEntries`                                                                                  | Wissensquelle der KI: nur `published` und für Gäste sichtbar, mit Abschnitts-ID als Quelle                                                                                                   |
+| Apaleo              | Client mit globalen Zugangsdaten; die Preview hat derzeit nur `reservations.read` (siehe [Preview-Prüfung](../staging/preview-pruefung.md))                                                                        | Reservierungskontext in der Inbox braucht dieselben Leseberechtigungen; Apaleo wird von der Inbox nicht beschrieben                                                                          |
+| Channex             | **Im Code nicht vorhanden.** Channex ist als Channel-Manager im Apaleo Store gelistet; ob und wie UNIQUE PLACES Channex heute betreibt (Konto, Standorte, vorhandene Webhooks), ist aus dem Code nicht ersichtlich | Vor jeder produktiven Aktivierung nur lesend klären (Abschnitt 3.7)                                                                                                                          |
+| KI                  | Kein LLM-Provider im Code                                                                                                                                                                                          | Neuer Port `AiProvider` und Adapter                                                                                                                                                          |
+| Admin-UI            | `packages/ui` (Text, Heading, Stack, Surface, Button, TextField, FilterBar, StatusList, DetailList, Callout …), `AdminShell`/`AdminNav`; Muster Liste → Detail (Anfragen); **keine Echtzeit, kein Polling**        | Die Inbox nutzt diese Bausteine; Echtzeit kommt neu hinzu                                                                                                                                    |
 
 ## 2. Datenmodell
 
@@ -190,14 +199,31 @@ Grundsätze:
 
 Optional später: `reply_templates` (gespeicherte Antworten je Standort und Sprache).
 
+**`push_subscriptions`**: ein Gerät je Zeile, mehrere Geräte je Mitarbeiter.
+
+- Spalten: `id`, `tenant_id`, `admin_user_id`, `endpoint` (unique; gilt als vertraulich, wird nie geloggt), `p256dh`, `auth`, `device_label` (vom Nutzer, z. B. „iPhone Aurel“), `user_agent_family` (grob, z. B. „iOS Safari PWA“), `created_at`, `last_success_at`, `last_failure_at`, `failure_count`, `revoked_at`, `revoked_reason` (`user` | `expired` | `gone` | `user_disabled` | `inactive`).
+- Löschkonzept: Bei 404/410 des Push-Dienstes sofort widerrufen. Nach 90 Tagen ohne erfolgreiche Zustellung widerrufen. Widerrufene Zeilen werden nach 30 Tagen gelöscht. Beim Deaktivieren eines Mitarbeiters werden alle Geräte widerrufen.
+
+**`push_deliveries`**: Zustellprotokoll ohne Inhalt.
+
+- Spalten: `id`, `tenant_id`, `subscription_id`, `admin_user_id`, `kind` (`test` | `message` | `reminder`), `dedup_key` (z. B. Nachrichten-ID), `conversation_id`, `status` (`simulated` | `sent` | `failed` | `expired` | `skipped`), `http_status`, `error_code`, `created_at`, `purge_after` (30 Tage).
+- Unique `(subscription_id, dedup_key)`: dieselbe Nachricht erzeugt pro Gerät höchstens eine Mitteilung.
+
+**`admin_user_grants`**: ausdrücklich vergebene Zusatzrechte.
+
+- Spalten: `tenant_id`, `admin_user_id`, `permission`, `granted_by`, `created_at`.
+- Erlaubt ist derzeit nur `inbox.read` (Viewer liest Nachrichten nur mit dieser Freigabe). Jede Vergabe und jeder Entzug wird auditiert.
+
 ### 2.2 Wichtige Regeln
 
 - **Unterhaltung ohne Reservierung:** Airbnb-Inquiry oder Reservierungsanfrage bekommt `kind = inquiry` bzw. `reservation_request` und keinen Reservierungslink. Kommt später eine Buchung, kann sie per Vorschlag oder manuell verknüpft werden. Laut Channex gibt es keinen automatischen Rückbezug von der Buchung zum Angebot.
 - **Mehrere Unterhaltungen je Reservierung:** In der Reservierungsansicht und im Kontextbereich werden alle verknüpften Unterhaltungen angezeigt. Auf Wunsch gibt es eine kombinierte Zeitleiste, nur in der Darstellung, ohne die Daten zusammenzuführen.
-- **Mandanten- und Standorttrennung:**
-  - Jede Abfrage läuft über Repository und `TenantContext`.
-  - Standortrechte prüft `can(…, {propertyId})`.
+- **Mandanten- und Standorttrennung, doppelt durchgesetzt:**
+  - Serverseitig: jede Aktion prüft `can(…, {propertyId})`; Abfragen laufen über das Inbox-Repository.
+  - **In der Datenbank (RLS):** Das Inbox-Repository führt jede Abfrage in einer Transaktion mit `SET LOCAL ROLE stay_inbox` aus. Diese Rolle hat kein `BYPASSRLS` und ist nicht Eigentümerin der Tabellen; ihre Policies lassen nur Zeilen zu, deren `tenant_id` der Sitzungseinstellung `app.tenant_id` entspricht und deren Standort in `app.property_ids` liegt (oder `app.all_properties = on`). Interne Notizen sind nur mit `app.can_read_notes = on` sichtbar, Push-Geräte nur dem eigenen Mitarbeiter. Die Einstellungen setzt ausschließlich der Server aus dem geprüften Admin-Kontext.
+  - Vergisst eine Abfrage einen Filter, liefert die Datenbank trotzdem keine fremden Zeilen (getestet).
   - Unterhaltungen ohne `property_id` sieht nur, wer Zugriff auf alle Standorte hat.
+  - Systemprozesse (Webhook-Verarbeitung, Versand, Push) laufen mit derselben Rolle und einem ausdrücklichen System-Kontext je Mandant.
 - **Status:** `open` (Antwort nötig) → `pending` (wartet auf Gast/Dritte) → `done`. Eine neue eingehende Nachricht öffnet `pending` bzw. `done` automatisch wieder (Ereignis `status_changed`, actor `system`).
 - **Aufbewahrung:** Standardvorschlag: Inhalte 12 Monate nach Abreise bzw. nach letzter Nachricht. Rohereignisse 30 Tage, KI-Vorschläge 90 Tage. Ereignisse ohne Inhalt bleiben. Die genauen Fristen sind eine Entscheidung (Abschnitt 8).
 
@@ -327,7 +353,7 @@ Optional später: `reply_templates` (gespeicherte Antworten je Standort und Spra
 ### 4.2 Funktionen
 
 - **Filter:** Standort, Kanal, Status (offen/wartend/erledigt), ungelesen, „mir zugewiesen“ / „nicht zugewiesen“, Suche nach Name und Reservierungsnummer.
-- **Zuweisung** an Teammitglieder mit Recht auf den Standort, mit Ereignis. Optional erhält die zugewiesene Person eine Slack-Benachrichtigung (Outbox, Vorlage `inbox.assigned`, simuliert bis zur Freigabe).
+- **Zuweisung** an Teammitglieder mit Recht auf den Standort, mit Ereignis. Die zugewiesene Person erhält künftig eine Push-Mitteilung (siehe 4.6), kein Slack.
 - **Verlauf:**
   - Nachrichten chronologisch, mit Datumsgrenzen.
   - Übersetzung inline („Original anzeigen“).
@@ -351,21 +377,22 @@ Optional später: `reply_templates` (gespeicherte Antworten je Standort und Spra
   - Der Server sendet nach jeder Änderung ein Signal ohne Inhalt.
   - Clients authentifizieren sich mit einem kurzlebigen, serverseitig ausgestellten Token.
   - Die Daten werden danach wie in Stufe 1 geladen.
-  - Tabellen-Abos (`postgres_changes`) bleiben ausgeschlossen: Sie würden RLS-Policies für Inhalte voraussetzen, die es bewusst nicht gibt.
+  - Tabellen-Abos (`postgres_changes`) bleiben ausgeschlossen: Sie setzen Supabase-Auth-Sitzungen im Browser voraus; STAY prüft Rechte serverseitig und setzt RLS über die Rolle `stay_inbox`.
 - Beide Stufen stehen hinter einem Port `InboxEvents`, damit die Oberfläche unabhängig bleibt.
 
-### 4.4 Rechte (Ergänzung `packages/core/src/admin/permissions.ts`)
+### 4.4 Rechte (umgesetzt in `packages/core/src/admin/permissions.ts`)
 
-| Recht          | owner | admin | manager | viewer |
-| -------------- | :---: | :---: | :-----: | :----: |
-| `inbox.read`   |   ✔   |   ✔   |    ✔    |   ✔    |
-| `inbox.reply`  |   ✔   |   ✔   |    ✔    |   –    |
-| `inbox.assign` |   ✔   |   ✔   |    ✔    |   –    |
-| `inbox.manage` |   ✔   |   ✔   |    –    |   –    |
-| `ai.use`       |   ✔   |   ✔   |    ✔    |   –    |
-| `ai.configure` |   ✔   |   ✔   |    –    |   –    |
+| Recht          | owner | admin | manager |                 viewer                 |
+| -------------- | :---: | :---: | :-----: | :------------------------------------: |
+| `inbox.read`   |   ✔   |   ✔   |    ✔    | nur mit Freigabe (`admin_user_grants`) |
+| `inbox.reply`  |   ✔   |   ✔   |    ✔    |                   –                    |
+| `inbox.notes`  |   ✔   |   ✔   |    ✔    |                   –                    |
+| `inbox.assign` |   ✔   |   ✔   |    ✔    |                   –                    |
+| `inbox.manage` |   ✔   |   ✔   |    –    |                   –                    |
 
-Alle Rechte sind standortbezogen. `inbox.manage` und `ai.configure` gelten mandantenweit wie `settings.*`.
+- Alle Rechte sind standortbezogen; Manager sehen nur ihre zugewiesenen Standorte. `inbox.manage` (Kanäle, Push-Einstellungen des Mandanten) gilt mandantenweit.
+- `inbox.notes` regelt interne Notizen (lesen und schreiben). Ein Viewer mit Lesefreigabe sieht Gästenachrichten, aber keine internen Notizen – auch die Datenbank liefert sie ihm nicht.
+- KI-Rechte (`ai.use`, `ai.configure`) kommen mit der KI-Phase.
 
 ### 4.5 STAY-Gäste-Chat (Gästeseite)
 
@@ -377,6 +404,37 @@ Alle Rechte sind standortbezogen. `inbox.manage` und `ai.configure` gelten manda
 - **Gastanhänge:** erst in einer späteren Phase, nur Bilder mit Größengrenze.
 - **Benachrichtigung bei Antwort:** Später per E-Mail, nur an eine bestätigte Adresse (`guest_registration_contacts`) und nur bei `EMAIL_DELIVERY=resend`. Bis dahin sieht der Gast die Antwort beim nächsten Besuch.
 - **Schalter:** `GUEST_CHAT=off|test`, zunächst nur Objekt TEST.
+
+### 4.6 PWA und Push-Benachrichtigungen
+
+**PWA (installierbar auf dem iPhone):**
+
+- Web-App-Manifest (`/manifest.webmanifest`): Name „STAY Admin“, `display: standalone`, `start_url: /inbox`, Farben aus dem STAY-Design, Icons 192/512 px (auch `maskable`) und `apple-touch-icon` (180 px).
+- Service Worker (`/sw.js`, Scope `/`): nur für Push und Benachrichtigungsklicks; kein Offline-Cache personenbezogener Daten.
+- iOS: Web Push gibt es nur für Web-Apps, die über „Zum Home-Bildschirm“ hinzugefügt wurden (iOS/iPadOS ≥ 16.4), nicht im Safari-Tab. Die Berechtigung darf nur nach einer Nutzeraktion in der installierten App angefragt werden. Die installierte App hat eine eigene Anmeldung (eigener Cookie-Speicher).
+
+**Ablauf:**
+
+1. Mitarbeiter öffnet „Konto → Geräte & Mitteilungen“ in der installierten App und tippt „Mitteilungen auf diesem Gerät aktivieren“.
+2. Der Browser fragt die Berechtigung an; bei Zustimmung erstellt der Service Worker eine Push-Subscription mit dem öffentlichen VAPID-Schlüssel.
+3. Der Server speichert sie in `push_subscriptions` (eigener Mitarbeiter, Mandant aus der Sitzung, optional Gerätename).
+4. Geräteliste mit „Test-Mitteilung senden“ (nur an das eigene Gerät) und „Entfernen“.
+
+**Wann wird benachrichtigt (ab I5, nach Freigabe):**
+
+- Auslöser: neue **eingehende** Gästenachricht (nicht eigene Antworten, keine internen Notizen, keine Systemereignisse).
+- Empfänger: zugewiesene Unterhaltung → nur die zugewiesene Person; nicht zugewiesen → alle Mitarbeiter mit `inbox.reply` für den Standort, die Mitteilungen für „nicht zugewiesen“ aktiviert haben. Viewer erhalten standardmäßig keine Mitteilungen. Die Standortprüfung erfolgt beim Versand erneut (geänderte Rechte gelten sofort).
+- Keine Doppelbenachrichtigung: Unique `(subscription_id, dedup_key)`; Bündelung je Unterhaltung (Notification `tag` = Unterhaltung, höchstens eine Mitteilung je Mitarbeiter und Unterhaltung in 2 Minuten); keine Mitteilung, wenn die Nachricht bereits gelesen wurde.
+- Inhalt: standardmäßig **ohne Nachrichtentext und ohne Gastnamen** („Neue Nachricht · Booking.com · Haus am Valtl“). Eine Textvorschau ist nur möglich, wenn der Mandant sie ausdrücklich erlaubt (Einstellung, auditiert).
+- Deep Link: `data.url = /inbox/c/<id>`; `notificationclick` fokussiert ein offenes Fenster und navigiert dorthin oder öffnet die App. Die Seite prüft Anmeldung und Rechte wie jeder Aufruf.
+
+**Zustellung und Fehler:**
+
+- Versand über einen Push-Job (Claim-Muster wie `notification_outbox`), VAPID, `TTL` 24 h, `Urgency: high`.
+- `201` → `sent`; `404`/`410` → Gerät sofort widerrufen; `400`/`413` → `failed` ohne Wiederholung; `429`/`5xx`/Netzwerk → höchstens 3 Wiederholungen mit Backoff.
+- Jede Zustellung wird in `push_deliveries` protokolliert (ohne Inhalt). Push gilt nie als Lesebestätigung; der Ungelesen-Status kommt nur aus der Inbox.
+- Schalter `PUSH_DELIVERY`: `off` (Standard) · `test` (nur Test-Mitteilungen an das eigene, ausdrücklich registrierte Gerät) · `live` (automatische Mitteilungen; erst nach Freigabe). VAPID-Schlüssel als Env-Variablen (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`).
+- Später: Erinnerungen bei unbeantworteten Nachrichten (z. B. nach 30 Minuten an die zugewiesene Person, dann an den Standort), Ruhezeiten je Mitarbeiter.
 
 ## 5. KI-Schicht
 
@@ -474,36 +532,36 @@ Für WhatsApp Business (Cloud API) braucht es **keine Änderung** an Inbox oder 
 
 E-Mail oder weitere OTAs folgen demselben Muster.
 
-## 7. Umsetzungsphasen
+## 7. Umsetzungsphasen (überarbeitet 13.11.2026)
 
-Jede Phase ist klein, einzeln abnehmbar und läuft zunächst lokal und auf Staging. Produktive Schritte sind eigene Freigaben.
+Jede Phase ist klein, einzeln abnehmbar und läuft zunächst lokal und auf Staging. Produktive Schritte sind eigene Freigaben. Slack ist keine Phase mehr.
 
-| Phase   | Inhalt                                                                                                                                                                               | Tests                                                                                                                                                                      | Abnahmekriterien                                                                                                                                    |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **I0**  | Entscheidungen und Zugänge (kein Code): Fragen aus 3.7 und Abschnitt 8, Channex-Staging-Konto, KI-Provider und AV-Vertrag, Aufbewahrungsfristen; ADR 0023 annehmen                   | –                                                                                                                                                                          | Schriftlich festgehaltene Antworten; Staging-Konto vorhanden                                                                                        |
-| **I1**  | Datenmodell (Migration 0023, nur lokal und Staging), Repositories, Rechte `inbox.*`/`ai.*`, Ports `ChannelAdapter`, `AiProvider`, `InboxEvents`                                      | PGlite: Mandanten- und Standorttrennung, Unique-Indizes (Dedup), `conversation_events` nur anhängend, Rechte-Matrix, `purge_after`                                         | Alle Tests grün; Schema auf Staging identisch; kein bestehender Test verändert                                                                      |
-| **I2**  | Admin-Inbox mit simuliertem Kanal und Testdaten: Liste, Filter, Status, Zuweisung, Gelesen, interne Notizen, Polling (Stufe 1), mobile Ansicht                                       | Service-Tests (Statuswechsel, Wiedereröffnung, optimistische Sperre), Playwright Desktop und Mobil, Rechte (viewer kann nicht antworten, fremder Standort unsichtbar)      | Inbox auf Staging mit Simulator bedienbar; Screenshots; keine externen Aufrufe                                                                      |
-| **I3**  | STAY-Gäste-Chat (`GUEST_CHAT=test`, nur TEST): Gastseite, Antwort im Admin, Rate-Limit                                                                                               | Gast sieht nur eigene Unterhaltung, keine Notizen; Rate-Limit; Doppelklick erzeugt eine Nachricht; Browser Gast ↔ Admin                                                    | Gespräch Gast ↔ Team auf der Staging-Preview mit `JTKQSYFX-1` durchspielbar                                                                         |
-| **I4**  | Zustell-Engine: `message_delivery_jobs`, Worker, Vercel Cron (geschützt wie `registration-sync`), `after()`, Zustände `failed`/`uncertain`, Anzeige in der Oberfläche                | Simulierter Adapter mit erzwungenen Fehlern (401/403/422/429/Timeout/5xx); kein Doppelversand bei `uncertain`; parallele Worker                                            | Alle Fehlerpfade sichtbar und korrekt; kein Retry bei eindeutigen Fehlern                                                                           |
-| **I5**  | Channex eingehend gegen **Channex-Staging** und Simulator: Webhook-Route mit HMAC, `inbound_events`, Normalisierung, Dedup, Abgleich, Standortzuordnung, Inquiries ohne Reservierung | Signatur (gültig, falsch, abgelaufen, Rotation mit zwei Werten), Duplikate, Reihenfolge, verlorene Webhooks per Abgleich, Egress-Allowlist (verbotene Pfade schlagen fehl) | Eine Nachricht aus Channex-Staging erscheint genau einmal in der Inbox; ein manipulierter Webhook wird abgewiesen                                   |
-| **I6**  | Channex ausgehend (nur Staging): Antworten, Anhänge, „Keine Antwort nötig“, Thread schließen; Reservierungszuordnung (exakt/Vorschlag/manuell)                                       | Zustellung inkl. `uncertain`-Abgleich; Zuordnungslogik mit Testfällen (eindeutig, mehrdeutig, keine); Rechte                                                               | Antwort erreicht Channex-Staging genau einmal; Zuordnung nachvollziehbar                                                                            |
-| **I7**  | Team-Benachrichtigung (Slack-Vorlage „neue Gastnachricht“/„zugewiesen“, simuliert), Ungelesen-Badge, optional Echtzeit Stufe 2                                                       | Outbox-Dedup, kein Inhalt in Slack-Text (nur Link und Kanal)                                                                                                               | Benachrichtigungen simuliert korrekt                                                                                                                |
-| **I8**  | KI-Vorschläge und Übersetzung (`AI_ASSIST=off                                                                                                                                        | suggest`): ContextBuilder, PolicyGate, Quellen, Aufzeichnung; nur Vorschläge                                                                                               | Simulierter Provider: Quellenpflicht, keine Reservierungsdaten ohne Recht, Übergabe-Intents; Evaluationssatz; keine Sendefunktion im KI-Pfad (Test) | Vorschlag mit Quelle in der Inbox; Übersetzung hin und zurück; Kosten und Latenz gemessen |
-| **I9**  | **Produktiver Pilot, eigene Freigabe:** ein Standort; zuerst nur lesend spiegeln (Webhook und Abgleich, `CHANNEX_SEND=off`), danach Senden für den Pilotstandort                     | Vorab lesende Prüfung der bestehenden Webhooks; Monitoring; Rückfallplan (Schalter aus, Webhook deaktivieren)                                                              | Zwei Wochen Spiegelung ohne Verlust oder Duplikat; danach Senden freigegeben                                                                        |
-| **I10** | KI Shadow-Modus, danach `auto_limited` je Standort (eigene Freigabe)                                                                                                                 | Richtlinientests (jede Bedingung einzeln), Not-Aus, Audit je Entscheidung                                                                                                  | Messwerte aus dem Shadow-Modus erfüllen vereinbarte Schwellen                                                                                       |
-| **I11** | WhatsApp-Adapter (Cloud API), Vorlagen, 24-h-Fenster                                                                                                                                 | Adapter-Vertragstests wie Channex; Fensterlogik                                                                                                                            | Keine Änderung an Inbox oder Schema außer neuen Enum-Werten                                                                                         |
+| Phase   | Inhalt                                                                                                                                                                          | Tests                                                                                                     | Abnahmekriterien                                                                      | Stand            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------- |
+| **I0**  | Technische Bestandsaufnahme, Channex nur lesend (soweit Zugang vorhanden), PWA-/Push-Voraussetzungen, offene Abhängigkeiten                                                     | –                                                                                                         | Dokumentiert in [Bericht I0–I2](../staging/unified-inbox-i0-i2-bericht.md)            | erledigt         |
+| **I1**  | Datenmodell (Migration 0023), RLS mit Rolle `stay_inbox`, Rechte `inbox.*`, Viewer-Freigabe, Ports `ChannelAdapter`/`InboxEvents`                                               | PGlite: RLS (Mandant, Standort, Notizen, Geräte), Unique-Indizes, Ereignisse nur anhängend, Rechte-Matrix | Alle Tests grün; Migration nur lokal/Staging nach Freigabe                            | erledigt (lokal) |
+| **I2**  | Admin-Inbox mit simuliertem Kanal: Liste, Filter, Verlauf, Antworten, interne Notizen, Status, Zuweisung, Gelesen, Polling, mobil                                               | Service-Tests, Playwright Desktop und iPhone, Rechte                                                      | Bedienbar mit Simulation; Screenshots; keine externen Aufrufe                         | erledigt (lokal) |
+| **I3**  | PWA und Push-Prototyp: Manifest, Service Worker, Registrierung, Geräteverwaltung, Test-Mitteilung an das eigene Gerät, Deep Link                                                | Unit-Tests Zustellung/Fehler; gemeinsamer Test auf einem iPhone                                           | Test-Mitteilung kommt auf dem registrierten iPhone an; Tippen öffnet die Unterhaltung | vorbereitet      |
+| **I4**  | STAY-Gäste-Chat (`GUEST_CHAT=test`, nur TEST)                                                                                                                                   | Gast sieht nur eigene Unterhaltung, keine Notizen; Rate-Limit; Browser Gast ↔ Admin                       | Gespräch Gast ↔ Team auf der Staging-Preview durchspielbar                            | offen            |
+| **I5**  | Zustell-Engine und Cron: Nachrichtenversand mit `failed`/`uncertain`, automatische Push-Jobs bei eingehenden Nachrichten (zunächst nur an ausdrücklich freigegebene Testgeräte) | Erzwungene Fehler, kein Doppelversand, Push-Dedup und Bündelung, Empfängerregeln                          | Fehlerpfade sichtbar; genau eine Mitteilung je Nachricht und Gerät                    | offen            |
+| **I6**  | Channex eingehend gegen Channex-Staging und Simulator: Webhook mit HMAC, Rohereignisse, Dedup, Abgleich, Inquiries ohne Reservierung                                            | Signatur, Duplikate, verlorene Webhooks, Egress-Allowlist                                                 | Nachricht aus Channex-Staging erscheint genau einmal                                  | offen            |
+| **I7**  | Channex ausgehend (Staging), Anhänge, „Keine Antwort nötig“, Reservierungszuordnung                                                                                             | Zustellung inkl. `uncertain`, Zuordnungsfälle                                                             | Antwort erreicht Channex-Staging genau einmal                                         | offen            |
+| **I8**  | **Produktiver Pilot (eigene Freigabe):** Migration auf Production, Channex lesend für einen Standort, dann Senden; Push `live` für ausgewählte Mitarbeiter                      | Prüfung bestehender Webhooks, Monitoring, Rückfallplan                                                    | Zwei Wochen ohne Verlust/Duplikat                                                     | offen            |
+| **I9**  | KI-Vorschläge und Übersetzung (nur Vorschläge, mit Quellen)                                                                                                                     | Quellenpflicht, keine Reservierungsdaten ohne Recht, keine Sendefunktion im KI-Pfad                       | Vorschlag mit Quelle; Übersetzung hin und zurück                                      | offen            |
+| **I10** | Erinnerungen bei unbeantworteten Nachrichten, Echtzeit Stufe 2, KI-Shadow-Modus und begrenzte Auto-Antworten (eigene Freigabe)                                                  | Richtlinien-, Not-Aus- und Audit-Tests                                                                    | Messwerte erfüllen vereinbarte Schwellen                                              | offen            |
+| **I11** | WhatsApp-Adapter (Cloud API), Vorlagen, 24-h-Fenster; optional Slack als zusätzlicher Benachrichtigungskanal                                                                    | Adapter-Vertragstests, Fensterlogik                                                                       | Keine Änderung an Inbox oder Schema außer Enum-Werten                                 | offen            |
 
 Jede Phase erfüllt die üblichen Prüfungen (`turbo typecheck lint test`, Prettier) und bekommt einen kurzen Bericht in `docs/staging/`.
 
 ## 8. Offene Entscheidungen
 
-1. **Channex:** Konto und Billing-Owner, Konditionen der Messages-App, vorhandene Webhooks (3.7). Wird parallel im Channex-Dashboard geantwortet?
-2. **KI-Provider:** Auswahl, AV-Vertrag, Region, Budget je Monat.
-3. **Aufbewahrung:** Fristen für Inhalte, Rohereignisse, KI-Vorschläge. Löschung auf Gastwunsch.
-4. **Gästebenachrichtigung** bei STAY-Chat-Antworten: E-Mail ab wann, Texte?
-5. **Rollen:** Darf `viewer` Inhalte lesen? Sollen Zuweisungen auf Teams statt Personen möglich sein?
-6. **Kennzeichnung automatischer Antworten** gegenüber Gästen (rechtliche Vorgabe und Tonalität).
-7. **Echtzeit Stufe 2** (Supabase Realtime Broadcast) gleich oder erst bei Bedarf?
+1. **Channex:** Konto und Billing-Owner, Konditionen der Messages-App, vorhandene Webhooks (3.7). Wird parallel im Channex-Dashboard geantwortet? In dieser Umgebung gibt es keinen Channex-Zugang; die lesende Prüfung steht aus.
+2. **Push:** VAPID-Schlüssel erzeugen und als Env-Variablen hinterlegen; Freigabe für `PUSH_DELIVERY=test` auf Staging; später `live` und Empfängerregeln je Standort; Textvorschau in Mitteilungen ja/nein.
+3. **Anmeldung in der iPhone-App:** Die Admin-Sitzung läuft heute nach 12 Stunden ab. Für die tägliche Nutzung auf dem Telefon ist eine längere, gerätegebundene Sitzung zu entscheiden (z. B. 30 Tage mit erneuter Passwortabfrage für Verwaltungsfunktionen).
+4. **KI-Provider:** Auswahl, AV-Vertrag, Region, Budget je Monat.
+5. **Aufbewahrung:** Vorschlag Inhalte 12 Monate nach letzter Nachricht bzw. Abreise, Zustellprotokolle 30 Tage, widerrufene Geräte 30 Tage. Löschung auf Gastwunsch.
+6. **Gästebenachrichtigung** bei STAY-Chat-Antworten: E-Mail ab wann, Texte?
+7. **Kennzeichnung automatischer Antworten** gegenüber Gästen.
 
 ## Quellen
 

@@ -13,6 +13,7 @@ import { and, asc, count, eq, gt, isNull } from "drizzle-orm";
 
 import { type Database } from "../client";
 import { adminSessions, adminUserProperties, adminUsers } from "../schema";
+import { listAdminUserGrants } from "./inbox-repository";
 
 export type AdminUser = {
   id: string;
@@ -156,7 +157,9 @@ export async function findAdminSessionByTokenHash(
   db: Database,
   tokenHash: string,
   now: Date,
-): Promise<{ sessionId: string; expiresAt: Date; user: AdminUser } | undefined> {
+): Promise<
+  { sessionId: string; expiresAt: Date; user: AdminUser & { grants: string[] } } | undefined
+> {
   if (!isSecretHash(tokenHash)) return undefined;
   const [row] = await db
     .select({
@@ -189,10 +192,11 @@ export async function findAdminSessionByTokenHash(
   if (!row) return undefined;
   const { sessionId, expiresAt, displayName, ...user } = row;
   const propertyIds = await propertyIdsFor(db, user);
+  const grants = await listAdminUserGrants(db, { tenantId: user.tenantId }, user.id);
   return {
     sessionId,
     expiresAt,
-    user: { ...user, propertyIds, ...(displayName ? { displayName } : {}) },
+    user: { ...user, propertyIds, grants, ...(displayName ? { displayName } : {}) },
   };
 }
 

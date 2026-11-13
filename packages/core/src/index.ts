@@ -543,3 +543,6 @@ export * from "./booking/stay-extension";
 export * from "./booking/config-normalization";
 export * from "./booking/extras-semantics";
 export * from "./serialization/canonical-json";
+export * from "./inbox/inbox-model";
+export * from "./inbox/channel-adapter";
+export * from "./inbox/push";

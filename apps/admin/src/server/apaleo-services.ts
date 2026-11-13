@@ -169,3 +169,43 @@ export async function shadowEngine(): Promise<
   const fixture = await localFixtureEngine("disabled");
   return fixture ? { engine: fixture, source: "fixture" } : undefined;
 }
+
+export type ReservationSummary = {
+  id: string;
+  status: string;
+  arrival: string;
+  departure: string;
+  adults: number;
+  children: number;
+  unitGroupId: string | null;
+  unitId: string | null;
+};
+
+/**
+ * Unified Inbox context (ADR 0023): reservation data read live from Apaleo – Apaleo stays the
+ * leading source, nothing is copied. Read-only; undefined without Apaleo access or on error.
+ */
+export async function loadReservationSummary(
+  reservationId: string,
+): Promise<ReservationSummary | undefined> {
+  const live = apaleoReader();
+  if (!live || !/^[A-Za-z0-9_-]{1,100}$/.test(reservationId)) return undefined;
+  try {
+    const r = await live.getReservation(reservationId);
+    return {
+      id: r.id,
+      status: r.status,
+      arrival: r.arrival,
+      departure: r.departure,
+      adults: r.adults,
+      children: r.childrenAges?.length ?? 0,
+      unitGroupId: r.unitGroup?.id ?? null,
+      unitId: r.unit?.id ?? null,
+    };
+  } catch (error) {
+    logger.warn("inbox reservation context unavailable", {
+      error: error instanceof Error ? { name: error.name } : "unknown",
+    });
+    return undefined;
+  }
+}

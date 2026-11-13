@@ -42,7 +42,8 @@ describe("role matrix", () => {
   it("viewers read only – no action button may ever be authorized for them", () => {
     for (const permission of ADMIN_PERMISSIONS) {
       expect(can(viewer, permission, { propertyId: "hov" })).toBe(
-        permission.endsWith(".read") && permission !== "users.read",
+        // Guest messages are personal data: viewers read them only with an explicit grant.
+        permission.endsWith(".read") && permission !== "users.read" && permission !== "inbox.read",
       );
     }
   });

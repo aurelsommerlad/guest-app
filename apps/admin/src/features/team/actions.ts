@@ -2,7 +2,12 @@
 
 import { redirect } from "next/navigation";
 
-import { requireAdmin } from "../auth/server";
+import { canAssignRole } from "@up/core";
+import { getAdminUser, setAdminUserGrant } from "@up/db";
+
+import { getDatabase } from "../../server/database";
+import { principalOf } from "../auth/authorization";
+import { requireAdmin, requirePermission } from "../auth/server";
 import { teamDeps } from "./server";
 import {
   changeMemberAccess,
@@ -85,4 +90,31 @@ export async function revokeInvitationAction(invitationId: string): Promise<void
   const admin = await requireAdmin();
   await revokeInvitation(teamDeps(), admin, invitationId);
   redirect("/team");
+}
+
+/**
+ * Explicit message reading for a viewer (ADR 0023): viewers see guest messages only with this
+ * grant – never internal notes, never replies. Owners/admins with users.manage decide.
+ */
+export async function setInboxReadGrantAction(userId: string, granted: boolean): Promise<void> {
+  const admin = await requirePermission("users.manage");
+  const db = getDatabase();
+  const member = await getAdminUser(db, { tenantId: admin.tenantId }, userId);
+  if (!member || !canAssignRole(principalOf(admin), member.role, member.role)) redirect("/team");
+  if (member.role !== "viewer") {
+    redirect(
+      `/team/${encodeURIComponent(userId)}?error=${encodeURIComponent("Nur für Leserechte nötig – andere Rollen lesen Nachrichten bereits.")}`,
+    );
+  }
+  await setAdminUserGrant(
+    db,
+    { tenantId: admin.tenantId },
+    {
+      adminUserId: member.id,
+      permission: "inbox.read",
+      granted,
+      actorAdminId: admin.adminUserId,
+    },
+  );
+  redirect(`/team/${encodeURIComponent(userId)}`);
 }

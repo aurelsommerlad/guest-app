@@ -53,6 +53,8 @@ export type AdminContext = {
   role: AdminRole;
   propertyScope: PropertyScope;
   propertyIds: readonly string[];
+  /** Explicit extra permissions (admin_user_grants), e.g. "inbox.read" for a viewer. */
+  grants?: readonly string[];
 };
 
 export type LoginResult =
@@ -153,6 +155,7 @@ export async function resolveAdminSession(
       role: record.user.role,
       propertyScope: record.user.propertyScope,
       propertyIds: record.user.propertyIds,
+      grants: record.user.grants,
     };
   } catch (error) {
     deps.logger.error("admin session lookup failed", {

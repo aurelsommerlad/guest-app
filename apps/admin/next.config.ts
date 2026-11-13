@@ -31,7 +31,19 @@ const baseConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ["@up/core", "@up/db", "@up/ui"],
   images: { remotePatterns: storageImagePatterns() },
-  headers: () => Promise.resolve([{ source: "/:path*", headers: securityHeaders }]),
+  headers: () =>
+    Promise.resolve([
+      { source: "/:path*", headers: securityHeaders },
+      {
+        // Service worker (ADR 0023): always fresh, same-origin scripts only.
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+    ]),
   redirects: () => Promise.resolve([...legacyRedirects]),
 };
 
